@@ -112,8 +112,6 @@ pub struct ConstructorOptionsNative {
 
 /// Parameters defining the construction of an engine.
 #[derive(Debug, Deserialize)]
-#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
-#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 #[serde(rename_all = "camelCase")]
 pub struct ConstructorOptions {
     pub datamodel: String,

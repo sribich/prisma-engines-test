@@ -41,12 +41,6 @@ pub struct SqlSchemaDialect {
 }
 
 impl SqlSchemaDialect {
-    /// Creates a CockroachDB schema dialect with the default settings.
-    #[cfg(feature = "postgresql")]
-    pub fn cockroach() -> Self {
-        Self::new(Box::new(flavour::PostgresDialect::cockroach()))
-    }
-
     /// Creates a PostgreSQL schema dialect with the default settings.
     #[cfg(feature = "postgresql")]
     pub fn postgres() -> Self {
@@ -259,20 +253,11 @@ impl SqlSchemaConnector {
         })
     }
 
-    /// Initialize a CockroachDb migration connector.
-    #[cfg(feature = "cockroachdb-native")]
-    pub fn new_cockroach(params: ConnectorParams) -> ConnectorResult<Self> {
-        Ok(SqlSchemaConnector {
-            inner: Box::new(flavour::PostgresConnector::new_cockroach(params)?),
-            host: Arc::new(EmptyHost),
-        })
-    }
-
     /// Initialize a PostgreSQL-like schema connector.
     ///
-    /// Use [`Self::new_postgres()`] or [`Self::new_cockroach()`] instead when the provider is
+    /// Use [`Self::new_postgres()`] instead when the provider is
     /// explicitly specified by user or already known otherwise.
-    #[cfg(any(feature = "postgresql-native", feature = "cockroachdb-native"))]
+    #[cfg(any(feature = "postgresql-native"))]
     pub fn new_postgres_like(params: ConnectorParams) -> ConnectorResult<Self> {
         Ok(SqlSchemaConnector {
             inner: Box::new(flavour::PostgresConnector::new_with_params(params)?),

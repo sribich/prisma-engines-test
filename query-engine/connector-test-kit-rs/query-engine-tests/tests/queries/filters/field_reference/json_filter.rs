@@ -271,7 +271,7 @@ mod json_filter {
     }
 
     // Cockroach doesn't support json list
-    #[connector_test(schema(schema_list), capabilities(JsonFiltering, ScalarLists), exclude(CockroachDb))]
+    #[connector_test(schema(schema_list), capabilities(JsonFiltering, ScalarLists))]
     async fn scalar_list_filters(runner: Runner) -> TestResult<()> {
         test_data_list(&runner).await?;
 

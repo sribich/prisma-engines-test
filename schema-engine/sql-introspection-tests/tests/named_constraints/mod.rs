@@ -8,7 +8,7 @@ use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(tags(Mssql, Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Mssql, Postgres))]
 async fn introspecting_non_default_pkey_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -43,7 +43,7 @@ async fn introspecting_non_default_pkey_names_works(api: &mut TestApi) -> TestRe
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Mssql, Postgres))]
 async fn introspecting_default_pkey_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -78,7 +78,7 @@ async fn introspecting_default_pkey_names_works(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Mssql, Postgres))]
 async fn introspecting_non_default_unique_constraint_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -113,7 +113,7 @@ async fn introspecting_non_default_unique_constraint_names_works(api: &mut TestA
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Mssql, Postgres))]
 async fn introspecting_default_unique_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -148,7 +148,7 @@ async fn introspecting_default_unique_names_works(api: &mut TestApi) -> TestResu
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Mssql, Postgres))]
 async fn introspecting_non_default_index_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -189,7 +189,7 @@ async fn introspecting_non_default_index_names_works(api: &mut TestApi) -> TestR
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Mssql, Postgres))]
 async fn introspecting_default_index_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

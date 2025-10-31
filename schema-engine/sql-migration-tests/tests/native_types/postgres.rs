@@ -856,7 +856,7 @@ fn safe_casts_with_existing_data_should_work(api: TestApi) {
     }
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn risky_casts_with_existing_data_should_warn(api: TestApi) {
     let connector = psl::builtin_connectors::POSTGRES;
 

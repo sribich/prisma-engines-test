@@ -12,12 +12,7 @@ use self::{query_ext::QueryExt, row::*};
 use quaint::prelude::Queryable;
 
 pub use database::FromSource;
-#[cfg(feature = "driver-adapters")]
-pub use database::Js;
 pub use error::SqlError;
-
-#[cfg(feature = "mssql-native")]
-pub use database::Mssql;
 
 #[cfg(feature = "mysql-native")]
 pub use database::Mysql;

@@ -438,11 +438,7 @@ fn with_a_failed_migration(api: TestApi) {
         .send_unwrap_err()
         .to_string();
 
-    if api.is_mssql() {
-        assert!(err.contains("Could not find stored procedure"), "{}", err)
-    } else {
-        assert!(&err.contains("syntax"), "{}", err)
-    }
+    assert!(&err.contains("syntax"), "{}", err);
 
     std::fs::remove_dir_all(migrations_directory.path().join(&generated_migration_name)).unwrap();
 

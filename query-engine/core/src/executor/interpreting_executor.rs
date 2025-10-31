@@ -38,8 +38,7 @@ where
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl<C> QueryExecutor for InterpretingExecutor<C>
 where
     C: Connector + Send + Sync + 'static,
@@ -139,8 +138,7 @@ where
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl<C> TransactionManager for InterpretingExecutor<C>
 where
     C: Connector + Send + Sync,

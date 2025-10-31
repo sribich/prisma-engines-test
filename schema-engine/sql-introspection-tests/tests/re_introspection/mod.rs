@@ -182,7 +182,7 @@ async fn mapped_model_and_field_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn manually_mapped_model_and_field_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -415,7 +415,7 @@ async fn mapped_enum_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn manually_remapped_enum_value_name(api: &mut TestApi) -> TestResult {
     let sql = "CREATE Type color as ENUM (\'_black\', \'white\')";
     api.database().execute_raw(sql, &[]).await?;
@@ -476,7 +476,7 @@ async fn manually_remapped_enum_value_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn manually_re_mapped_enum_name(api: &mut TestApi) -> TestResult {
     let sql = "CREATE Type _color as ENUM (\'black\', \'white\')";
     api.database().execute_raw(sql, &[]).await?;
@@ -540,7 +540,7 @@ async fn manually_re_mapped_enum_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn manually_re_mapped_invalid_enum_values(api: &mut TestApi) -> TestResult {
     api.raw_cmd(r#"CREATE TYPE "invalid" as ENUM ('@', '-')"#).await;
 
@@ -664,7 +664,7 @@ async fn multiple_changed_relation_names(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn custom_virtual_relation_field_names(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -967,7 +967,7 @@ async fn multiple_changed_relation_names_due_to_mapped_models(api: &mut TestApi)
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn virtual_uid_default(api: &mut TestApi) {
     api.barrel()
         .execute(|migration| {
@@ -1112,7 +1112,7 @@ async fn virtual_cuid_default_cockroach(api: &mut TestApi) {
     api.assert_eq_datamodels(final_dm, &result);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn comments_should_be_kept(api: &mut TestApi) -> TestResult {
     api.raw_cmd("CREATE TYPE a AS ENUM (\'A\')").await;
 
@@ -1402,7 +1402,7 @@ async fn re_introspecting_mysql_enum_names_if_enum_is_reused(api: &mut TestApi) 
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn custom_repro(api: &mut TestApi) -> TestResult {
     let sql = r#"
         CREATE TABLE "tag" (
@@ -1573,7 +1573,7 @@ async fn do_not_try_to_keep_custom_many_to_many_self_relation_names(api: &mut Te
     Ok(())
 }
 
-#[test_connector(tags(Postgres, Mssql, Mysql, Sqlite), exclude(CockroachDb))]
+#[test_connector(tags(Postgres, Mssql, Mysql, Sqlite))]
 async fn re_introspecting_custom_compound_unique_upgrade(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

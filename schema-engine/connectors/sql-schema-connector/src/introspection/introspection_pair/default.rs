@@ -35,16 +35,6 @@ impl<'a> DefaultValuePair<'a> {
         let family = self.next.column_type_family();
 
         match (sql_kind, family) {
-            (Some(sql::DefaultKind::Sequence(name)), _) if self.context.is_cockroach() => {
-                let connector_data: &PostgresSchemaExt = self.context.sql_schema.downcast_connector_data();
-
-                let sequence_idx = connector_data
-                    .sequences
-                    .binary_search_by_key(&name, |s| &s.name)
-                    .unwrap();
-
-                Some(DefaultKind::Sequence(&connector_data.sequences[sequence_idx]))
-            }
             (_, sql::ColumnTypeFamily::Int | sql::ColumnTypeFamily::BigInt) if self.next.is_autoincrement() => {
                 Some(DefaultKind::Autoincrement)
             }

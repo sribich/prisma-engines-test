@@ -5,7 +5,6 @@ use crate::datamodel_connector::Flavour;
 
 pub fn set_config_dir<'a>(flavour: Flavour, config_dir: &std::path::Path, url: &'a str) -> Cow<'a, str> {
     match flavour {
-        Flavour::Sqlserver => set_config_dir_mssql(config_dir, url),
         Flavour::Sqlite => set_config_dir_sqlite(config_dir, url),
         _ => set_config_dir_default(config_dir, url),
     }

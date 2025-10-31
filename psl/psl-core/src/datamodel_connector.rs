@@ -305,8 +305,6 @@ pub trait Connector: Send + Sync {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Flavour {
-    Cockroach,
-    Sqlserver,
     Mysql,
     Postgres,
     Sqlite,

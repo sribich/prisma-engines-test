@@ -3,7 +3,7 @@ pub mod completions;
 #[cfg(feature = "mysql")]
 pub use mysql_datamodel_connector::MySqlType;
 #[cfg(feature = "postgresql")]
-pub use postgres_datamodel_connector::{KnownPostgresType, PostgresDatasourceProperties, PostgresType};
+pub use postgres_datamodel_connector::{KnownPostgresType, PostgresDatasourceProperties, PostgresType, SequenceFunction};
 
 mod capabilities_support;
 #[cfg(feature = "mysql")]

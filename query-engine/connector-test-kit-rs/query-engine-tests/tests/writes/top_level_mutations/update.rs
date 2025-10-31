@@ -269,7 +269,7 @@ mod update {
 
     // "An updateOne mutation" should "update enums"
     // TODO: Flaky test on Cockroach, re-enable once figured out
-    #[connector_test(schema(schema_3), capabilities(Enums), exclude(CockroachDb))]
+    #[connector_test(schema(schema_3), capabilities(Enums))]
     async fn update_enums(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1 }"#).await?;
 
@@ -366,7 +366,7 @@ mod update {
     // TODO(dom): Not working on Mongo (first snapshot)
     // -{"data":{"updateOneTestModel":{"optInt":null}}}
     // +{"data":{"updateOneTestModel":{"optInt":10}}}
-    #[connector_test(schema(schema_6), exclude(CockroachDb))]
+    #[connector_test(schema(schema_6))]
     async fn update_apply_number_ops_for_int(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1 }"#).await?;
         create_row(&runner, r#"{ id: 2, optInt: 3}"#).await?;

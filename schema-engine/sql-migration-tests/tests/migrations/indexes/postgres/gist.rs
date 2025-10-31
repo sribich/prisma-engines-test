@@ -1,7 +1,7 @@
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::postgres::{SQLOperatorClassKind, SqlIndexAlgorithm};
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gist_change_from_btree(api: TestApi) {
     let dm = r#"
         model A {
@@ -38,7 +38,7 @@ fn gist_change_from_btree(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gist_inet_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -63,7 +63,7 @@ fn gist_inet_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gist_raw_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -90,7 +90,7 @@ fn gist_raw_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gist_unsupported_no_ops(api: TestApi) {
     let dm = r#"
         model A {

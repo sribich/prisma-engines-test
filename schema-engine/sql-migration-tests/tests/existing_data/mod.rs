@@ -166,9 +166,6 @@ fn altering_a_column_with_non_null_values_should_warn(api: TestApi) {
     api.schema_push_w_datasource(dm2).send().assert_warnings(&[
         if api.is_postgres() {
              "The `age` column on the `Test` table would be dropped and recreated. This will lead to data loss.".into()
-        } else if api.is_mssql() {
-             "You are about to alter the column `age` on the `Test` table, which contains 2 non-null values. The data in that column will be cast from `NVarChar(1000)` to `Int`.".into()
-
         } else if api.is_mysql() {
             if api.lower_cases_table_names() {
 

@@ -65,7 +65,7 @@ mod postgres {
     }
 
     // "Postgres native decimal types" should "work"
-    #[connector_test(schema(schema_decimal), only(Postgres), exclude(CockroachDb))]
+    #[connector_test(schema(schema_decimal), only(Postgres))]
     async fn native_decimal_types(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {

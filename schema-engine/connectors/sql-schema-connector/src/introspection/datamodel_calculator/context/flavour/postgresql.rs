@@ -60,10 +60,9 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
         }
     }
 
+    // TODO(sr): is_cockroach
     fn uses_row_level_ttl(&self, ctx: &DatamodelCalculatorContext<'_>, table: TableWalker<'_>) -> bool {
-        let pg_ext: &PostgresSchemaExt = ctx.sql_schema.downcast_connector_data();
-
-        ctx.is_cockroach() && pg_ext.uses_row_level_ttl(table.id)
+        false
     }
 
     fn uses_non_default_index_deferring(&self, ctx: &DatamodelCalculatorContext<'_>, index: IndexWalker<'_>) -> bool {
@@ -97,7 +96,8 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
         pg_ext.uses_exclude_constraint(table.id)
     }
 
+    // TODO(sr): is_cockroach
     fn uses_pk_in_m2m_join_tables(&self, ctx: &DatamodelCalculatorContext<'_>) -> bool {
-        !ctx.is_cockroach()
+        true
     }
 }

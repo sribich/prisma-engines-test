@@ -1,7 +1,7 @@
 use indoc::indoc;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn re_introspecting_custom_compound_id_names(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -74,7 +74,7 @@ async fn re_introspecting_custom_compound_id_names(api: &mut TestApi) -> TestRes
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn re_introspecting_custom_compound_unique_names(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -120,7 +120,7 @@ async fn re_introspecting_custom_compound_unique_names(api: &mut TestApi) -> Tes
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn mapped_enum_value_name(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE Type color as ENUM ('black', 'white');
@@ -179,7 +179,7 @@ async fn mapped_enum_value_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn ignore_docs_only_added_once(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "A" (
@@ -215,7 +215,7 @@ async fn ignore_docs_only_added_once(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reserved_name_docs_are_only_added_once(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "if" (

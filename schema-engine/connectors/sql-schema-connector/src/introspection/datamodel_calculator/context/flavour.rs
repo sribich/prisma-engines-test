@@ -1,9 +1,6 @@
-#![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
-
 mod mysql;
 mod postgresql;
 mod sqlite;
-mod sqlserver;
 
 use sql::{ForeignKeyWalker, IndexColumnWalker, IndexWalker, TableWalker};
 use sql_schema_describer as sql;
@@ -11,7 +8,6 @@ use sql_schema_describer as sql;
 pub(super) use mysql::MysqlIntrospectionFlavour;
 pub(super) use postgresql::PostgresIntrospectionFlavour;
 pub(super) use sqlite::SqliteIntrospectionFlavour;
-pub(super) use sqlserver::SqlServerIntrospectionFlavour;
 
 use schema_connector::Warnings;
 

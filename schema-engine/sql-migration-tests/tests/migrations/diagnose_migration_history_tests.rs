@@ -619,10 +619,6 @@ fn dmh_with_a_failed_migration(api: TestApi) {
         .send_unwrap_err()
         .to_string();
 
-    if api.is_mssql() {
-        assert!(err.contains("Could not find stored procedure"), "{}", err)
-    }
-
     let DiagnoseMigrationHistoryOutput {
         drift,
         history,
@@ -737,7 +733,7 @@ fn dmh_with_an_invalid_unapplied_migration_should_report_it(api: TestApi) {
     );
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn drift_can_be_detected_without_migrations_table(api: TestApi) {
     let directory = api.create_migrations_directory();
 

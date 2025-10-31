@@ -573,7 +573,7 @@ fn enum_array_modification_should_work(api: TestApi) {
         .assert_applied_migrations(&[]);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn mapped_enum_defaults_must_work(api: TestApi) {
     let schema = r#"
         datasource db {
@@ -616,7 +616,7 @@ fn mapped_enum_defaults_must_work(api: TestApi) {
     api.schema_push(schema).send().assert_green().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn alter_enum_and_change_default_must_work(api: TestApi) {
     let plain_dm = r#"
         datasource db {

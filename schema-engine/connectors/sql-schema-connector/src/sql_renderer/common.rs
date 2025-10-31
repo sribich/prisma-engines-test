@@ -42,10 +42,6 @@ pub(crate) enum Quoted<T> {
 }
 
 impl<T> Quoted<T> {
-    pub(crate) fn mssql_string(contents: T) -> Quoted<T> {
-        Quoted::Single(contents)
-    }
-
     pub(crate) fn mysql_string(contents: T) -> Quoted<T> {
         Quoted::Single(contents)
     }
@@ -68,10 +64,6 @@ impl<T> Quoted<T> {
 
     pub(crate) fn sqlite_string(name: T) -> Quoted<T> {
         Quoted::Single(name)
-    }
-
-    pub(crate) fn mssql_ident(name: T) -> Quoted<T> {
-        Quoted::SquareBrackets(name)
     }
 }
 

@@ -62,10 +62,8 @@ impl Connection {
 
         let version = quaint.version().await.map_err(quaint_error_mapper(params))?;
 
-        if let Some(version) = version {
-            let cockroach_version_prefix = "CockroachDB CCL v";
-
-            let semver: Option<(u8, u8)> = version.strip_prefix(cockroach_version_prefix).and_then(|v| {
+        if let Some(v) = version {
+            let semver: Option<(u8, u8)> = {
                 let semver_unparsed: String = v.chars().take_while(|&c| c.is_ascii_digit() || c == '.').collect();
 
                 // we only consider the major and minor version, as the patch version is not interesting for us
@@ -81,7 +79,7 @@ impl Connection {
 
                     major.zip(minor)
                 })
-            });
+            };
 
             match semver {
                 Some((major, minor)) if (major == 22 && minor >= 2) || major >= 23 => {

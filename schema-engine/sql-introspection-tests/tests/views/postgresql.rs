@@ -1,7 +1,7 @@
 use indoc::indoc;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn preview_feature_is_required(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -160,7 +160,7 @@ async fn simple_view_from_one_table_postgres16(api: &mut TestApi) -> TestResult 
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn simple_view_from_two_tables(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -235,7 +235,7 @@ async fn simple_view_from_two_tables(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_column_arity_and_unique(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -283,7 +283,7 @@ async fn re_intro_keeps_column_arity_and_unique(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_does_not_keep_column_arity_if_list(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -326,7 +326,7 @@ async fn re_intro_does_not_keep_column_arity_if_list(api: &mut TestApi) -> TestR
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_back_relations(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -418,7 +418,7 @@ async fn re_intro_keeps_back_relations(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_forward_relations(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -510,7 +510,7 @@ async fn re_intro_keeps_forward_relations(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_view_to_view_relations(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -550,7 +550,7 @@ async fn re_intro_keeps_view_to_view_relations(api: &mut TestApi) -> TestResult 
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_comments(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -579,7 +579,7 @@ async fn re_intro_keeps_comments(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_ignores_the_ignored(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -608,7 +608,7 @@ async fn re_intro_ignores_the_ignored(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn reserved_name_gets_mapped(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "if" AS SELECT 1 AS id;
@@ -640,7 +640,7 @@ async fn reserved_name_gets_mapped(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn unsupported_types_trigger_a_warning(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id, to_tsvector('english', 'meow') as vector;
@@ -675,7 +675,7 @@ async fn unsupported_types_trigger_a_warning(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_the_map(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -713,7 +713,7 @@ async fn re_intro_keeps_the_map(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn re_intro_keeps_the_field_map(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -790,7 +790,7 @@ async fn schema_is_introspected(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn defaults_are_introspected(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -820,7 +820,7 @@ async fn defaults_are_introspected(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn invalid_field_names_trigger_warnings(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 2 AS foo, 1 AS "1";
@@ -917,7 +917,7 @@ async fn dupes_are_renamed(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), namespaces("public", "private"))]
+#[test_connector(tags(Postgres), namespaces("public", "private"))]
 async fn dupe_views_are_not_considered_without_preview_feature(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE SCHEMA IF NOT EXISTS "private";
@@ -953,7 +953,7 @@ async fn dupe_views_are_not_considered_without_preview_feature(api: &mut TestApi
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn ignore_docs_only_added_once(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "A" AS SELECT 1 AS id;
@@ -983,7 +983,7 @@ async fn ignore_docs_only_added_once(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn reserved_name_docs_are_only_added_once(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW "if" AS SELECT 1 AS id;

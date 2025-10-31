@@ -1,6 +1,6 @@
 use crate::{
-    CockroachDbConnectorTag, ConnectorTag, ConnectorVersion, MongoDbConnectorTag, MySqlConnectorTag,
-    PostgresConnectorTag, SqlServerConnectorTag, SqliteConnectorTag, TestResult, VitessConnectorTag,
+    ConnectorTag, ConnectorVersion, MySqlConnectorTag,
+    PostgresConnectorTag, SqliteConnectorTag, TestResult, VitessConnectorTag,
 };
 use log::warn;
 use qe_setup::driver_adapters::DriverAdapter;
@@ -94,13 +94,10 @@ pub struct TestConfigFromSerde {
 impl TestConfigFromSerde {
     pub fn test_connector(&self) -> TestResult<(ConnectorTag, ConnectorVersion)> {
         let version = ConnectorVersion::try_from((self.connector.as_str(), self.connector_version.as_deref()))?;
-        let tag = match version {
-            ConnectorVersion::SqlServer(_) => &SqlServerConnectorTag as ConnectorTag,
+        let tag: ConnectorTag = match version {
             ConnectorVersion::Postgres(_) => &PostgresConnectorTag,
             ConnectorVersion::MySql(_) => &MySqlConnectorTag,
-            ConnectorVersion::MongoDb(_) => &MongoDbConnectorTag,
             ConnectorVersion::Sqlite(_) => &SqliteConnectorTag,
-            ConnectorVersion::CockroachDb(_) => &CockroachDbConnectorTag,
             ConnectorVersion::Vitess(_) => &VitessConnectorTag,
         };
 
@@ -115,18 +112,12 @@ impl TestConfigFromSerde {
         match self.test_connector().map(|(_, v)| v) {
             Ok(ConnectorVersion::Vitess(None))
             | Ok(ConnectorVersion::MySql(None))
-            | Ok(ConnectorVersion::SqlServer(None))
-            | Ok(ConnectorVersion::MongoDb(None))
-            | Ok(ConnectorVersion::CockroachDb(None))
             | Ok(ConnectorVersion::Postgres(None))
             | Ok(ConnectorVersion::Sqlite(None)) => {
                 exit_with_message("The current test connector requires a version to be set to run.");
             }
             Ok(ConnectorVersion::Vitess(Some(_)))
             | Ok(ConnectorVersion::MySql(Some(_)))
-            | Ok(ConnectorVersion::SqlServer(Some(_)))
-            | Ok(ConnectorVersion::MongoDb(Some(_)))
-            | Ok(ConnectorVersion::CockroachDb(Some(_)))
             | Ok(ConnectorVersion::Postgres(Some(_)))
             | Ok(ConnectorVersion::Sqlite(Some(_))) => (),
             Err(err) => exit_with_message(&err.to_string()),
@@ -431,13 +422,10 @@ impl TestConfig {
 
     pub fn test_connector(&self) -> TestResult<(ConnectorTag, ConnectorVersion)> {
         let version = self.parse_connector_version()?;
-        let tag = match version {
-            ConnectorVersion::SqlServer(_) => &SqlServerConnectorTag as ConnectorTag,
+        let tag: ConnectorTag = match version {
             ConnectorVersion::Postgres(_) => &PostgresConnectorTag,
             ConnectorVersion::MySql(_) => &MySqlConnectorTag,
-            ConnectorVersion::MongoDb(_) => &MongoDbConnectorTag,
             ConnectorVersion::Sqlite(_) => &SqliteConnectorTag,
-            ConnectorVersion::CockroachDb(_) => &CockroachDbConnectorTag,
             ConnectorVersion::Vitess(_) => &VitessConnectorTag,
         };
 

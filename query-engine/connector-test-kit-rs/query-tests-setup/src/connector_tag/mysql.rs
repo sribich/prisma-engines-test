@@ -34,9 +34,6 @@ pub enum MySqlVersion {
     V5_7,
     V8,
     MariaDb,
-    MariaDbJsWasm,
-    // Used for testing the MariaDB driver with a MySQL server.
-    MariaDbMysqlJsWasm,
 }
 
 impl TryFrom<&str> for MySqlVersion {
@@ -48,8 +45,6 @@ impl TryFrom<&str> for MySqlVersion {
             "5.7" => Self::V5_7,
             "8" => Self::V8,
             "mariadb" => Self::MariaDb,
-            "mariadb.js.wasm" => Self::MariaDbJsWasm,
-            "mariadb-mysql.js.wasm" => Self::MariaDbMysqlJsWasm,
             _ => return Err(TestError::parse_error(format!("Unknown MySQL version `{s}`"))),
         };
 
@@ -64,8 +59,6 @@ impl Display for MySqlVersion {
             MySqlVersion::V5_7 => f.write_str("5.7"),
             MySqlVersion::V8 => f.write_str("8"),
             MySqlVersion::MariaDb => f.write_str("mariadb"),
-            MySqlVersion::MariaDbJsWasm => f.write_str("mariadb.js.wasm"),
-            MySqlVersion::MariaDbMysqlJsWasm => f.write_str("mariadb-mysql.js.wasm"),
         }
     }
 }

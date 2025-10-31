@@ -76,7 +76,7 @@ fn existing_postgis_views_must_not_be_migrated(api: TestApi) {
     api.schema_push_w_datasource("").send().assert_green().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn native_type_columns_can_be_created(api: TestApi) {
     let types = &[
         ("smallint", "Int", "SmallInt", "int2"),
@@ -138,9 +138,7 @@ fn native_type_columns_can_be_created(api: TestApi) {
 
 #[test_connector(tags(Postgres))]
 fn uuids_do_not_generate_drift_issue_5282(api: TestApi) {
-    if !api.is_cockroach() {
-        api.raw_cmd(r#"CREATE EXTENSION IF NOT EXISTS "uuid-ossp";"#)
-    }
+    api.raw_cmd(r#"CREATE EXTENSION IF NOT EXISTS "uuid-ossp";"#);
 
     api.raw_cmd(
         r#"
@@ -170,7 +168,7 @@ fn uuids_do_not_generate_drift_issue_5282(api: TestApi) {
 }
 
 // CockroachDB does not support uuid-ossp functions in a separate schema.
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn functions_with_schema_prefix_in_dbgenerated_are_idempotent(api: TestApi) {
     api.raw_cmd(r#"CREATE SCHEMA "myschema"; CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "myschema";"#);
 
@@ -187,7 +185,7 @@ fn functions_with_schema_prefix_in_dbgenerated_are_idempotent(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn postgres_apply_migrations_errors_give_precise_location(api: TestApi) {
     let dm = "";
     let migrations_directory = api.create_migrations_directory();
@@ -245,7 +243,7 @@ fn postgres_apply_migrations_errors_give_precise_location(api: TestApi) {
     expectation.assert_eq(first_segment)
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn postgres_apply_migrations_errors_give_precise_location_at_the_beginning_of_files(api: TestApi) {
     let dm = "";
     let migrations_directory = api.create_migrations_directory();
@@ -300,7 +298,7 @@ fn postgres_apply_migrations_errors_give_precise_location_at_the_beginning_of_fi
 }
 
 // exclude: CITEXT does not exist on cockroachdb at this point in time.
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn citext_to_text_and_back_works(api: TestApi) {
     api.raw_cmd("CREATE EXTENSION citext;");
 
@@ -403,7 +401,7 @@ fn foreign_key_renaming_to_default_works(api: TestApi) {
 }
 
 // exclude: enum migrations work differently on cockroachdb, there is no migration
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn failing_enum_migrations_should_not_be_partially_applied(api: TestApi) {
     let dm1 = r#"
         model Cat {
@@ -471,7 +469,7 @@ fn failing_enum_migrations_should_not_be_partially_applied(api: TestApi) {
     }
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn connecting_to_a_postgres_database_with_the_cockroach_connector_fails(_api: TestApi) {
     let dm = r#"
         datasource crdb {
@@ -500,7 +498,7 @@ fn connecting_to_a_postgres_database_with_the_cockroach_connector_fails(_api: Te
     expected_error.assert_eq(&err);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn scalar_list_defaults_work(api: TestApi) {
     let schema = r#"
         datasource db {
@@ -562,7 +560,7 @@ fn scalar_list_defaults_work(api: TestApi) {
     api.expect_sql_for_schema(schema, &expected_sql);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn scalar_list_default_diffing(api: TestApi) {
     let schema_1 = r#"
         datasource db {
@@ -656,7 +654,7 @@ fn scalar_list_default_diffing(api: TestApi) {
 }
 
 // https://github.com/prisma/prisma/issues/12095
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn json_defaults_with_escaped_quotes_work(api: TestApi) {
     let schema = r#"
         datasource db {
@@ -689,7 +687,7 @@ fn json_defaults_with_escaped_quotes_work(api: TestApi) {
     api.expect_sql_for_schema(schema, &sql);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn bigint_defaults_work(api: TestApi) {
     let schema = r#"
         datasource mypg {
@@ -718,7 +716,7 @@ fn bigint_defaults_work(api: TestApi) {
 }
 
 // https://github.com/prisma/prisma/issues/14799
-#[test_connector(tags(Postgres12), exclude(CockroachDb))]
+#[test_connector(tags(Postgres12))]
 fn dbgenerated_on_generated_columns_is_idempotent(api: TestApi) {
     let sql = r#"
         CREATE TABLE "table" (
@@ -747,7 +745,7 @@ fn dbgenerated_on_generated_columns_is_idempotent(api: TestApi) {
 }
 
 // https://github.com/prisma/prisma/issues/15654
-#[test_connector(tags(Postgres12), exclude(CockroachDb))]
+#[test_connector(tags(Postgres12))]
 fn dbgenerated_on_generated_unsupported_columns_is_idempotent(api: TestApi) {
     let sql = r#"
         CREATE TABLE "table" (

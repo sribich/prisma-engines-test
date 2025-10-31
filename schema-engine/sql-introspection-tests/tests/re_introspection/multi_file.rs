@@ -340,7 +340,7 @@ async fn reintrospect_force_invalid_config(api: &mut TestApi) -> TestResult {
 
 // ----- Enums -----
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_new_enum_single_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -380,7 +380,7 @@ async fn reintrospect_new_enum_single_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_removed_enum_single_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -418,7 +418,7 @@ async fn reintrospect_removed_enum_single_file(api: &mut TestApi) -> TestResult 
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_new_enum_multi_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -478,7 +478,7 @@ async fn reintrospect_new_enum_multi_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_removed_enum_multi_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -526,7 +526,7 @@ async fn reintrospect_removed_enum_multi_file(api: &mut TestApi) -> TestResult {
 
 // ----- Views -----
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn introspect_multi_view_preview_feature_is_required(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -800,7 +800,7 @@ async fn reintrospect_removed_view_multi_file(api: &mut TestApi) -> TestResult {
 }
 
 // ----- Configuration -----
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_keep_configuration_in_same_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -890,7 +890,7 @@ async fn reintrospect_keep_configuration_in_same_file(api: &mut TestApi) -> Test
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_keep_configuration_when_spread_across_files(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -980,7 +980,7 @@ async fn reintrospect_keep_configuration_when_spread_across_files(api: &mut Test
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_keep_configuration_when_no_models(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -1059,7 +1059,7 @@ async fn reintrospect_keep_configuration_when_no_models(api: &mut TestApi) -> Te
 
 // ----- Miscellaneous -----
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn reintrospect_empty_multi_file(api: &mut TestApi) -> TestResult {
     let user_dm = indoc! {r#"
       model User {

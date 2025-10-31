@@ -5,7 +5,7 @@ use test_macros::test_connector;
 use user_facing_errors::UserFacingError;
 
 // exclude: auth works differently in single-node insecure cockroach
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn shadow_db_url_can_be_configured_on_postgres(api: TestApi) {
     let migrations_directory = api.create_migrations_directory();
     let mut url: url::Url = api.connection_string().parse().unwrap();

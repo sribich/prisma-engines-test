@@ -37,13 +37,6 @@ use super::{SqlConnector, SqlDialect, UsingExternalShadowDb};
 
 const ADVISORY_LOCK_TIMEOUT: time::Duration = time::Duration::from_secs(10);
 
-/// Connection settings applied to every new connection on CockroachDB.
-///
-/// https://www.cockroachlabs.com/docs/stable/experimental-features.html
-const COCKROACHDB_PRELUDE: &str = r#"
-SET enable_experimental_alter_column_type_general = true;
-"#;
-
 type State = imp::State;
 
 #[derive(Debug, Clone)]
@@ -187,8 +180,6 @@ impl From<MigratePostgresUrl> for quaint::prelude::NativeConnectionInfo {
 pub(crate) enum PostgresProvider {
     /// Used when `provider = "postgresql"` was specified in the schema.
     PostgreSql,
-    /// Used when `provider = "cockroachdb"` was specified in the schema.
-    CockroachDb,
     /// Used when there is no schema but only the connection string to the database.
     Unspecified,
 }
@@ -202,19 +193,11 @@ impl PostgresDialect {
     fn new(circumstances: BitFlags<Circumstances>) -> Self {
         Self { circumstances }
     }
-
-    pub fn cockroach() -> Self {
-        Self::new(Circumstances::IsCockroachDb.into())
-    }
-
-    fn is_cockroachdb(&self) -> bool {
-        self.circumstances.contains(Circumstances::IsCockroachDb)
-    }
 }
 
 impl SqlDialect for PostgresDialect {
     fn renderer(&self) -> Box<dyn crate::sql_renderer::SqlRenderer> {
-        Box::new(PostgresRenderer::new(self.is_cockroachdb()))
+        Box::new(PostgresRenderer::new())
     }
 
     fn schema_differ(&self) -> Box<dyn crate::sql_schema_differ::SqlSchemaDifferFlavour> {
@@ -232,11 +215,7 @@ impl SqlDialect for PostgresDialect {
     }
 
     fn datamodel_connector(&self) -> &'static dyn psl::datamodel_connector::Connector {
-        if self.is_cockroachdb() {
-            psl::builtin_connectors::COCKROACH
-        } else {
-            psl::builtin_connectors::POSTGRES
-        }
+        psl::builtin_connectors::POSTGRES
     }
 
     fn empty_database_schema(&self) -> SqlSchema {
@@ -307,14 +286,6 @@ impl PostgresConnector {
     }
 
     #[cfg(feature = "postgresql-native")]
-    pub(crate) fn new_cockroach(params: schema_connector::ConnectorParams) -> ConnectorResult<Self> {
-        Ok(Self {
-            state: State::WithParams(imp::Params::new(params)?),
-            provider: PostgresProvider::CockroachDb,
-        })
-    }
-
-    #[cfg(feature = "postgresql-native")]
     pub(crate) fn new_with_params(params: schema_connector::ConnectorParams) -> ConnectorResult<Self> {
         Ok(Self {
             state: State::WithParams(imp::Params::new(params)?),
@@ -324,14 +295,8 @@ impl PostgresConnector {
 
     fn circumstances(&self) -> BitFlags<Circumstances> {
         let mut circumstances = imp::get_circumstances(&self.state).unwrap_or_default();
-        if self.provider == PostgresProvider::CockroachDb {
-            circumstances |= Circumstances::IsCockroachDb;
-        }
-        circumstances
-    }
 
-    pub(crate) fn is_cockroachdb(&self) -> bool {
-        self.circumstances().contains(Circumstances::IsCockroachDb)
+        circumstances
     }
 
     fn schema_name(&self) -> &str {
@@ -361,12 +326,6 @@ impl SqlConnector for PostgresConnector {
     }
 
     fn acquire_lock(&mut self) -> BoxFuture<'_, ConnectorResult<()>> {
-        // They do not support advisory locking:
-        // https://github.com/cockroachdb/cockroach/issues/13546
-        if self.is_cockroachdb() {
-            return Box::pin(async { Ok(()) });
-        }
-
         self.with_connection(|connection, params| async {
             // https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS
 
@@ -391,7 +350,6 @@ impl SqlConnector for PostgresConnector {
     fn connector_type(&self) -> &'static str {
         match self.provider {
             PostgresProvider::PostgreSql | PostgresProvider::Unspecified => "postgresql",
-            PostgresProvider::CockroachDb => "cockroachdb",
         }
     }
 
@@ -460,11 +418,7 @@ impl SqlConnector for PostgresConnector {
             let (conn, params, circumstances) =
                 imp::get_connection_and_params_and_circumstances(&mut self.state, self.provider).await?;
             let mut enriched_circumstances = circumstances;
-            if circumstances.contains(Circumstances::IsCockroachDb)
-                && ctx.previous_schema().connector.is_provider("postgresql")
-            {
-                enriched_circumstances |= Circumstances::CockroachWithPostgresNativeTypes;
-            }
+
             describe_schema_with(
                 conn,
                 params,
@@ -638,14 +592,6 @@ async fn describe_schema_with(
 
     let mut describer_circumstances: BitFlags<describer::Circumstances> = Default::default();
 
-    if circumstances.contains(Circumstances::IsCockroachDb) {
-        describer_circumstances |= describer::Circumstances::Cockroach;
-    }
-
-    if circumstances.contains(Circumstances::CockroachWithPostgresNativeTypes) {
-        describer_circumstances |= describer::Circumstances::CockroachWithPostgresNativeTypes;
-    }
-
     if circumstances.contains(Circumstances::CanPartitionTables) {
         describer_circumstances |= describer::Circumstances::CanPartitionTables;
     }
@@ -680,15 +626,6 @@ async fn sql_schema_from_migrations_and_db(
     circumstances: BitFlags<Circumstances>,
     preview_features: BitFlags<PreviewFeature>,
 ) -> ConnectorResult<SqlSchema> {
-    if circumstances.contains(Circumstances::IsCockroachDb) {
-        // CockroachDB is very slow in applying DDL statements.
-        // A workaround to it is to run the statements in a transaction block. This comes with some
-        // drawbacks and limitations though, so we only apply this when creating a shadow db.
-        // See https://www.cockroachlabs.com/docs/stable/online-schema-changes#limitations
-        // Original GitHub issue with context: https://github.com/prisma/prisma/issues/12384#issuecomment-1152523689
-        conn.raw_cmd("BEGIN;").await.map_err(imp::quaint_error_mapper(params))?;
-    }
-
     if !migrations.shadow_db_init_script.trim().is_empty() {
         conn.raw_cmd(&migrations.shadow_db_init_script)
             .await
@@ -711,12 +648,6 @@ async fn sql_schema_from_migrations_and_db(
             })?;
     }
 
-    if circumstances.contains(Circumstances::IsCockroachDb) {
-        conn.raw_cmd("COMMIT;")
-            .await
-            .map_err(imp::quaint_error_mapper(params))?;
-    }
-
     describe_schema_with(conn, params, circumstances, preview_features, namespaces, schema).await
 }
 
@@ -724,8 +655,6 @@ async fn sql_schema_from_migrations_and_db(
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub(crate) enum Circumstances {
-    IsCockroachDb,
-    CockroachWithPostgresNativeTypes, // FIXME: we should really break and remove this
     CanPartitionTables,
 }
 
@@ -736,10 +665,6 @@ async fn setup_connection(
     schema_name: &str,
 ) -> ConnectorResult<BitFlags<Circumstances>> {
     let mut circumstances = BitFlags::<Circumstances>::default();
-
-    if provider == PostgresProvider::CockroachDb {
-        circumstances |= Circumstances::IsCockroachDb;
-    }
 
     let schema_exists_result = connection.query_raw(
         "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1), version(), current_setting('server_version_num')::integer as numeric_version;",
@@ -761,27 +686,7 @@ async fn setup_connection(
 
     match version {
         Some((version, version_num)) => {
-            let db_is_cockroach = version.contains("CockroachDB");
-
-            if db_is_cockroach && provider == PostgresProvider::PostgreSql {
-                let msg = "You are trying to connect to a CockroachDB database, but the provider in your Prisma schema is `postgresql`. Please change it to `cockroachdb`.";
-
-                return Err(ConnectorError::from_msg(msg.to_owned()));
-            }
-
-            if !db_is_cockroach && provider == PostgresProvider::CockroachDb {
-                let msg = "You are trying to connect to a PostgreSQL database, but the provider in your Prisma schema is `cockroachdb`. Please change it to `postgresql`.";
-
-                return Err(ConnectorError::from_msg(msg.to_owned()));
-            }
-
-            if db_is_cockroach {
-                circumstances |= Circumstances::IsCockroachDb;
-                connection
-                    .raw_cmd(COCKROACHDB_PRELUDE)
-                    .await
-                    .map_err(imp::quaint_error_mapper(params))?;
-            } else if version_num >= 100000 {
+            if version_num >= 100000 {
                 circumstances |= Circumstances::CanPartitionTables;
             }
         }

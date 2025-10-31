@@ -1,5 +1,4 @@
 use psl::{datamodel_connector::constraint_names::ConstraintNames, parser_database::walkers};
-use sql::mssql::MssqlSchemaExt;
 use sql_schema_describer as sql;
 
 use super::{IndexFieldPair, IntrospectionPair};
@@ -36,23 +35,7 @@ impl<'a> IdPair<'a> {
     /// SQL Server specific clustering setting. A value is returned if
     /// non-default.
     pub(crate) fn clustered(self) -> Option<bool> {
-        if !self.context.sql_family.is_mssql() {
-            return None;
-        }
-
-        let clustered = match self.next {
-            Some(next) => {
-                let ext: &MssqlSchemaExt = self.context.sql_schema.downcast_connector_data();
-                ext.index_is_clustered(next.id)
-            }
-            None => self.previous.and_then(|prev| prev.clustered()).unwrap_or(true),
-        };
-
-        if clustered {
-            return None;
-        }
-
-        Some(clustered)
+        None
     }
 
     /// True if the `@id` attribute is in a field, not in the model as

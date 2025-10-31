@@ -1,7 +1,7 @@
 use barrel::types;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn relations_between_ignored_models_should_not_have_field_level_ignores(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -40,7 +40,7 @@ async fn relations_between_ignored_models_should_not_have_field_level_ignores(ap
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn fields_we_cannot_sanitize_are_commented_out_and_warned(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "Test" (
@@ -82,7 +82,7 @@ async fn fields_we_cannot_sanitize_are_commented_out_and_warned(api: &mut TestAp
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn unsupported_type_keeps_its_usages(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -132,7 +132,7 @@ async fn unsupported_type_keeps_its_usages(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_only_an_unsupported_id(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -182,7 +182,7 @@ async fn a_table_with_only_an_unsupported_id(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_unsupported_types_in_a_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -217,7 +217,7 @@ async fn a_table_with_unsupported_types_in_a_relation(api: &mut TestApi) -> Test
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn dbgenerated_in_unsupported(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "Blog" (
@@ -253,7 +253,7 @@ async fn dbgenerated_in_unsupported(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn commenting_out_a_table_without_columns(api: &mut TestApi) -> TestResult {
     api.raw_cmd("CREATE TABLE \"Test\" ();").await;
 
@@ -286,7 +286,7 @@ async fn commenting_out_a_table_without_columns(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn ignore_on_back_relation_field_if_pointing_to_ignored_model(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

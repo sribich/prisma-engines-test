@@ -11,7 +11,6 @@ use tracing_error::SpanTrace;
 use user_facing_errors::{
     KnownError, UserFacingError, common::SchemaParserError, schema_engine::MigrationFileNotFound,
 };
-use wasm_bindgen::JsValue;
 
 /// The general error reporting type for migration connectors.
 #[derive(Clone)]
@@ -215,44 +214,6 @@ impl ConnectorError {
         Self::user_facing(user_facing_errors::common::InvalidConnectionString {
             details: invalid_connection_string_description(err),
         })
-    }
-}
-
-impl ConnectorError {
-    /// Convert this error into a `wasm_bindgen::JsError` for use in WebAssembly contexts.
-    ///
-    /// This preserves the error message, error code (if available), and context information
-    /// from the original error.
-    pub fn into_js_error(self) -> JsValue {
-        let error_name = "SchemaConnectorError";
-
-        // Include known error information if available
-        if let Some(known_error) = self.known_error() {
-            let error = js_sys::Error::new(&known_error.message);
-            error.set_name(error_name);
-
-            let obj = JsValue::from(error);
-
-            _ = Reflect::set(
-                &obj,
-                &JsValue::from("code"),
-                &JsValue::from(known_error.error_code.to_string()),
-            );
-            return obj;
-        }
-
-        // Get the full error display representation, and use it as a fallback
-        let error_string = self.to_string();
-        let error = js_sys::Error::new(&error_string);
-        error.set_name(error_name);
-
-        JsValue::from(error)
-    }
-}
-
-impl From<ConnectorError> for JsValue {
-    fn from(err: ConnectorError) -> JsValue {
-        err.into_js_error()
     }
 }
 

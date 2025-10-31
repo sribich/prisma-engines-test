@@ -594,7 +594,7 @@ fn execute_postgres(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 fn introspect_single_postgres_force(api: TestApi) {
     /* Drop and create database via `drop-database` and `create-database` */
 
@@ -696,7 +696,7 @@ fn introspect_single_postgres_force(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 fn introspect_multi_postgres_force(api: TestApi) {
     /* Drop and create database via `drop-database` and `create-database` */
 

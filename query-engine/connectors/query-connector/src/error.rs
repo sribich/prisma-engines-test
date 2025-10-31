@@ -97,9 +97,6 @@ impl ConnectorError {
                 }))
             }
             ErrorKind::ConnectionClosed => Some(KnownError::new(user_facing_errors::common::ConnectionClosed)),
-            ErrorKind::MongoReplicaSetRequired => Some(KnownError::new(
-                user_facing_errors::query_engine::MongoReplicaSetRequired {},
-            )),
             ErrorKind::RawDatabaseError { code, message } => Some(user_facing_errors::KnownError::new(
                 user_facing_errors::query_engine::RawQueryFailed {
                     code: code.clone(),
@@ -265,9 +262,6 @@ pub enum ErrorKind {
 
     #[error("Cannot find a fulltext index to use for the native search")]
     MissingNativeFullTextSearchIndex,
-
-    #[error("Replica Set required for Transactions")]
-    MongoReplicaSetRequired,
 
     #[error("Unsupported connector: {0}")]
     UnsupportedConnector(String),

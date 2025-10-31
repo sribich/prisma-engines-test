@@ -2,7 +2,7 @@ use prisma_value::PrismaValue;
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::ColumnTypeFamily;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn adding_an_unsupported_type_must_work(api: TestApi) {
     let dm = r#"
         model Post {
@@ -47,7 +47,7 @@ fn adding_an_unsupported_type_must_work(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn switching_an_unsupported_type_to_supported_must_work(api: TestApi) {
     let dm1 = r#"
         model Post {
@@ -100,7 +100,7 @@ fn switching_an_unsupported_type_to_supported_must_work(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn adding_and_removing_properties_on_unsupported_should_work(api: TestApi) {
     let dm1 = r#"
         model Post {
@@ -202,14 +202,10 @@ fn adding_and_removing_properties_on_unsupported_should_work(api: TestApi) {
 fn using_unsupported_and_ignore_should_work(api: TestApi) {
     let unsupported_type = if api.is_sqlite() {
         "some random string"
-    } else if api.is_cockroach() {
-        "interval"
     } else if api.is_postgres() {
         "macaddr"
     } else if api.is_mysql() {
         "point"
-    } else if api.is_mssql() {
-        "money"
     } else {
         unreachable!()
     };

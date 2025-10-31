@@ -51,9 +51,7 @@ async fn a_simple_table_with_gql_types(api: &mut TestApi) -> TestResult {
         })
         .await?;
 
-    let float_native = if api.sql_family().is_mssql() {
-        "@db.Real"
-    } else if api.sql_family().is_mysql() {
+    let float_native = if api.sql_family().is_mysql() {
         "@db.Float"
     } else {
         ""
@@ -66,7 +64,7 @@ async fn a_simple_table_with_gql_types(api: &mut TestApi) -> TestResult {
         ""
     };
 
-    let text_native = if api.sql_family().is_mssql() || api.sql_family().is_mysql() {
+    let text_native = if api.sql_family().is_mysql() {
         "@db.Text"
     } else {
         ""
@@ -275,8 +273,6 @@ async fn a_table_with_default_values(api: &mut TestApi) -> TestResult {
     };
     let float_string = if api.sql_family().is_mysql() {
         "@db.Float"
-    } else if api.sql_family().is_mssql() {
-        "@db.Real"
     } else {
         ""
     };
@@ -419,15 +415,11 @@ async fn default_values(api: &mut TestApi) -> TestResult {
     };
     let varchar_native = if api.sql_family().is_sqlite() {
         ""
-    } else if api.is_cockroach() {
-        "@db.String(5)"
     } else {
         "@db.VarChar(5)"
     };
 
-    let float_native = if api.sql_family().is_mssql() {
-        "@db.Real"
-    } else if api.sql_family().is_mysql() {
+    let float_native = if api.sql_family().is_mysql() {
         "@db.Float"
     } else {
         ""
@@ -674,8 +666,6 @@ async fn negative_default_values_should_work(api: &mut TestApi) -> TestResult {
 
     let float_native = if api.sql_family().is_mysql() {
         "@db.Float"
-    } else if api.sql_family().is_mssql() {
-        "@db.Real"
     } else {
         ""
     };
@@ -862,7 +852,7 @@ async fn unique_and_id_on_same_field_works_mssql(api: &mut TestApi) -> TestResul
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 // If multiple constraints are created in the create table statement Postgres seems to collapse them
 // into the first named one. So on the db level there will be one named really_must_be_different that
 // is both unique and primary. We only render it as @id then.

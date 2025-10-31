@@ -35,4 +35,4 @@ quaint = { workspace = true, features = ["all-native"] }
 
 [dependencies.barrel]
 workspace = true
-features = ["sqlite3", "mysql", "pg", "mssql"]
+features = ["sqlite3", "mysql", "pg"]

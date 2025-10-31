@@ -1,8 +1,5 @@
-mod cockroachdb;
-mod js;
 mod mysql;
 mod postgres;
-mod sql_server;
 mod sqlite;
 mod vitess;
 
@@ -10,11 +7,8 @@ pub use mysql::MySqlVersion;
 pub use sqlite::SqliteVersion;
 pub use vitess::VitessVersion;
 
-pub(crate) use cockroachdb::*;
-pub(crate) use js::*;
 pub(crate) use mysql::*;
 pub(crate) use postgres::*;
-pub(crate) use sql_server::*;
 pub(crate) use sqlite::*;
 pub(crate) use vitess::*;
 
@@ -54,31 +48,6 @@ pub(crate) fn connection_string(
     isolation_level: Option<&'static str>,
 ) -> String {
     match version {
-        ConnectorVersion::SqlServer(v) => {
-            let database = if is_multi_schema {
-                format!("database={database};schema=dbo")
-            } else {
-                format!("database=master;schema={database}")
-            };
-
-            let isolation_level = isolation_level.unwrap_or("READ UNCOMMITTED");
-
-            match v {
-                Some(SqlServerVersion::V2017) => format!(
-                    "sqlserver://127.0.0.1:1434;{database};user=SA;password=<YourStrong@Passw0rd>;trustServerCertificate=true;isolationLevel={isolation_level}"
-                ),
-
-                Some(SqlServerVersion::V2019) => format!(
-                    "sqlserver://127.0.0.1:1433;{database};user=SA;password=<YourStrong@Passw0rd>;trustServerCertificate=true;isolationLevel={isolation_level}"
-                ),
-
-                Some(SqlServerVersion::V2022 | SqlServerVersion::MssqlJsWasm) => format!(
-                    "sqlserver://127.0.0.1:1435;{database};user=SA;password=<YourStrong@Passw0rd>;trustServerCertificate=true;isolationLevel={isolation_level}"
-                ),
-
-                None => unreachable!("A versioned connector must have a concrete version to run."),
-            }
-        }
         ConnectorVersion::Postgres(v) => {
             let database = if is_multi_schema {
                 database.to_string()
@@ -91,7 +60,7 @@ pub(crate) fn connection_string(
                 Some(PostgresVersion::V10) => format!("postgresql://postgres:prisma@127.0.0.1:5432/{database}"),
                 Some(PostgresVersion::V11) => format!("postgresql://postgres:prisma@127.0.0.1:5433/{database}"),
                 Some(PostgresVersion::V12) => format!("postgresql://postgres:prisma@127.0.0.1:5434/{database}"),
-                Some(PostgresVersion::V13) | Some(PostgresVersion::PgJsWasm) | Some(PostgresVersion::NeonJsWasm) => {
+                Some(PostgresVersion::V13) => {
                     format!("postgresql://postgres:prisma@127.0.0.1:5435/{database}")
                 }
                 Some(PostgresVersion::V14) => format!("postgresql://postgres:prisma@127.0.0.1:5437/{database}"),
@@ -107,10 +76,10 @@ pub(crate) fn connection_string(
         ConnectorVersion::MySql(v) => match v {
             Some(MySqlVersion::V5_6) => format!("mysql://root:prisma@127.0.0.1:3309/{database}"),
             Some(MySqlVersion::V5_7) => format!("mysql://root:prisma@127.0.0.1:3306/{database}"),
-            Some(MySqlVersion::V8 | MySqlVersion::MariaDbMysqlJsWasm) => {
+            Some(MySqlVersion::V8) => {
                 format!("mysql://root:prisma@127.0.0.1:3307/{database}")
             }
-            Some(MySqlVersion::MariaDb | MySqlVersion::MariaDbJsWasm) => {
+            Some(MySqlVersion::MariaDb) => {
                 format!("mysql://root:prisma@127.0.0.1:3308/{database}")
             }
 
@@ -128,29 +97,7 @@ pub(crate) fn connection_string(
 
             format!("file:{db_dir}/{database}.db")
         }
-        ConnectorVersion::CockroachDb(v) => {
-            // Use the same database and schema name for CockroachDB - unfortunately CockroachDB
-            // can't handle 1 schema per test in a database well at this point in time.
-            match v {
-                Some(CockroachDbVersion::V221) => {
-                    format!("postgresql://prisma@127.0.0.1:26257/{database}?schema={database}")
-                }
-                Some(CockroachDbVersion::V222) => {
-                    format!("postgresql://prisma@127.0.0.1:26259/{database}?schema={database}")
-                }
-                Some(CockroachDbVersion::V231 | CockroachDbVersion::PgJsWasm) => {
-                    format!("postgresql://prisma@127.0.0.1:26260/{database}?schema={database}")
-                }
-
-                None => unreachable!("A versioned connector must have a concrete version to run."),
-            }
-        }
-
         ConnectorVersion::Vitess(Some(VitessVersion::V8_0)) => "mysql://root@localhost:33807/test".into(),
-        ConnectorVersion::Vitess(Some(VitessVersion::PlanetscaleJsWasm)) => {
-            format!("mysql://root@127.0.0.1:3310/{database}")
-        }
-
         ConnectorVersion::Vitess(None) => unreachable!("A versioned connector must have a concrete version to run."),
     }
 }
@@ -159,11 +106,9 @@ pub type ConnectorTag = &'static (dyn ConnectorTagInterface + Send + Sync);
 
 #[derive(Debug, Clone)]
 pub enum ConnectorVersion {
-    SqlServer(Option<SqlServerVersion>),
     Postgres(Option<PostgresVersion>),
     MySql(Option<MySqlVersion>),
     Sqlite(Option<SqliteVersion>),
-    CockroachDb(Option<CockroachDbVersion>),
     Vitess(Option<VitessVersion>),
 }
 
@@ -171,11 +116,9 @@ impl ConnectorVersion {
     fn is_broader(&self, other: &ConnectorVersion) -> bool {
         matches!(
             (self, other),
-            (Self::SqlServer(None), Self::SqlServer(_))
-                | (Self::Postgres(None), Self::Postgres(_))
+                (Self::Postgres(None), Self::Postgres(_))
                 | (Self::MySql(None), Self::MySql(_))
                 | (Self::Sqlite(None), Self::Sqlite(_))
-                | (Self::CockroachDb(None), Self::CockroachDb(_))
                 | (Self::Vitess(None), Self::Vitess(_))
         )
     }
@@ -191,19 +134,12 @@ impl ConnectorVersion {
         }
 
         match (self, pat) {
-            (SqlServer(a), SqlServer(b)) => versions_match(a, b),
             (Postgres(a), Postgres(b)) => versions_match(a, b),
             (MySql(a), MySql(b)) => versions_match(a, b),
-            (CockroachDb(a), CockroachDb(b)) => versions_match(a, b),
             (Vitess(a), Vitess(b)) => versions_match(a, b),
             (Sqlite(a), Sqlite(b)) => versions_match(a, b),
-
-            | (SqlServer(..), _)
-            | (_, SqlServer(..))
             | (Sqlite(..), _)
             | (_, Sqlite(..))
-            | (CockroachDb(..), _)
-            | (_, CockroachDb(..))
             | (Vitess(..), _)
             | (_, Vitess(..))
             | (Postgres(..), _)
@@ -229,56 +165,24 @@ impl ConnectorVersion {
     /// will use. i.e. if it's a WASM connector, the default, not overridable one. Otherwise the one
     /// as seen by the test binary (which will be the same as the engine exercised)
     pub fn max_bind_values(&self) -> Option<usize> {
-        if matches!(self, Self::Sqlite(Some(SqliteVersion::CloudflareD1))) {
-            // D1 doesn't have the same limit as other SQLite implementations.
-            Some(98)
-        } else if self.is_wasm() {
-            self.sql_family().map(|f| f.default_max_bind_values())
-        } else {
-            self.sql_family().map(|f| f.max_bind_values())
-        }
+        self.sql_family().map(|f| f.max_bind_values())
     }
 
     /// SQL family for the connector
     fn sql_family(&self) -> Option<SqlFamily> {
         match self {
-            Self::SqlServer(_) => Some(SqlFamily::Mssql),
             Self::Postgres(_) => Some(SqlFamily::Postgres),
             Self::MySql(_) => Some(SqlFamily::Mysql),
             Self::Sqlite(_) => Some(SqlFamily::Sqlite),
-            Self::CockroachDb(_) => Some(SqlFamily::Postgres),
             Self::Vitess(_) => Some(SqlFamily::Mysql),
             _ => None,
         }
-    }
-
-    /// Determines if the connector uses a driver adapter implemented in Wasm.
-    /// Do not delete! This is used because the `#[cfg(target_arch = "wasm32")]` conditional compilation
-    /// directive doesn't work in the test runner.
-    pub fn is_wasm(&self) -> bool {
-        matches!(
-            self,
-            Self::Postgres(Some(PostgresVersion::PgJsWasm))
-                | Self::Postgres(Some(PostgresVersion::NeonJsWasm))
-                | Self::Vitess(Some(VitessVersion::PlanetscaleJsWasm))
-                | Self::Sqlite(Some(SqliteVersion::LibsqlJsWasm))
-                | Self::Sqlite(Some(SqliteVersion::CloudflareD1))
-                | Self::Sqlite(Some(SqliteVersion::BetterSQLite3))
-                | Self::SqlServer(Some(SqlServerVersion::MssqlJsWasm))
-                | Self::MySql(Some(MySqlVersion::MariaDbJsWasm))
-                | Self::MySql(Some(MySqlVersion::MariaDbMysqlJsWasm))
-                | Self::CockroachDb(Some(CockroachDbVersion::PgJsWasm))
-        )
     }
 }
 
 impl fmt::Display for ConnectorVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let printable = match self {
-            Self::SqlServer(v) => match v {
-                Some(v) => format!("SQL Server ({v})"),
-                None => "SQL Server (unknown)".to_string(),
-            },
             Self::Postgres(v) => match v {
                 Some(v) => format!("PostgreSQL ({v})"),
                 None => "PostgreSQL (unknown)".to_string(),
@@ -295,7 +199,6 @@ impl fmt::Display for ConnectorVersion {
                 Some(v) => format!("Vitess ({v})"),
                 None => "Vitess (unknown)".to_string(),
             },
-            Self::CockroachDb(_) => "CockroachDB".to_string(),
         };
 
         write!(f, "{printable}")
@@ -357,53 +260,10 @@ impl TryFrom<(&str, Option<&str>)> for ConnectorVersion {
     fn try_from((connector, version): (&str, Option<&str>)) -> Result<Self, Self::Error> {
         Ok(match connector.to_lowercase().as_str() {
             "sqlite" => ConnectorVersion::Sqlite(version.map(SqliteVersion::try_from).transpose()?),
-            "sqlserver" => ConnectorVersion::SqlServer(version.map(SqlServerVersion::try_from).transpose()?),
-            "cockroachdb" => ConnectorVersion::CockroachDb(version.map(CockroachDbVersion::try_from).transpose()?),
             "postgres" => ConnectorVersion::Postgres(version.map(PostgresVersion::try_from).transpose()?),
             "mysql" => ConnectorVersion::MySql(version.map(MySqlVersion::try_from).transpose()?),
             "vitess" => ConnectorVersion::Vitess(version.map(|v| v.parse()).transpose()?),
             _ => return Err(TestError::parse_error(format!("Unknown connector tag `{connector}`"))),
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::connector_tag::{PostgresConnectorTag, PostgresVersion};
-    use crate::{ConnectorTag, ConnectorVersion};
-
-    #[test]
-    #[rustfmt::skip]
-    fn test_should_run() {
-        let only = vec![("postgres", None)];
-        let exclude = vec![("postgres", Some("neon.js.wasm"))];
-        let postgres = &PostgresConnectorTag as ConnectorTag;
-        let neon = ConnectorVersion::Postgres(Some(PostgresVersion::NeonJsWasm));
-        let pg = ConnectorVersion::Postgres(Some(PostgresVersion::PgJsWasm));
-
-        assert!(!super::should_run(&postgres, &neon, &only, &exclude, Default::default()));
-        assert!(super::should_run(&postgres, &pg, &only, &exclude, Default::default()));
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_should_run_wrong_definition_versionless() {
-        let only = vec![("postgres", None)];
-        let exclude = vec![("postgres", None)];
-        let postgres = &PostgresConnectorTag as ConnectorTag;
-        let neon = ConnectorVersion::Postgres(Some(PostgresVersion::NeonJsWasm));
-
-        super::should_run(&postgres, &neon, &only, &exclude, Default::default());
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_should_run_wrong_definition_wider_exclusion() {
-        let only = vec![("postgres", Some("neon.js.wasm"))];
-        let exclude = vec![("postgres", None)];
-        let postgres = &PostgresConnectorTag as ConnectorTag;
-        let neon = ConnectorVersion::Postgres(Some(PostgresVersion::NeonJsWasm));
-
-        super::should_run(&postgres, &neon, &only, &exclude, Default::default());
     }
 }

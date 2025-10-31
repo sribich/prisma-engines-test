@@ -34,18 +34,6 @@ pub(crate) fn get_postgres_tags(database_url: &str) -> Result<BitFlags<Tags>, St
                     tags |= Tags::Postgres16;
                 }
 
-                if version.contains("CockroachDB") {
-                    if version.contains("v23.1") {
-                        tags |= Tags::CockroachDb231;
-                    } else if version.contains("v22.2") {
-                        tags |= Tags::CockroachDb222;
-                    } else if version.contains("v21.2") {
-                        tags |= Tags::CockroachDb221;
-                    }
-
-                    tags |= Tags::CockroachDb;
-                }
-
                 eprintln!("Inferred tags: {tags:?}");
 
                 Ok(tags)

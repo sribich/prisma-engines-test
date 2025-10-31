@@ -2,8 +2,9 @@ mod datasource;
 mod native_types;
 mod validations;
 
+use diagnostics::DatamodelError;
 pub use native_types::{KnownPostgresType, PostgresType};
-use parser_database::{ExtensionTypes, ScalarFieldType};
+use parser_database::{coerce, ExtensionTypes, ScalarFieldType};
 
 use crate::{
     Configuration, Datasource, DatasourceConnectorData, PreviewFeature, ValidatedSchema,
@@ -780,4 +781,42 @@ fn allowed_index_operator_classes(algo: IndexAlgorithm, field: walkers::ScalarFi
     }
 
     classes
+}
+
+/// An `@default(sequence())` function.
+#[derive(Default, Debug)]
+pub struct SequenceFunction {
+    pub r#virtual: Option<bool>,
+    pub cache: Option<i64>,
+    pub increment: Option<i64>,
+    pub min_value: Option<i64>,
+    pub max_value: Option<i64>,
+    pub start: Option<i64>,
+}
+
+impl SequenceFunction {
+    pub fn build_unchecked(args: &ast::ArgumentsList) -> Self {
+        Self::validate(args, &mut Diagnostics::default())
+    }
+
+    pub fn validate(args: &ast::ArgumentsList, diagnostics: &mut Diagnostics) -> Self {
+        let mut this = SequenceFunction::default();
+
+        for arg in &args.arguments {
+            match arg.name.as_ref().map(|arg| arg.name.as_str()) {
+                Some("virtual") => this.r#virtual = coerce::boolean(&arg.value, diagnostics),
+                Some("cache") => this.cache = coerce::integer(&arg.value, diagnostics),
+                Some("increment") => this.increment = coerce::integer(&arg.value, diagnostics),
+                Some("minValue") => this.min_value = coerce::integer(&arg.value, diagnostics),
+                Some("maxValue") => this.max_value = coerce::integer(&arg.value, diagnostics),
+                Some("start") => this.start = coerce::integer(&arg.value, diagnostics),
+                Some(_) | None => diagnostics.push_error(DatamodelError::new_static(
+                    "Unexpected argument in `sequence()` function call",
+                    arg.span,
+                )),
+            }
+        }
+
+        this
+    }
 }

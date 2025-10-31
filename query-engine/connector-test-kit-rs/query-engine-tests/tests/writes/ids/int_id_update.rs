@@ -89,7 +89,7 @@ mod int_id_update {
     }
 
     // "Updating an item with an id field of type Int with autoincrement" should "work"
-    #[connector_test(schema(schema_int_autoinc), capabilities(AutoIncrement), exclude(CockroachDb))]
+    #[connector_test(schema(schema_int_autoinc), capabilities(AutoIncrement))]
     async fn update_id_int_autoinc(runner: Runner) -> TestResult<()> {
         // Setup
         insta::assert_snapshot!(

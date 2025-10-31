@@ -75,11 +75,7 @@ static DB_UNDER_TEST: LazyLock<Result<DbUnderTest, String>> = LazyLock::new(|| {
         "postgresql" | "postgres" => Ok({
             let tags = postgres::get_postgres_tags(&database_url)?;
 
-            let provider = if tags.contains(Tags::CockroachDb) {
-                "cockroachdb"
-            } else {
-                "postgresql"
-            };
+            let provider = "postgresql";
 
             DbUnderTest {
                 tags,
@@ -92,14 +88,6 @@ static DB_UNDER_TEST: LazyLock<Result<DbUnderTest, String>> = LazyLock::new(|| {
                 shadow_database_url,
                 max_ddl_refresh_delay: None,
             }
-        }),
-        "sqlserver" => Ok(DbUnderTest {
-            tags: mssql::get_mssql_tags(&database_url)?,
-            database_url,
-            capabilities: Capabilities::CreateDatabase.into(),
-            provider: "sqlserver",
-            shadow_database_url,
-            max_ddl_refresh_delay: None,
         }),
         _ => Err("Unknown database URL".into()),
     }

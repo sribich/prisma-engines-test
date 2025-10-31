@@ -619,7 +619,7 @@ mod many_count_rel {
     }
 
     // Regression test for: https://github.com/prisma/prisma/issues/7299
-    #[connector_test(schema(schema_one2m_multi_fks), capabilities(CompoundIds), exclude(CockroachDb))]
+    #[connector_test(schema(schema_one2m_multi_fks), capabilities(CompoundIds))]
     async fn count_one2m_compound_ids(runner: Runner) -> TestResult<()> {
         run_query!(
             runner,

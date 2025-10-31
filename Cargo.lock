@@ -1091,29 +1091,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "driver-adapters"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "expect-test",
- "futures",
- "napi",
- "napi-derive",
- "panic-utils",
- "pin-project",
- "prisma-metrics",
- "quaint",
- "serde",
- "serde_json",
- "serde_repr",
- "telemetry",
- "tokio",
- "tracing",
- "tracing-core",
- "uuid",
-]
-
-[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2588,8 +2565,6 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
- "regex",
- "semver",
  "syn 2.0.104",
 ]
 

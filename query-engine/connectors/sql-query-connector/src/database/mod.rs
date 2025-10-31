@@ -1,6 +1,4 @@
 mod connection;
-#[cfg(feature = "driver-adapters")]
-mod js;
 mod transaction;
 
 #[cfg(any(
@@ -21,9 +19,6 @@ pub(crate) mod operations;
 
 use async_trait::async_trait;
 use connector_interface::{Connector, error::ConnectorError};
-
-#[cfg(feature = "driver-adapters")]
-pub use js::*;
 
 #[cfg(feature = "mysql-native")]
 pub use native::mysql::*;

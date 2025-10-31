@@ -98,7 +98,7 @@ mod int_id_create {
     }
 
     // "Creating an item with an id field of type Int with autoincrement" should "work"
-    #[connector_test(schema(schema_int_autoinc), capabilities(AutoIncrement), exclude(CockroachDb))]
+    #[connector_test(schema(schema_int_autoinc), capabilities(AutoIncrement))]
     async fn create_id_int_with_autoinc(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {

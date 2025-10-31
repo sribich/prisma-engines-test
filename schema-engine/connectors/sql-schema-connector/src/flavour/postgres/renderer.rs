@@ -1,6 +1,6 @@
 use crate::apply_migration::is_default_namespace_in_schema;
 use crate::sql_renderer::{
-    IteratorJoin, Quoted, QuotedWithPrefix, SQL_INDENTATION, SqlRenderer, StepRenderer, format_hex, render_nullability,
+    IteratorJoin, Quoted, QuotedWithPrefix, SQL_INDENTATION, SqlRenderer, format_hex, render_nullability,
     render_step,
 };
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
     sql_schema_differ::{ColumnChange, ColumnChanges},
 };
 use itertools::Itertools;
-use psl::builtin_connectors::{CockroachType, KnownPostgresType, PostgresType};
+use psl::builtin_connectors::{KnownPostgresType, PostgresType};
 use sql_ddl::{
     IndexColumn, SortOrder,
     postgres::{self as ddl, PostgresIdentifier},
@@ -25,13 +25,11 @@ use sql_schema_describer::{
 use std::borrow::Cow;
 
 #[derive(Debug)]
-pub struct PostgresRenderer {
-    is_cockroach: bool,
-}
+pub struct PostgresRenderer {}
 
 impl PostgresRenderer {
-    pub fn new(is_cockroach: bool) -> Self {
-        Self { is_cockroach }
+    pub fn new() -> Self {
+        Self {}
     }
 
     fn render_column(&self, column: TableColumnWalker<'_>) -> String {
@@ -198,14 +196,8 @@ impl SqlRenderer for PostgresRenderer {
         // On Postgres:
         // - Values cannot be removed.
         // - Only one value can be added in a single transaction until postgres 11.
-        if self.is_cockroach {
-            render_step(&mut |step| {
-                render_cockroach_alter_enum(alter_enum, schemas, step);
-            })
-        } else {
-            let renderer = self;
-            render_postgres_alter_enum(alter_enum, schemas, renderer)
-        }
+        let renderer = self;
+        render_postgres_alter_enum(alter_enum, schemas, renderer)
     }
 
     fn render_alter_primary_key(&self, tables: MigrationPair<TableWalker<'_>>) -> Vec<String> {
@@ -320,24 +312,14 @@ impl SqlRenderer for PostgresRenderer {
         if lines.is_empty() {
             return Vec::new();
         }
+       
+        let alter_table = format!("ALTER TABLE {} {}", quoted_alter_table_name(tables), lines.join(",\n"));
 
-        if self.is_cockroach {
-            let mut out = Vec::with_capacity(before_statements.len() + after_statements.len() + lines.len());
-            out.extend(before_statements);
-            for line in lines {
-                out.push(format!("ALTER TABLE {} {}", quoted_alter_table_name(tables), line))
-            }
-            out.extend(after_statements);
-            out
-        } else {
-            let alter_table = format!("ALTER TABLE {} {}", quoted_alter_table_name(tables), lines.join(",\n"));
-
-            before_statements
-                .into_iter()
-                .chain(std::iter::once(alter_table))
-                .chain(after_statements)
-                .collect()
-        }
+        before_statements
+            .into_iter()
+            .chain(std::iter::once(alter_table))
+            .chain(after_statements)
+            .collect()
     }
 
     fn render_create_enum(&self, enm: EnumWalker<'_>) -> Vec<String> {
@@ -558,11 +540,7 @@ fn render_column_type(col: TableColumnWalker<'_>, renderer: &PostgresRenderer) -
         return format!("{}{}", description, if t.arity.is_list() { "[]" } else { "" }).into();
     }
 
-    if renderer.is_cockroach {
-        render_column_type_cockroachdb(col)
-    } else {
-        render_column_type_postgres(col)
-    }
+    render_column_type_postgres(col)
 }
 
 fn render_column_type_postgres(col: TableColumnWalker<'_>) -> Cow<'static, str> {
@@ -607,47 +585,6 @@ fn render_column_type_postgres(col: TableColumnWalker<'_>) -> Cow<'static, str> 
         KnownPostgresType::Xml => "XML".into(),
         KnownPostgresType::Json => "JSON".into(),
         KnownPostgresType::JsonB => "JSONB".into(),
-    };
-
-    if t.arity.is_list() {
-        format!("{tpe}[]").into()
-    } else {
-        tpe
-    }
-}
-
-fn render_column_type_cockroachdb(col: TableColumnWalker<'_>) -> Cow<'static, str> {
-    let t = col.column_type();
-    let native_type = col
-        .column_native_type()
-        .expect("Missing native type in postgres_renderer::render_column_type()");
-
-    let tpe: Cow<'_, str> = match native_type {
-        CockroachType::Inet => "INET".into(),
-        CockroachType::Int2 => "INT2".into(),
-        CockroachType::Int4 => "INT4".into(),
-        CockroachType::Int8 => "INT8".into(),
-        CockroachType::Oid => "OID".into(),
-        CockroachType::Decimal(precision) => format!("DECIMAL{}", render_decimal_args(*precision)).into(),
-        CockroachType::Float4 => "FLOAT4".into(),
-        CockroachType::Float8 => "FLOAT8".into(),
-        CockroachType::String(length) => format!("STRING{}", render_optional_args(*length)).into(),
-
-        // https://www.cockroachlabs.com/docs/stable/string.html
-        CockroachType::Char(length) => format!("CHAR{}", render_optional_args(*length)).into(),
-        CockroachType::CatalogSingleChar => r#""char""#.into(),
-
-        CockroachType::Bytes => "BYTES".into(),
-        CockroachType::Date => "DATE".into(),
-        CockroachType::Timestamp(precision) => format!("TIMESTAMP{}", render_optional_args(*precision)).into(),
-        CockroachType::Timestamptz(precision) => format!("TIMESTAMPTZ{}", render_optional_args(*precision)).into(),
-        CockroachType::Time(precision) => format!("TIME{}", render_optional_args(*precision)).into(),
-        CockroachType::Timetz(precision) => format!("TIMETZ{}", render_optional_args(*precision)).into(),
-        CockroachType::Bool => "BOOL".into(),
-        CockroachType::Bit(length) => format!("BIT{}", render_optional_args(*length)).into(),
-        CockroachType::VarBit(length) => format!("VARBIT{}", render_optional_args(*length)).into(),
-        CockroachType::Uuid => "UUID".into(),
-        CockroachType::JsonB => "JSONB".into(),
     };
 
     if t.arity.is_list() {
@@ -1043,105 +980,8 @@ fn render_postgres_alter_enum(
     stmts
 }
 
-fn render_cockroach_alter_enum(
-    alter_enum: &AlterEnum,
-    schemas: MigrationPair<&SqlSchema>,
-    renderer: &mut StepRenderer,
-) {
-    let enums = schemas.walk(alter_enum.id);
-    let mut prefix = String::new();
-    prefix.push_str("ALTER TYPE ");
-    prefix.push_str(quoted_alter_enum_name(enums).to_string().as_str());
-
-    // Defaults that use a dropped value will need to be recreated after the alter enum.
-    let defaults_to_drop = alter_enum
-        .previous_usages_as_default
-        .iter()
-        .filter_map(|(prev_colidx, _)| {
-            let col = schemas.previous.walk(*prev_colidx);
-            col.default()
-                .and_then(|d| d.as_value())
-                .and_then(|v| v.as_enum_value())
-                .map(|value| (col, value))
-        })
-        .filter(|(_, value)| !enums.next.values().any(|v| v == *value));
-
-    for (col, _) in defaults_to_drop {
-        renderer.render_statement(&mut |stmt| {
-            stmt.push_str("ALTER TABLE ");
-            stmt.push_display(&QuotedWithPrefix::pg_from_table_walker(col.table()));
-            stmt.push_str(" ALTER COLUMN ");
-            stmt.push_display(&Quoted::postgres_ident(col.name()));
-            stmt.push_str(" DROP DEFAULT");
-        })
-    }
-
-    for variant in &alter_enum.created_variants {
-        renderer.render_statement(&mut |stmt| {
-            stmt.push_str(&prefix);
-            stmt.push_str(" ADD VALUE '");
-            stmt.push_str(variant);
-            stmt.push_str("'");
-        });
-    }
-
-    for variant in &alter_enum.dropped_variants {
-        renderer.render_statement(&mut |stmt| {
-            stmt.push_str(&prefix);
-            stmt.push_str("DROP VALUE '");
-            stmt.push_str(variant);
-            stmt.push_str("'");
-        });
-    }
-}
-
 fn render_column_identity_str(column: TableColumnWalker<'_>, renderer: &PostgresRenderer) -> String {
-    if !renderer.is_cockroach {
-        return String::new();
-    }
-
-    let sequence = if let Some(seq_name) = column.default().as_ref().and_then(|d| d.as_sequence()) {
-        let connector_data: &PostgresSchemaExt = column.schema.downcast_connector_data();
-        connector_data
-            .sequences
-            .iter()
-            .find(|sequence| sequence.name == seq_name)
-            .unwrap()
-    } else {
-        return String::new();
-    };
-
-    let mut options = Vec::new();
-
-    if sequence.r#virtual {
-        options.push("VIRTUAL".to_owned());
-    }
-
-    if sequence.increment_by > 1 {
-        options.push(format!("INCREMENT {}", sequence.increment_by));
-    }
-
-    if sequence.cache_size > 1 {
-        options.push(format!("CACHE {}", sequence.cache_size))
-    }
-
-    if sequence.start_value > 1 {
-        options.push(format!("START {}", sequence.start_value))
-    }
-
-    if sequence.min_value > 1 {
-        options.push(format!("MINVALUE {}", sequence.min_value))
-    }
-
-    if sequence.max_value != 0 && sequence.max_value != i64::MAX {
-        options.push(format!("MAXVALUE {}", sequence.max_value))
-    }
-
-    if options.is_empty() {
-        String::from(" GENERATED BY DEFAULT AS IDENTITY")
-    } else {
-        format!(" GENERATED BY DEFAULT AS IDENTITY ({})", options.join(" "))
-    }
+    String::new()
 }
 
 /// Quotes a table name for use in an `ALTER TABLE` statement.

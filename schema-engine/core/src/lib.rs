@@ -23,7 +23,6 @@ use json_rpc::types::{SchemaContainer, SchemasContainer, SchemasWithConfigDir};
 pub use schema_connector;
 
 use enumflags2::BitFlags;
-use mongodb_schema_connector::MongoDbSchemaConnector;
 use psl::{
     Datasource, PreviewFeature, builtin_connectors::*, datamodel_connector::Flavour, parser_database::SourceFile,
 };
@@ -61,23 +60,6 @@ fn connector_for_connection_string(
                 shadow_database_connection_string,
             };
             Ok(Box::new(SqlSchemaConnector::new_mysql(params)?))
-        }
-        Some("sqlserver") => {
-            let params = ConnectorParams {
-                connection_string,
-                preview_features,
-                shadow_database_connection_string,
-            };
-            Ok(Box::new(SqlSchemaConnector::new_mssql(params)?))
-        }
-        Some("mongodb+srv") | Some("mongodb") => {
-            let params = ConnectorParams {
-                connection_string,
-                preview_features,
-                shadow_database_connection_string,
-            };
-            let connector = MongoDbSchemaConnector::new(params);
-            Ok(Box::new(connector))
         }
         Some(_other) => Err(CoreError::url_parse_error("The scheme is not recognized")),
         None => Err(CoreError::user_facing(InvalidConnectionString {
@@ -159,9 +141,6 @@ fn connector_for_provider(
 ) -> CoreResult<Box<dyn schema_connector::SchemaConnector>> {
     if let Some(connector) = BUILTIN_CONNECTORS.iter().find(|c| c.is_provider(provider)) {
         match connector.flavour() {
-            Flavour::Cockroach => Ok(Box::new(SqlSchemaConnector::new_cockroach(params)?)),
-            Flavour::Mongo => Ok(Box::new(MongoDbSchemaConnector::new(params))),
-            Flavour::Sqlserver => Ok(Box::new(SqlSchemaConnector::new_mssql(params)?)),
             Flavour::Mysql => Ok(Box::new(SqlSchemaConnector::new_mysql(params)?)),
             Flavour::Postgres => Ok(Box::new(SqlSchemaConnector::new_postgres(params)?)),
             Flavour::Sqlite => Ok(Box::new(SqlSchemaConnector::new_sqlite(params)?)),

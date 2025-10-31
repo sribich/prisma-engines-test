@@ -1,7 +1,7 @@
 use indoc::indoc;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn string_defaults_that_need_escaping(api: &mut TestApi) -> TestResult {
     let setup = r#"
         CREATE TABLE "stringstest" (
@@ -125,7 +125,7 @@ async fn a_table_with_descending_index(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_a_hash_index(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
        CREATE TABLE "A" (
@@ -213,7 +213,7 @@ async fn introspecting_now_functions(api: &mut TestApi) -> TestResult {
 }
 
 // https://github.com/prisma/prisma/issues/12095
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_json_columns(api: &mut TestApi) -> TestResult {
     let setup = r#"
         CREATE TABLE "Foo" (
@@ -246,7 +246,7 @@ async fn a_table_with_json_columns(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn datetime_default_expressions_are_not_truncated(api: &mut TestApi) -> TestResult {
     let setup = r#"
         CREATE TABLE "Foo" (
@@ -279,7 +279,7 @@ async fn datetime_default_expressions_are_not_truncated(api: &mut TestApi) -> Te
     Ok(())
 }
 
-#[test_connector(tags(Postgres12, Postgres14), exclude(CockroachDb))]
+#[test_connector(tags(Postgres12, Postgres14))]
 async fn northwind(api: TestApi) {
     let setup = include_str!("./northwind_postgresql.sql");
     api.raw_cmd(setup).await;

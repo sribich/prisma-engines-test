@@ -3,7 +3,7 @@ use psl::{
     parser_database::{IndexType, walkers},
     schema_ast::ast,
 };
-use sql::{mssql::MssqlSchemaExt, postgres::PostgresSchemaExt};
+use sql::{postgres::PostgresSchemaExt};
 use sql_schema_describer as sql;
 
 use super::{IndexFieldPair, IntrospectionPair};
@@ -70,19 +70,7 @@ impl<'a> IndexPair<'a> {
     /// SQL Server specific clustering setting. A value is returned if
     /// non-default.
     pub(crate) fn clustered(self) -> Option<bool> {
-        if !self.context.sql_family.is_mssql() {
-            return None;
-        }
-
-        let clustered = match self.next {
-            Some(next) => {
-                let ext: &MssqlSchemaExt = self.context.sql_schema.downcast_connector_data();
-                ext.index_is_clustered(next.id)
-            }
-            None => self.previous.and_then(|prev| prev.clustered()).unwrap_or(false),
-        };
-
-        if !clustered { None } else { Some(clustered) }
+        None
     }
 
     /// A PostgreSQL specific algorithm. Defines the data structure
