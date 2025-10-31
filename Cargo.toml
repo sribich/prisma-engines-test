@@ -93,7 +93,7 @@ napi = { version = "2", default-features = false, features = [
 ] }
 napi-derive = "2"
 native-tls = "0.2"
-nom = "7"
+nom = "8"
 num_cpus = "1"
 parking_lot = "0.12"
 parse-hyperlinks = "0.23"
