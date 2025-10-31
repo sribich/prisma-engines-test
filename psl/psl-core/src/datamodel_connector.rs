@@ -50,8 +50,8 @@ pub trait Connector: Send + Sync {
 
     /// The database flavour, divergences in database backends capabilities might consider
     /// us to use a different flavour, like in the case of CockroachDB. However other databases
-    /// are less divergent as to consider sharing a flavour with others, like Planetscale and MySQL
-    /// or Neon and Postgres, which respectively have the Mysql and Postgres flavours.
+    /// are less divergent as to consider sharing a flavour with others, like MySQL
+    /// or Postgres, which respectively have the Mysql and Postgres flavours.
     fn flavour(&self) -> Flavour;
 
     /// The name of the connector. Can be used in error messages.

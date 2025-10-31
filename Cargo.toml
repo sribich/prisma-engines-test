@@ -24,7 +24,6 @@ members = [
     "query-engine/request-handlers",
     "query-engine/schema",
     "query-engine/query-builders/*",
-    "query-compiler/query-compiler",
     "libs/*",
     "prisma-fmt",
     "psl/*",
@@ -32,13 +31,18 @@ members = [
 ]
 
 [workspace.package]
+authors = []
 edition = "2024"
+publish = false
+version = "0.0.0"
 
 [workspace.lints.rust.unexpected_cfgs]
 level = "warn"
 check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)', 'cfg(debug_assert)']
 
 [workspace.dependencies]
+gix = "0.74.1"
+
 ahash = "0.8"
 anyhow = "1"
 async-trait = "0.1"
@@ -206,8 +210,6 @@ datamodel-renderer.path = "./schema-engine/datamodel-renderer"
 schema-connector.path = "./schema-engine/connectors/schema-connector"
 sql-schema-connector.path = "./schema-engine/connectors/sql-schema-connector"
 sql-schema-describer.path = "./schema-engine/sql-schema-describer"
-
-query-compiler = { path = "./query-compiler/query-compiler", default-features = false }
 
 [profile.dev.package.backtrace]
 opt-level = 3

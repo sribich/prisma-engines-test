@@ -17,7 +17,7 @@ services:
 
   postgres12:
     build:
-      context: ./docker/postgres-ext
+      context: ./docker/images/postgres-ext
       args:
         POSTGRES_VERSION: 12
     restart: unless-stopped
@@ -31,7 +31,7 @@ services:
 
   postgres13:
     build:
-      context: ./docker/postgres-ext
+      context: ./docker/images/postgres-ext
       args:
         POSTGRES_VERSION: 13
     restart: unless-stopped
@@ -43,89 +43,9 @@ services:
     networks:
       - databases
 
-  neon-proxy:
-    image: ghcr.io/neondatabase/wsproxy:latest
-    restart: unless-stopped
-    environment:
-      # the port of the postgres13 within the databases network
-      APPEND_PORT: 'postgres13:5432'
-      ALLOW_ADDR_REGEX: '.*'
-      LOG_TRAFFIC: 'true'
-      LOG_CONN_INFO: 'true'
-    ports:
-      - '5488:80'
-    depends_on:
-      - postgres13
-    networks:
-      - databases
-
-  # Tests using a vitess backend were not running properly for query-engine tests, and In
-  # https://github.com/prisma/prisma-engines/pull/4423 work was done to have coverage of the correctness of planetscale
-  # driver adapters.
-  #
-  # Given these tests run against the planetscale proxy, and given a different test suite will exist for vitess with
-  # rust drivers, we opted for the path of least friction when running the driver adapter tests, which is putting a
-  # single mysql box behind the planetscale proxy instead of full vttest cluster.
-  #
-  # The tradeoffs are:
-  #
-  # - we don't exercise vitess but mysql. This is a close approximation, but there might be small differences in
-  # behavior. (ex. vttest can be returning different error messages than mysql)
-  #
-  # - however, we 1) do exercise the planetscale proxy, 2) we use relationMode=prisma and this resembles what actually
-  # happens within the query engine, where vitess does not exist as a provider, and as such there isn't any particular
-  # capability or conditional code making the engine behave differently then when using Mysql.
-  # In the end Vitess is just an abstraction existing in the test kit to a) use the mysql provider, b) run the suite
-  # with relationMode=prisma; c) being able to run or exclude specific tests for that configuration. But the existence
-  # of this testing connector is misleading, and it should probably be just a version of the MySQL testing connector
-  # instead.
-  planetscale-proxy:
-    build: ./docker/planetscale_proxy
-    environment:
-      MYSQL_HOST: 'mysql-planetscale'
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: prisma
-    ports:
-      - '8085:8085'
-    depends_on:
-      mysql-planetscale:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'nc', '-z', '127.0.0.1', '8085']
-      interval: 5s
-      timeout: 2s
-      retries: 20
-    networks:
-      - databases
-
-  mysql-planetscale:
-    image: mysql:8.0.28
-    command: mysqld
-    restart: unless-stopped
-    platform: linux/x86_64
-    environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: yes
-      MYSQL_DATABASE: prisma
-    ports:
-      - '3310:3306'
-    networks:
-      - databases
-    tmpfs: /var/lib/planetscale-mysql
-    volumes:
-      - './docker/planetscale-mysql/my.cnf:/etc/mysql/my.cnf'
-    ulimits:
-      nofile:
-        soft: 20000
-        hard: 40000
-    healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
-      timeout: 20s
-      retries: 10
-
   postgres14:
     build:
-      context: ./docker/postgres-ext
+      context: ./docker/images/postgres-ext
       args:
         POSTGRES_VERSION: 14
     restart: unless-stopped
@@ -141,7 +61,7 @@ services:
 
   postgres15:
     build:
-      context: ./docker/postgres-ext
+      context: ./docker/images/postgres-ext
       args:
         POSTGRES_VERSION: 15
     restart: unless-stopped
@@ -157,7 +77,7 @@ services:
 
   postgres16:
     build:
-      context: ./docker/postgres-ext
+      context: ./docker/images/postgres-ext
       args:
         POSTGRES_VERSION: 16
     restart: unless-stopped
@@ -314,15 +234,15 @@ services:
     image: prom/prometheus
     restart: unless-stopped
     volumes:
-      - ${PWD}/metrics/prometheus:/prometheus-data
+      - ${PWD}/.docker/config/prometheus:/prometheus-data
     command: --config.file=/prometheus-data/prometheus.yml
     ports:
       - 9090:9090
   grafana:
     image: grafana/grafana
     volumes:
-      - ${PWD}/metrics/grafana/datasources:/etc/grafana/provisioning/datasources/
-      - ${PWD}/metrics/grafana/dashboards:/etc/grafana/provisioning/dashboards/
+      - ${PWD}/.docker/config/grafana/datasources:/etc/grafana/provisioning/datasources/
+      - ${PWD}/.docker/config/grafana/dashboards:/etc/grafana/provisioning/dashboards/
     ports:
       - 3000:3000
 

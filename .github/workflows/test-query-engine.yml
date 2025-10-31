@@ -9,7 +9,6 @@ on:
       - '!.github/workflows/test-query-engine.yml'
       - '!.github/workflows/test-query-engine-template.yml'
       - '!.github/workflows/test-driver-adapters-template.yml'
-      - '!.github/workflows/include/rust-wasm-setup/action.yml'
       - '*.md'
       - 'LICENSE'
       - 'CODEOWNERS'
@@ -176,12 +175,8 @@ jobs:
       fail-fast: false
       matrix:
         adapter:
-          - name: 'planetscale (wasm)'
-            setup_task: 'dev-planetscale-wasm'
           - name: 'pg (wasm)'
             setup_task: 'dev-pg-wasm'
-          - name: 'neon (wasm)'
-            setup_task: 'dev-neon-wasm'
           - name: 'libsql (wasm)'
             setup_task: 'dev-libsql-wasm'
             relation_load_strategy: '["query"]'

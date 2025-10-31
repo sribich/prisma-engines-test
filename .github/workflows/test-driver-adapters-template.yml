@@ -82,7 +82,6 @@ jobs:
           echo "PRISMA_BRANCH=$PRISMA_BRANCH" >> "$GITHUB_ENV"
           echo "Using Prisma branch: $PRISMA_BRANCH"
 
-      - uses: ./.github/workflows/include/rust-wasm-setup
       - uses: taiki-e/install-action@nextest
 
       - name: Setup

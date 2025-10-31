@@ -19,8 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/workflows/include/rust-wasm-setup
-
       - name: Build native engines
         run: |
           cargo build --release -p query-engine

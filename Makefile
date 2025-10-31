@@ -200,34 +200,6 @@ run-bench:
 
 bench-pg-js: setup-pg-bench run-bench
 
-start-neon:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans neon-proxy
-
-dev-neon-wasm: start-neon build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/neon-wasm $(CONFIG_FILE)
-
-test-neon-wasm: dev-neon-wasm test-qe-st
-
-dev-neon-qc: start-neon build-qc-wasm build-driver-adapters-kit-qc
-	cp $(CONFIG_PATH)/neon-qc $(CONFIG_FILE)
-
-dev-neon-qc-join:
-	PRISMA_RELATION_LOAD_STRATEGY=join make dev-neon-qc
-
-dev-neon-qc-query:
-	PRISMA_RELATION_LOAD_STRATEGY=query make dev-neon-qc
-
-test-neon-qc: dev-neon-qc test-qe
-
-test-neon-qc-join:
-	PRISMA_RELATION_LOAD_STRATEGY=join make test-neon-qc
-
-test-neon-qc-query:
-	PRISMA_RELATION_LOAD_STRATEGY=query make test-neon-qc
-
-test-driver-adapter-neon: test-neon-js
-test-driver-adapter-neon-wasm: test-neon-wasm
-
 start-postgres14:
 	docker compose -f docker-compose.yml up --wait -d --remove-orphans postgres14
 
@@ -284,14 +256,6 @@ start-vitess_8_0:
 
 dev-vitess_8_0: start-vitess_8_0
 	cp $(CONFIG_PATH)/vitess_8_0 $(CONFIG_FILE)
-
-start-planetscale:
-	docker compose -f docker-compose.yml up -d --remove-orphans planetscale-proxy
-
-dev-planetscale-qc: start-planetscale build-qc-wasm build-driver-adapters-kit-qc
-	cp $(CONFIG_PATH)/planetscale-qc $(CONFIG_FILE)
-
-test-planetscale-qc: dev-planetscale-qc test-qe-st
 
 dev-mariadb-mysql-qc: start-mysql_8 build-qc-wasm build-driver-adapters-kit-qc
 	cp $(CONFIG_PATH)/mariadb-mysql-qc $(CONFIG_FILE)
