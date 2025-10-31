@@ -46,8 +46,6 @@ pub fn compile(
         SqlFamily::Mysql => translate(graph, &SqlQueryBuilder::<visitor::Mysql<'_>>::new(ctx)),
         #[cfg(feature = "sqlite")]
         SqlFamily::Sqlite => translate(graph, &SqlQueryBuilder::<visitor::Sqlite<'_>>::new(ctx)),
-        #[cfg(feature = "mssql")]
-        SqlFamily::Mssql => translate(graph, &SqlQueryBuilder::<visitor::Mssql<'_>>::new(ctx)),
     };
 
     res.map_err(CompileError::TranslateError)

@@ -330,65 +330,6 @@ fn mysql_fulltext_index_map() {
 }
 
 #[test]
-fn fulltext_index_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id String  @id @map("_id") @test.ObjectId
-          a  String
-          b  String
-
-          @@fulltext([a, b])
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Mongo, &[]))
-        .unwrap()
-        .assert_has_model("A")
-        .assert_fulltext_on_fields(&["a", "b"]);
-}
-
-#[test]
-fn duplicate_index_different_sort_order_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id String @id @default(auto()) @map("_id") @test.ObjectId
-          a  Int
-
-          @@index([a(sort: Desc)], map: "bbb")
-          @@index([a(sort: Asc)], map: "aaa")
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Mongo, &[]))
-        .unwrap()
-        .assert_has_model("A")
-        .assert_index_on_fields(&["a"])
-        .assert_mapped_name("bbb")
-        .assert_field("a")
-        .assert_descending();
-}
-
-#[test]
-fn fulltext_index_sort_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id String  @id @map("_id") @test.ObjectId
-          a  String
-          b  String
-
-          @@fulltext([a, b(sort: Desc)])
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Mongo, &[]))
-        .unwrap()
-        .assert_has_model("A")
-        .assert_fulltext_on_fields(&["a", "b"])
-        .assert_field("b")
-        .assert_descending();
-}
-
-#[test]
 fn multiple_fulltext_indexes_allowed_per_model_in_mysql() {
     let dml = indoc! {r#"
         model A {

@@ -1014,57 +1014,6 @@ fn issue_10118() {
 }
 
 #[test]
-fn mongodb_inline_relations_reformat_as_expected() {
-    let schema = indoc! {r#"
-        datasource db {
-          provider = "mongodb"
-          url = "mongodb://"
-        }
-
-        generator js {
-          provider = "prisma-client"
-          previewFeatures = ["mongoDb"]
-        }
-
-        model A {
-          id   String   @id @map("_id") @default(auto()) @db.ObjectId
-          bIds String[] @db.ObjectId
-          bs   B[]      @relation(fields: [bIds])
-        }
-
-        model B {
-          id   String   @id @map("_id") @default(auto()) @db.ObjectId
-        }
-    "#};
-
-    let expected = expect![[r#"
-        datasource db {
-          provider = "mongodb"
-          url      = "mongodb://"
-        }
-
-        generator js {
-          provider        = "prisma-client"
-          previewFeatures = ["mongoDb"]
-        }
-
-        model A {
-          id   String   @id @default(auto()) @map("_id") @db.ObjectId
-          bIds String[] @db.ObjectId
-          bs   B[]      @relation(fields: [bIds])
-        }
-
-        model B {
-          id  String  @id @default(auto()) @map("_id") @db.ObjectId
-          a   A?      @relation(fields: [aId], references: [id])
-          aId String? @db.ObjectId
-        }
-    "#]];
-
-    expected.assert_eq(&reformat(schema));
-}
-
-#[test]
 fn reformat_missing_forward_relation_arguments_with_crln() {
     let schema = r#"
     generator client {

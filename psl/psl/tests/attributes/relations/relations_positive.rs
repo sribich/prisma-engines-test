@@ -226,28 +226,6 @@ fn one_to_one_optional() {
 }
 
 #[test]
-fn embedded_many_to_many_relations_work_on_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id    String   @id @map("_id") @default(auto()) @test.ObjectId
-          b_ids String[] @test.ObjectId
-          bs    B[]      @relation(fields: [b_ids], references: [id])
-        }
-
-        model B {
-          id    String   @id @map("_id") @default(auto()) @test.ObjectId
-          a_ids String[] @test.ObjectId
-          as    A[]      @relation(fields: [a_ids], references: [id])
-        }
-    "#};
-
-    let schema = parse_schema(&with_header(dml, Provider::Mongo, &[]));
-
-    schema.assert_has_model("A").assert_has_relation_field("bs");
-    schema.assert_has_model("B").assert_has_relation_field("as");
-}
-
-#[test]
 fn implicit_many_to_many_relations_work_on_postgresql() {
     let dml = indoc! {r#"
         model A {

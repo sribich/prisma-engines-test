@@ -44,13 +44,9 @@ pub(crate) fn mutation_fields(ctx: &QuerySchema) -> Vec<FieldFn> {
         field!(delete_many_field, model);
     }
 
-    if ctx.enable_raw_queries && ctx.is_sql() {
+    if ctx.enable_raw_queries {
         fields.push(Box::new(|_| create_execute_raw_field()));
         fields.push(Box::new(|_| create_query_raw_field()));
-    }
-
-    if ctx.enable_raw_queries && ctx.is_mongo() {
-        fields.push(Box::new(|_| create_mongodb_run_command_raw()));
     }
 
     fields
@@ -95,18 +91,6 @@ fn create_query_raw_field<'a>() -> OutputField<'a> {
         OutputType::non_list(OutputType::json()),
         Some(QueryInfo {
             tag: QueryTag::QueryRaw,
-            model: None,
-        }),
-    )
-}
-
-fn create_mongodb_run_command_raw<'a>() -> OutputField<'a> {
-    field(
-        "runCommandRaw",
-        || vec![simple_input_field("command", InputType::json(), None)],
-        OutputType::non_list(OutputType::json()),
-        Some(QueryInfo {
-            tag: QueryTag::RunCommandRaw,
             model: None,
         }),
     )

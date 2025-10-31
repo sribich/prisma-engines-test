@@ -1,4 +1,3 @@
-mod mssql;
 mod multi_file;
 mod mysql;
 mod postgresql;

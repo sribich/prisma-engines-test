@@ -1,5 +1,4 @@
 //! Definitions for the SQLite connector.
-//! This module is not compatible with wasm32-* targets.
 //! This module is only available with the `sqlite-native` feature.
 mod column_type;
 mod conversion;

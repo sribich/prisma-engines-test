@@ -988,67 +988,6 @@ fn reformatting_with_empty_indexes() {
 }
 
 #[test]
-fn test_composite_types_in_models() {
-    let input = indoc! {r#"
-        datasource db {
-          provider = "mongodb"
-          url      = "mongodb://prisma:prisma@127.0.0.1:27017/test?authSource=admin"
-        }
-
-        generator js {
-          previewFeatures = ["mongodb"]
-          provider        = "prisma-client"
-        }
-
-        model A {
-          id String @id @default(auto()) @map("_id") @db.ObjectId
-          b  B
-          c  C[]
-        }
-
-        type B {
-          b_1 String
-          b_2 Int
-        }
-
-        type C {
-          b_1 String
-          b_2 Int
-        }
-    "#};
-
-    let expected = expect![[r#"
-        datasource db {
-          provider = "mongodb"
-          url      = "mongodb://prisma:prisma@127.0.0.1:27017/test?authSource=admin"
-        }
-
-        generator js {
-          previewFeatures = ["mongodb"]
-          provider        = "prisma-client"
-        }
-
-        model A {
-          id String @id @default(auto()) @map("_id") @db.ObjectId
-          b  B
-          c  C[]
-        }
-
-        type B {
-          b_1 String
-          b_2 Int
-        }
-
-        type C {
-          b_1 String
-          b_2 Int
-        }
-    "#]];
-
-    expected.assert_eq(&reformat(input));
-}
-
-#[test]
 fn empty_arguments_reformat_properly() {
     let schema = r#"
         /// Post including an author and content.
@@ -1085,59 +1024,6 @@ fn empty_arguments_reformat_properly() {
           email String  @unique
           name  String?
           posts Post[]
-        }
-    "#]];
-
-    expected.assert_eq(&reformat(schema));
-}
-
-#[test]
-fn composite_type_native_types_roundtrip() {
-    let schema = r#"
-        datasource db{
-            provider = "mongodb"
-            url = "mongo+srv:/...."
-        }
-
-        generator client {
-            provider        = "prisma-client"
-            previewFeatures = ["mongoDb"]
-        }
-
-        type Address {
-            name String?
-            street String @db.ObjectId
-            number Int
-            zipCode Int?
-        }
-
-        model User {
-            id  String @id @default(dbgenerated()) @map("_id") @db.ObjectId
-            address Address?
-        }
-    "#;
-
-    let expected = expect![[r#"
-        datasource db {
-          provider = "mongodb"
-          url      = "mongo+srv:/...."
-        }
-
-        generator client {
-          provider        = "prisma-client"
-          previewFeatures = ["mongoDb"]
-        }
-
-        type Address {
-          name    String?
-          street  String  @db.ObjectId
-          number  Int
-          zipCode Int?
-        }
-
-        model User {
-          id      String   @id @default(dbgenerated()) @map("_id") @db.ObjectId
-          address Address?
         }
     "#]];
 
@@ -1186,68 +1072,54 @@ fn rewrites_legacy_list_and_required_type_arities() {
 fn attribute_arguments_reformatting_is_idempotent() {
     let schema = r#"
         generator client {
-          provider        = "prisma-client"
-          previewFeatures = "mongodb"
+          provider = "prisma-client"
         }
 
         datasource db {
-          provider = "mongodb"
-          url      = "m...ty"
+          provider = "postgres"
         }
 
         model Foo {
-          id       String   @id @default(auto()) @map("_id") @db.ObjectId
+          id       String   @id @default(auto()) @map("_id")
           name     String   @unique
           json     Json
           bar      Bar
           bars     Bar[]
           baz      Baz      @relation(fields: [bazId], references: [id])
-          bazId    String   @db.ObjectId
+          bazId    String
           list     String[]
           jsonList Json[]
         }
 
-        type Bar {
-          label  String
-          number Int
-        }
-
         model Baz {
-          id  String @id @default(auto()) @map("_id") @db.ObjectId
+          id  String @id @default(auto()) @map("_id")
           foo Foo?
         }
     "#;
 
     let expected = expect![[r#"
         generator client {
-          provider        = "prisma-client"
-          previewFeatures = "mongodb"
+          provider = "prisma-client"
         }
 
         datasource db {
-          provider = "mongodb"
-          url      = "m...ty"
+          provider = "postgres"
         }
 
         model Foo {
-          id       String   @id @default(auto()) @map("_id") @db.ObjectId
+          id       String   @id @default(auto()) @map("_id")
           name     String   @unique
           json     Json
           bar      Bar
           bars     Bar[]
           baz      Baz      @relation(fields: [bazId], references: [id])
-          bazId    String   @db.ObjectId
+          bazId    String
           list     String[]
           jsonList Json[]
         }
 
-        type Bar {
-          label  String
-          number Int
-        }
-
         model Baz {
-          id  String @id @default(auto()) @map("_id") @db.ObjectId
+          id  String @id @default(auto()) @map("_id")
           foo Foo?
         }
     "#]];

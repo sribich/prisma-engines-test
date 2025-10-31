@@ -24,7 +24,6 @@ tracing.workspace = true
 url.workspace = true
 connection-string.workspace = true
 
-mongodb-query-connector = { workspace = true, optional = true }
 sql-query-connector = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -33,7 +32,6 @@ schema.workspace = true
 codspeed-criterion-compat.workspace = true
 
 [features]
-mongodb = ["mongodb-query-connector", "psl/mongodb"]
 sql = ["dep:sql-query-connector"]
 postgresql = ["sql", "sql-query-connector/postgresql", "psl/postgresql"]
 postgresql-native = [
@@ -49,26 +47,11 @@ mysql-native = [
 ]
 sqlite = ["sql", "sql-query-connector/sqlite", "psl/sqlite"]
 sqlite-native = ["sqlite", "sql-query-connector/sqlite-native"]
-cockroachdb = ["sql", "sql-query-connector/postgresql", "psl/cockroachdb"]
-cockroachdb-native = [
-    "cockroachdb",
-    "sql-query-connector/cockroachdb",
-    "user-facing-errors/postgresql-native",
-]
-mssql = ["sql", "sql-query-connector/mssql", "psl/mssql"]
-mssql-native = [
-    "mssql",
-    "sql-query-connector/mssql-native",
-    "user-facing-errors/mssql-native",
-]
 driver-adapters = ["sql", "sql-query-connector/driver-adapters"]
 all = [
-    "mongodb",
     "mysql-native",
     "sqlite-native",
     "postgresql-native",
-    "cockroachdb-native",
-    "mssql-native",
     "graphql-protocol",
     "psl/all",
     "query-core/metrics",

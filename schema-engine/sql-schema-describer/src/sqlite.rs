@@ -1,6 +1,4 @@
 //! SQLite description.
-#![cfg_attr(target_arch = "wasm32", allow(dead_code))]
-
 use crate::{
     Column, ColumnArity, ColumnType, ColumnTypeFamily, DefaultValue, DescriberResult, ForeignKeyAction, PrismaValue,
     Regex, SQLSortOrder, SqlSchema, getters::Getter, ids::*, parsers::Parser,

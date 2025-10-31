@@ -8,7 +8,7 @@ pub enum PropertyPosition<'ast> {
     /// In the property's name.
     /// ```prisma
     /// datasource db {
-    ///     provider = "mongodb"
+    ///     provider = "postgres"
     /// //  ^^^^^^^^
     ///     url      = env("DATABASE_URL")
     /// }
@@ -17,7 +17,7 @@ pub enum PropertyPosition<'ast> {
     /// In the property's value.
     /// ```prisma
     /// datasource db {
-    ///     provider = "mongodb"
+    ///     provider = "postgres"
     /// //             ^^^^^^^^^
     ///     url      = env("DATABASE_URL")
     /// }
@@ -26,7 +26,7 @@ pub enum PropertyPosition<'ast> {
     /// In the property's value - specifically a function.
     /// ```prisma
     /// datasource db {
-    ///     provider = "mongodb"
+    ///     provider = "postgres"
     ///     url      = env("DATABASE_URL")
     /// //             ^^^^^^^^^^^^^^^^^^^
     /// }

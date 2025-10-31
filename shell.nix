@@ -16,9 +16,6 @@ pkgs.mkShell {
     nodePackages.prettier
     pnpm_10
     rustup
-    wabt
-    wasm-bindgen-cli_0_2_105
-    wasm-pack
   ];
 
   nativeBuildInputs =

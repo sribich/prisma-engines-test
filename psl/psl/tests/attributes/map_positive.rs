@@ -29,23 +29,3 @@ fn map_attribute() {
     post.assert_mapped_name("posti");
     post.assert_has_scalar_field("text").assert_mapped_name("post_text");
 }
-
-#[test]
-fn map_on_composite_type_field() {
-    let dml = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongodb://"
-        }
-
-        type Address {
-            fullName String @map("full_name")
-        }
-   "#;
-
-    psl::parse_schema_without_extensions(dml)
-        .unwrap()
-        .assert_has_type("Address")
-        .assert_has_scalar_field("fullName")
-        .assert_mapped_name("full_name");
-}

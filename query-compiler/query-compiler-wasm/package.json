@@ -1,5 +1,0 @@
-{
-  "name": "@prisma/query-compiler-wasm",
-  "version": "0.0.0",
-  "type": "module"
-}

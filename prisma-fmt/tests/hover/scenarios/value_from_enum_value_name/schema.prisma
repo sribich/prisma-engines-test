@@ -3,7 +3,7 @@ generator js {
 }
 
 datasource db {
-    provider = "mongodb"
+    provider = "postgres"
     url      = env("DATABASE_URL")
 }
 

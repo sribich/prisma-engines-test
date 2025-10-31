@@ -4,9 +4,9 @@
 //! transactions.
 //!
 //! Connectors for [MySQL](struct.Mysql.html),
-//! [PostgreSQL](struct.PostgreSql.html), [SQLite](struct.Sqlite.html) and [SQL
-//! Server](struct.Mssql.html) connect to the corresponding databases and
-//! implement the [Queryable](trait.Queryable.html) trait for generalized
+//! [PostgreSQL](struct.PostgreSql.html), and [SQLite](struct.Sqlite.html) 
+//! connect to the corresponding databases and implement the 
+//! [Queryable](trait.Queryable.html) trait for generalized
 //! querying interface.
 
 mod column_type;
@@ -17,10 +17,9 @@ pub mod external;
 pub mod metrics;
 mod queryable;
 mod result_set;
-#[cfg(any(feature = "mssql-native", feature = "postgresql-native", feature = "mysql-native"))]
+#[cfg(any(feature = "postgresql-native", feature = "mysql-native"))]
 mod timeout;
 mod transaction;
-#[cfg(not(target_arch = "wasm32"))]
 mod type_identifier;
 
 pub use self::result_set::*;
@@ -58,10 +57,3 @@ pub(crate) mod sqlite;
 pub use sqlite::native::*;
 #[cfg(feature = "sqlite")]
 pub use sqlite::*;
-
-#[cfg(feature = "mssql")]
-pub(crate) mod mssql;
-#[cfg(feature = "mssql-native")]
-pub use mssql::native::*;
-#[cfg(feature = "mssql")]
-pub use mssql::*;

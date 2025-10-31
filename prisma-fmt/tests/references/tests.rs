@@ -12,8 +12,6 @@ macro_rules! scenarios {
 }
 
 scenarios! {
-    composite_type_as_type
-    composite_type_name
     enum_as_type
     enum_name
     model_as_type

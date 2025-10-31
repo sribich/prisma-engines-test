@@ -26,19 +26,7 @@ impl TestApi {
             (db_name, tok(Quaint::new(&cs)).unwrap())
         } else if tags.contains(Tags::Postgres) {
             let (db_name, q, _) = tok(args.create_postgres_database());
-            if tags.contains(Tags::CockroachDb) {
-                tok(q.raw_cmd(
-                    r#"
-                    SET default_int_size = 4;
-                    SET serial_normalization = 'sql_sequence';
-                    "#,
-                ))
-                .unwrap();
-            }
             (db_name, q)
-        } else if tags.contains(Tags::Mssql) {
-            let (q, _cs) = tok(args.create_mssql_database());
-            (args.test_function_name(), q)
         } else if tags.contains(Tags::Sqlite) {
             (args.test_function_name(), Quaint::new_in_memory().unwrap())
         } else {
@@ -79,16 +67,12 @@ impl TestApi {
 
     async fn describe_impl(&self, schemas: &[&str]) -> Result<SqlSchema, DescriberError> {
         match self.sql_family() {
-            #[cfg(any(feature = "postgresql", feature = "cockroachdb"))]
+            #[cfg(any(feature = "postgresql"))]
             SqlFamily::Postgres => {
                 use postgres::Circumstances;
                 sql_schema_describer::postgres::SqlSchemaDescriber::new(
                     &self.database,
-                    if self.tags.contains(Tags::CockroachDb) {
-                        Circumstances::Cockroach.into()
-                    } else {
-                        Default::default()
-                    },
+                    Default::default(),
                 )
                 .describe(schemas)
                 .await
@@ -116,12 +100,6 @@ impl TestApi {
                 )
                 .describe(schemas)
                 .await
-            }
-            #[cfg(feature = "mssql")]
-            SqlFamily::Mssql => {
-                sql_schema_describer::mssql::SqlSchemaDescriber::new(&self.database)
-                    .describe(schemas)
-                    .await
             }
         }
     }

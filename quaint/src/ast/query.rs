@@ -53,36 +53,12 @@ pub enum SelectQuery<'a> {
     Union(Box<Union<'a>>),
 }
 
-#[cfg_attr(not(feature = "mssql"), allow(clippy::needless_lifetimes))]
 impl<'a> SelectQuery<'a> {
     /// Finds all named values or columns from the selection.
     pub fn named_selection(&self) -> Vec<String> {
         match self {
             Self::Select(s) => s.named_selection(),
             Self::Union(u) => u.named_selection(),
-        }
-    }
-
-    #[cfg(feature = "mssql")]
-    pub(crate) fn convert_tuple_selects_to_ctes(
-        self,
-        level: &mut usize,
-    ) -> (Self, Vec<super::CommonTableExpression<'a>>) {
-        match self {
-            Self::Select(select) => match select.convert_tuple_selects_to_ctes(false, level) {
-                either::Either::Left(select) => (Self::Select(Box::new(select)), Vec::new()),
-                either::Either::Right((select, ctes)) => {
-                    let select = Self::Select(Box::new(select));
-                    (select, ctes)
-                }
-            },
-            Self::Union(union) => match union.convert_tuple_selects_into_ctes(false, level) {
-                either::Either::Left(union) => (Self::Union(Box::new(union)), Vec::new()),
-                either::Either::Right((union, ctes)) => {
-                    let union = Self::Union(Box::new(union));
-                    (union, ctes)
-                }
-            },
         }
     }
 }

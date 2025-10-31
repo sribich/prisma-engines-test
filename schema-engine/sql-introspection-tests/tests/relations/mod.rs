@@ -1,5 +1,3 @@
-mod cockroachdb;
-mod mssql;
 mod mysql;
 mod postgres;
 mod sqlite;

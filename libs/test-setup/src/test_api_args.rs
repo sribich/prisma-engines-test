@@ -1,4 +1,4 @@
-use crate::{Capabilities, Tags, logging, mssql, mysql, postgres};
+use crate::{Capabilities, Tags, logging, mysql, postgres};
 use enumflags2::BitFlags;
 use quaint::single::Quaint;
 use std::sync::LazyLock;
@@ -158,12 +158,6 @@ impl TestApiArgs {
 
     pub fn capabilities(&self) -> BitFlags<Capabilities> {
         self.db.capabilities
-    }
-
-    pub async fn create_mssql_database(&self) -> (Quaint, String) {
-        mssql::init_mssql_database(self.database_url(), self.test_function_name)
-            .await
-            .unwrap()
     }
 
     pub async fn create_mysql_database(&self) -> (&'static str, String) {

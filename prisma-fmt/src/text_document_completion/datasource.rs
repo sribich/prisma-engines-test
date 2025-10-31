@@ -89,7 +89,7 @@ pub(super) fn provider_completion(completion_list: &mut CompletionList) {
             kind: MarkupKind::Markdown,
             value: format_completion_docs(
                 r#"provider = "foo""#,
-                r#"Describes which datasource connector to use. Can be one of the following datasource providers: `postgresql`, `mysql`, `sqlserver`, `sqlite`, `mongodb` or `cockroachdb`."#,
+                r#"Describes which datasource connector to use. Can be one of the following datasource providers: `postgresql`, `mysql`, or `sqlite`."#,
                 None,
             ),
         })),

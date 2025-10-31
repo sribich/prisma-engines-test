@@ -1,4 +1,3 @@
-mod mssql;
 mod mysql;
 mod sqlite;
 

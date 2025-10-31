@@ -4,12 +4,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgres"
   url      = env("DATABASE_URL")
 }
 
 view User<|>Two {
-    id String @id @map("_id") @db.String
+    id Int @id
 
     posts  Post   @relation(fields: [postId], references: [id])
     postId String

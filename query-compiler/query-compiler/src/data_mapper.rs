@@ -256,7 +256,7 @@ fn get_scalar_field_result_node(
         if type_info.typ.id == TypeIdentifier::Bytes
             && matches!(
                 field.dm.schema.connector.flavour(),
-                Flavour::Postgres | Flavour::Cockroach
+                Flavour::Postgres
             )
         {
             let typ = FieldScalarType::Bytes {

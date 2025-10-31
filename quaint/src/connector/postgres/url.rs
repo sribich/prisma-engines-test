@@ -1,5 +1,3 @@
-#![cfg_attr(target_arch = "wasm32", allow(dead_code))]
-
 use std::{borrow::Cow, fmt::Debug, time::Duration};
 
 use percent_encoding::percent_decode;
@@ -36,7 +34,6 @@ pub struct SslParams {
 #[derive(Debug, Clone, Copy)]
 pub enum PostgresFlavour {
     Postgres,
-    Cockroach,
     Unknown,
 }
 
@@ -46,13 +43,6 @@ impl PostgresFlavour {
     /// [`Postgres`]: PostgresFlavour::Postgres
     pub(crate) fn is_postgres(&self) -> bool {
         matches!(self, Self::Postgres)
-    }
-
-    /// Returns `true` if the postgres flavour is [`Cockroach`].
-    ///
-    /// [`Cockroach`]: PostgresFlavour::Cockroach
-    pub(crate) fn is_cockroach(&self) -> bool {
-        matches!(self, Self::Cockroach)
     }
 
     /// Returns `true` if the postgres flavour is [`Unknown`].
@@ -270,12 +260,11 @@ impl PostgresNativeUrl {
         self.query_params.single_use_connections
     }
 
-    /// Sets whether the URL points to a Postgres, Cockroach or Unknown database.
+    /// Sets whether the URL points to a Postgres or Unknown database.
     /// This is used to avoid a network roundtrip at connection to set the search path.
     ///
     /// The different behaviours are:
     /// - Postgres: Always avoid a network roundtrip by setting the search path through client connection parameters.
-    /// - Cockroach: Avoid a network roundtrip if the schema name is deemed "safe" (i.e. no escape quoting required). Otherwise, set the search path through a database query.
     /// - Unknown: Always add a network roundtrip by setting the search path through a database query.
     pub fn set_flavour(&mut self, flavour: PostgresFlavour) {
         self.flavour = flavour;
@@ -786,33 +775,5 @@ mod tests {
 
         // Postgres supports setting the search_path via a connection parameter.
         assert_eq!(config.get_search_path(), Some(&"\"hello\"".to_owned()));
-    }
-
-    #[test]
-    fn search_path_crdb_safe_ident_should_be_set_with_param() {
-        let mut url = Url::parse(&CONN_STR).unwrap();
-        url.query_pairs_mut().append_pair("schema", "hello");
-
-        let mut pg_url = PostgresNativeUrl::new(url).unwrap();
-        pg_url.set_flavour(PostgresFlavour::Cockroach);
-
-        let config = pg_url.to_config();
-
-        // CRDB supports setting the search_path via a connection parameter if the identifier is safe.
-        assert_eq!(config.get_search_path(), Some(&"hello".to_owned()));
-    }
-
-    #[test]
-    fn search_path_crdb_unsafe_ident_should_be_set_with_query() {
-        let mut url = Url::parse(&CONN_STR).unwrap();
-        url.query_pairs_mut().append_pair("schema", "HeLLo");
-
-        let mut pg_url = PostgresNativeUrl::new(url).unwrap();
-        pg_url.set_flavour(PostgresFlavour::Cockroach);
-
-        let config = pg_url.to_config();
-
-        // CRDB does NOT support setting the search_path via a connection parameter if the identifier is unsafe.
-        assert_eq!(config.get_search_path(), None);
     }
 }

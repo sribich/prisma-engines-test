@@ -24,7 +24,6 @@ scenarios! {
     extended_indexes_types_mysql
     extended_indexes_types_sqlserver
     extended_indexes_types_sqlite
-    extended_indexes_types_mongo
     extended_indexes_types_cockroach
     extended_indexes_operators_postgres_gist
     extended_indexes_operators_postgres_gin
@@ -40,7 +39,6 @@ scenarios! {
     referential_actions_in_progress_2
     referential_actions_middle_of_args_list
     referential_actions_mssql
-    referential_actions_relation_mode_prisma_mongodb
     referential_actions_relation_mode_prisma_mysql
     referential_actions_relation_mode_fk_mysql
     referential_actions_with_trailing_comma

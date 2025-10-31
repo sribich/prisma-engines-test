@@ -1,11 +1,8 @@
 mod arg_parsing;
 mod builtin_attributes;
 mod cockroachdb_sequence;
-mod composite_index;
 mod constraint_names_negative;
 mod constraint_names_positive;
-mod default_composite_negative;
-mod default_composite_positive;
 mod default_negative;
 mod default_positive;
 mod field_name_clash;

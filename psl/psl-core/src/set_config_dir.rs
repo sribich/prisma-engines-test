@@ -41,11 +41,6 @@ fn set_config_dir_default<'a>(config_dir: &std::path::Path, url: &'a str) -> Cow
         params.insert("sslidentity".into(), path);
     }
 
-    // Only for MongoDB
-    if let Some(path) = params.get("tlsCAFile").map(|s| s.as_str()).and_then(set_root) {
-        params.insert("tlsCAFile".into(), path);
-    }
-
     for (k, v) in params.into_iter() {
         url.query_pairs_mut().append_pair(&k, &v);
     }

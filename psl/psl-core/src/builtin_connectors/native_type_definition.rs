@@ -48,7 +48,7 @@ macro_rules! native_type_definition {
                 )
             }
 
-            #[allow(unused_variables)] // some impls (mongo) don't use the arguments param
+            #[allow(unused_variables)]
             pub fn from_parts<'a>(
                 name: &'a str,
                 arguments: &[String],

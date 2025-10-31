@@ -3,7 +3,7 @@ use cfg_if::cfg_if;
 
 cfg_if! {
     // if built only for mysql
-    if #[cfg(all(feature="mysql", not(any(feature = "postgresql", feature="sqlite", feature = "cockroachdb", feature="mssql", feature="mongodb"))))] {
+    if #[cfg(all(feature="mysql", not(any(feature = "postgresql", feature="sqlite", feature = "cockroachdb", feature="mssql"))))] {
         #[inline(always)]
         const fn can_have_capability_impl(capability: ConnectorCapability) -> bool {
             check_comptime_capability(super::mysql_datamodel_connector::CAPABILITIES, capability)
@@ -13,7 +13,7 @@ cfg_if! {
             can_have_capability_impl(capability)
         }
     // if built only for sqlite
-    } else if #[cfg(all(feature="sqlite", not(any(feature = "postgresql", feature="mysql", feature = "cockroachdb", feature="mssql", feature="mongodb"))))] {
+    } else if #[cfg(all(feature="sqlite", not(any(feature = "postgresql", feature="mysql", feature = "cockroachdb", feature="mssql"))))] {
         #[inline(always)]
         const fn can_have_capability_impl(capability: ConnectorCapability) -> bool {
             check_comptime_capability(super::sqlite_datamodel_connector::CAPABILITIES, capability)
@@ -24,7 +24,7 @@ cfg_if! {
             can_have_capability_impl(capability)
         }
     // if built only for postgresql
-    } else if #[cfg(all(feature="postgresql", not(any(feature = "sqlite", feature="mysql", feature = "cockroachdb", feature="mssql", feature="mongodb"))))] {
+    } else if #[cfg(all(feature="postgresql", not(any(feature = "sqlite", feature="mysql", feature = "cockroachdb", feature="mssql"))))] {
         #[inline(always)]
         const fn can_have_capability_impl(capability: ConnectorCapability) -> bool {
             check_comptime_capability(super::postgres_datamodel_connector::CAPABILITIES, capability)

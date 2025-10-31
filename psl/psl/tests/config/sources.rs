@@ -612,7 +612,7 @@ fn must_process_overrides_when_ignoring_env_errors() {
 fn fail_to_load_sources_for_invalid_source() {
     let dml = indoc! {r#"
         datasource pg1 {
-          provider = "AStrangeHalfMongoDatabase"
+          provider = "UnknownConnectorType"
           url = "https://localhost/postgres1"
         }
     "#};
@@ -620,11 +620,11 @@ fn fail_to_load_sources_for_invalid_source() {
     let error = parse_config(dml).map(drop).unwrap_err();
 
     let expectation = expect![[r#"
-        [1;91merror[0m: [1mDatasource provider not known: "AStrangeHalfMongoDatabase".[0m
+        [1;91merror[0m: [1mDatasource provider not known: "UnknownConnectorType".[0m
           [1;94m-->[0m  [4mschema.prisma:2[0m
         [1;94m   | [0m
         [1;94m 1 | [0mdatasource pg1 {
-        [1;94m 2 | [0m  provider = [1;91m"AStrangeHalfMongoDatabase"[0m
+        [1;94m 2 | [0m  provider = [1;91m"UnknownConnectorType"[0m
         [1;94m   | [0m
     "#]];
 

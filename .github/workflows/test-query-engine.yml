@@ -123,45 +123,6 @@ jobs:
       connector: 'cockroachdb'
       threads: 4
 
-  mongodb:
-    strategy:
-      fail-fast: false
-      matrix:
-        database:
-          - name: 'mongodb_5'
-            version: '5'
-            connector: 'mongodb'
-    name: 'MongoDB v${{ matrix.database.version}}'
-    uses: ./.github/workflows/test-query-engine-template.yml
-    with:
-      name: ${{ matrix.database.name }}
-      version: ${{ matrix.database.version }}
-      # MongoDB tests MUST run single threaded
-      threads: 1
-      connector: 'mongodb'
-      relation_load_strategy: '["query"]'
-
-  mongodb-push:
-    if: github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.body, '/test-all'))
-    strategy:
-      fail-fast: false
-      matrix:
-        database:
-          - name: 'mongodb_4_4'
-            version: '4.4'
-          - name: 'mongodb_4_2'
-            version: '4.2'
-    name: 'MongoDB Old v${{ matrix.database.version}}'
-    uses: ./.github/workflows/test-query-engine-template.yml
-    with:
-      name: ${{ matrix.database.name }}
-      version: ${{ matrix.database.version }}
-      # MongoDB tests MUST run single threaded
-      threads: 1
-      connector: 'mongodb'
-      relation_load_strategy: '["query"]'
-
   mssql:
     strategy:
       fail-fast: false

@@ -23,12 +23,6 @@ pub(crate) fn query_fields(ctx: &QuerySchema) -> Vec<FieldFn> {
             field!(find_unique_field, model);
             field!(find_unique_or_throw_field, model);
         }
-
-        if ctx.enable_raw_queries && ctx.is_mongo() {
-            let model_cloned = model.clone();
-            fields.push(Box::new(move |_ctx| mongo_find_raw_field(&model_cloned)));
-            fields.push(Box::new(move |_ctx| mongo_aggregate_raw_field(&model)));
-        }
     }
 
     fields
@@ -165,44 +159,6 @@ fn group_by_aggregation_field(ctx: &QuerySchema, model: Model) -> OutputField<'_
         Some(QueryInfo {
             model: Some(model_id),
             tag: QueryTag::GroupBy,
-        }),
-    )
-}
-
-fn mongo_aggregate_raw_field<'a>(model: &Model) -> OutputField<'a> {
-    let field_name = format!("aggregate{}Raw", model.name());
-
-    field(
-        field_name,
-        || {
-            vec![
-                input_field("pipeline", vec![InputType::list(InputType::json())], None).optional(),
-                input_field("options", vec![InputType::json()], None).optional(),
-            ]
-        },
-        OutputType::non_list(OutputType::json()),
-        Some(QueryInfo {
-            tag: QueryTag::AggregateRaw,
-            model: Some(model.id),
-        }),
-    )
-}
-
-fn mongo_find_raw_field<'a>(model: &Model) -> OutputField<'a> {
-    let field_name = format!("find{}Raw", model.name());
-
-    field(
-        field_name,
-        || {
-            vec![
-                input_field("filter", vec![InputType::json()], None).optional(),
-                input_field("options", vec![InputType::json()], None).optional(),
-            ]
-        },
-        OutputType::non_list(OutputType::json()),
-        Some(QueryInfo {
-            tag: QueryTag::FindRaw,
-            model: Some(model.id),
         }),
     )
 }

@@ -1,6 +1,5 @@
 mod cockroachdb;
 mod js;
-mod mongodb;
 mod mysql;
 mod postgres;
 mod sql_server;
@@ -13,7 +12,6 @@ pub use vitess::VitessVersion;
 
 pub(crate) use cockroachdb::*;
 pub(crate) use js::*;
-pub(crate) use mongodb::*;
 pub(crate) use mysql::*;
 pub(crate) use postgres::*;
 pub(crate) use sql_server::*;
@@ -118,18 +116,6 @@ pub(crate) fn connection_string(
 
             None => unreachable!("A versioned connector must have a concrete version to run."),
         },
-        ConnectorVersion::MongoDb(v) => match v {
-            Some(MongoDbVersion::V4_2) => {
-                format!("mongodb://prisma:prisma@127.0.0.1:27016/{database}?authSource=admin&retryWrites=true")
-            }
-            Some(MongoDbVersion::V4_4) => {
-                format!("mongodb://prisma:prisma@127.0.0.1:27017/{database}?authSource=admin&retryWrites=true")
-            }
-            Some(MongoDbVersion::V5) => {
-                format!("mongodb://prisma:prisma@127.0.0.1:27018/{database}?authSource=admin&retryWrites=true")
-            }
-            None => unreachable!("A versioned connector must have a concrete version to run."),
-        },
         ConnectorVersion::Sqlite(_) => {
             let working_dir = std::env::var("RAMDISK")
                 .or_else(|_| std::env::var("WORKSPACE_ROOT"))
@@ -176,7 +162,6 @@ pub enum ConnectorVersion {
     SqlServer(Option<SqlServerVersion>),
     Postgres(Option<PostgresVersion>),
     MySql(Option<MySqlVersion>),
-    MongoDb(Option<MongoDbVersion>),
     Sqlite(Option<SqliteVersion>),
     CockroachDb(Option<CockroachDbVersion>),
     Vitess(Option<VitessVersion>),
@@ -189,7 +174,6 @@ impl ConnectorVersion {
             (Self::SqlServer(None), Self::SqlServer(_))
                 | (Self::Postgres(None), Self::Postgres(_))
                 | (Self::MySql(None), Self::MySql(_))
-                | (Self::MongoDb(None), Self::MongoDb(_))
                 | (Self::Sqlite(None), Self::Sqlite(_))
                 | (Self::CockroachDb(None), Self::CockroachDb(_))
                 | (Self::Vitess(None), Self::Vitess(_))
@@ -210,13 +194,10 @@ impl ConnectorVersion {
             (SqlServer(a), SqlServer(b)) => versions_match(a, b),
             (Postgres(a), Postgres(b)) => versions_match(a, b),
             (MySql(a), MySql(b)) => versions_match(a, b),
-            (MongoDb(a), MongoDb(b)) => versions_match(a, b),
             (CockroachDb(a), CockroachDb(b)) => versions_match(a, b),
             (Vitess(a), Vitess(b)) => versions_match(a, b),
             (Sqlite(a), Sqlite(b)) => versions_match(a, b),
 
-            (MongoDb(..), _)
-            | (_, MongoDb(..))
             | (SqlServer(..), _)
             | (_, SqlServer(..))
             | (Sqlite(..), _)
@@ -306,10 +287,6 @@ impl fmt::Display for ConnectorVersion {
                 Some(v) => format!("MySQL ({v})"),
                 None => "MySQL (unknown)".to_string(),
             },
-            Self::MongoDb(v) => match v {
-                Some(v) => format!("MongoDB ({v})"),
-                None => "MongoDB (unknown)".to_string(),
-            },
             Self::Sqlite(v) => match v {
                 Some(v) => format!("SQLite ({v})"),
                 None => "SQLite (unknown)".to_string(),
@@ -384,7 +361,6 @@ impl TryFrom<(&str, Option<&str>)> for ConnectorVersion {
             "cockroachdb" => ConnectorVersion::CockroachDb(version.map(CockroachDbVersion::try_from).transpose()?),
             "postgres" => ConnectorVersion::Postgres(version.map(PostgresVersion::try_from).transpose()?),
             "mysql" => ConnectorVersion::MySql(version.map(MySqlVersion::try_from).transpose()?),
-            "mongodb" => ConnectorVersion::MongoDb(version.map(MongoDbVersion::try_from).transpose()?),
             "vitess" => ConnectorVersion::Vitess(version.map(|v| v.parse()).transpose()?),
             _ => return Err(TestError::parse_error(format!("Unknown connector tag `{connector}`"))),
         })

@@ -4,14 +4,11 @@ mod js;
 mod transaction;
 
 #[cfg(any(
-    feature = "mssql-native",
     feature = "mysql-native",
     feature = "postgresql-native",
     feature = "sqlite-native"
 ))]
 pub(crate) mod native {
-    #[cfg(feature = "mssql")]
-    pub(crate) mod mssql;
     #[cfg(feature = "mysql")]
     pub(crate) mod mysql;
     #[cfg(feature = "postgresql")]
@@ -27,9 +24,6 @@ use connector_interface::{Connector, error::ConnectorError};
 
 #[cfg(feature = "driver-adapters")]
 pub use js::*;
-
-#[cfg(feature = "mssql-native")]
-pub use native::mssql::*;
 
 #[cfg(feature = "mysql-native")]
 pub use native::mysql::*;

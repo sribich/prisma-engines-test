@@ -10,19 +10,10 @@ sqlite = ["sql-schema-connector/sqlite"]
 sqlite-native = ["sqlite"]
 mysql = ["sql-schema-connector/mysql"]
 mysql-native = ["mysql"]
-mssql = ["sql-schema-connector/mssql"]
-mssql-native = ["mssql"]
-cockroachdb = ["sql-schema-connector/cockroachdb"]
-cockroachdb-native = ["cockroachdb"]
-mongodb = ["mongodb-schema-connector"]
-mongodb-native = ["mongodb"]
 all-native = [
     "postgresql-native",
     "sqlite-native",
     "mysql-native",
-    "mssql-native",
-    "cockroachdb-native",
-    "mongodb-native",
     "schema-connector/all-native",
     "sql-schema-connector/all-native",
     "user-facing-errors/all-native",
@@ -33,7 +24,6 @@ crosstarget-utils.workspace = true
 psl.workspace = true
 schema-connector.workspace = true
 sql-schema-connector.workspace = true
-mongodb-schema-connector = { workspace = true, optional = true }
 quaint.workspace = true
 
 user-facing-errors = { workspace = true }

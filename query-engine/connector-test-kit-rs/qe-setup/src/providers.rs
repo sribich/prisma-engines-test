@@ -13,15 +13,6 @@ pub(crate) enum Provider {
 
     #[serde(rename = "sqlite")]
     Sqlite,
-
-    #[serde(rename = "sqlserver")]
-    SqlServer,
-
-    #[serde(rename = "mongo")]
-    Mongo,
-
-    #[serde(rename = "cockroach")]
-    Cockroach,
 }
 
 impl TryFrom<&str> for Provider {
@@ -34,12 +25,6 @@ impl TryFrom<&str> for Provider {
             Ok(Provider::Mysql)
         } else if SQLITE.is_provider(provider) {
             Ok(Provider::Sqlite)
-        } else if MSSQL.is_provider(provider) {
-            Ok(Provider::SqlServer)
-        } else if MONGODB.is_provider(provider) {
-            Ok(Provider::Mongo)
-        } else if COCKROACH.is_provider(provider) {
-            Ok(Provider::Cockroach)
         } else {
             Err(format!("Connector {provider} is not supported yet"))
         }

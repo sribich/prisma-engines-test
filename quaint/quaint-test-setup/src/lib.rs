@@ -14,7 +14,6 @@ pub fn run_with_tokio<O, F: std::future::Future<Output = O>>(fut: F) -> O {
 
 fn connector_names() -> Vec<(&'static str, &'static str, Tags)> {
     vec![
-        ("mssql", "mssql", Tags::MSSQL),
         ("mysql5_7", "mysql", Tags::MYSQL5_7),
         ("mysql8", "mysql", Tags::MYSQL8),
         ("mysql_mariadb", "mysql", Tags::MYSQL_MARIADB),

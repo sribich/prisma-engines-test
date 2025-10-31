@@ -294,14 +294,6 @@ pub trait Connector: Send + Sync {
         unreachable!("This method is only implemented on connectors with lateral join support.")
     }
 
-    fn is_sql(&self) -> bool {
-        self.flavour().is_sql()
-    }
-
-    fn is_mongo(&self) -> bool {
-        self.flavour().is_mongo()
-    }
-
     fn supports_shard_keys(&self) -> bool {
         false
     }
@@ -314,21 +306,10 @@ pub trait Connector: Send + Sync {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Flavour {
     Cockroach,
-    Mongo,
     Sqlserver,
     Mysql,
     Postgres,
     Sqlite,
-}
-
-impl Flavour {
-    pub fn is_sql(&self) -> bool {
-        !self.is_mongo()
-    }
-
-    pub fn is_mongo(&self) -> bool {
-        matches!(self, Flavour::Mongo)
-    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]

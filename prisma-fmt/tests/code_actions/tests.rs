@@ -14,7 +14,6 @@ macro_rules! scenarios {
 scenarios! {
     add_missing_opposite_relation
     add_missing_relation_attribute
-    add_missing_relation_attribute_mongodb
     add_missing_relation_attribute_args
     add_missing_relation_attribute_args_self
     add_missing_relation_attribute_args_fields
@@ -50,12 +49,5 @@ scenarios! {
     multi_schema_add_to_existing_schemas
     multi_schema_add_to_existing_schemas_multifile
     multi_schema_add_to_nonexisting_schemas
-    mongodb_at_map
-    mongodb_at_map_multifile
-    mongodb_at_map_with_validation_errors
-    mongodb_auto_native
     create_missing_block
-    create_missing_block_composite_type
-    create_missing_block_composite_type_crlf
-    create_missing_block_mongodb
 }

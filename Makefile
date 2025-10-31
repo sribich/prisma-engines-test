@@ -6,8 +6,6 @@ SCHEMA_EXAMPLES_PATH = ./query-engine/example_schemas
 DEV_SCHEMA_FILE = dev_datamodel.prisma
 PRISMA_BRANCH ?= main
 ENGINE_SIZE_OUTPUT ?= /dev/stdout
-QE_WASM_VERSION ?= 0.0.0
-SCHEMA_WASM_VERSION ?= 0.0.0
 
 LIBRARY_EXT := $(shell                            \
     case "$$(uname -s)" in                        \
@@ -23,24 +21,11 @@ default: build
 ###############
 # clean tasks #
 ###############
-
-clean-qe-wasm:
-	@echo "Cleaning query-engine/query-engine-wasm/pkg" && \
-	cd query-engine/query-engine-wasm/pkg && find . ! -name '.' ! -name '..' ! -name 'README.md' -exec rm -rf {} +
-
-clean-se-wasm:
-	@echo "Cleaning schema-engine/schema-engine-wasm/pkg" && \
-	cd schema-engine/schema-engine-wasm/pkg && find . ! -name '.' ! -name '..' ! -name 'README.md' -exec rm -rf {} +
-
-clean-qc-wasm:
-	@echo "Cleaning query-compiler/query-compiler-wasm/pkg" && \
-	cd query-compiler/query-compiler-wasm/pkg && find . ! -name '.' ! -name '..' ! -name 'README.md' -exec rm -rf {} +
-
 clean-cargo:
 	@echo "Cleaning cargo" && \
 	cargo clean
 
-clean: clean-qe-wasm clean-se-wasm clean-qc-wasm clean-cargo
+clean: clean-cargo
 
 ###################
 # script wrappers #
@@ -62,58 +47,10 @@ build:
 build-qe:
 	cargo build --package query-engine
 
-build-qe-napi:
-	cargo build --package query-engine-node-api --profile $(PROFILE)
-
-build-qe-wasm:
-	cd query-engine/query-engine-wasm && \
-	./build.sh $(QE_WASM_VERSION) query-engine/query-engine-wasm/pkg
-
-build-qe-wasm-gz: build-qe-wasm
-	@cd query-engine/query-engine-wasm/pkg && \
-    for provider in postgresql mysql sqlite sqlserver cockroachdb; do \
-        gzip -knc $$provider/query_engine_bg.wasm > $$provider.gz; \
-    done;
-
-integrate-qe-wasm:
-	cd query-engine/query-engine-wasm && \
-	./build.sh $(QE_WASM_VERSION) ../prisma/packages/client/node_modules/@prisma/query-engine-wasm
-
-build-se-wasm:
-	cd schema-engine/schema-engine-wasm && \
-	./build.sh $(SCHEMA_ENGINE_WASM_VERSION) schema-engine/schema-engine-wasm/pkg
-
-build-qc-wasm:
-	cd query-compiler/query-compiler-wasm && \
-	./build.sh $(QE_WASM_VERSION) query-compiler/query-compiler-wasm/pkg
-
-build-qc-wasm-gz: build-qc-wasm
-	@cd query-compiler/query-compiler-wasm/pkg && \
-    for provider in postgresql mysql sqlite sqlserver cockroachdb; do \
-        gzip -knc $$provider/query_compiler_bg.wasm > $$provider.gz; \
-    done;
-
-build-schema-wasm:
-	@printf '%s\n' "🛠️  Building the Rust crate"
-	cargo build --profile $(PROFILE) --target=wasm32-unknown-unknown -p prisma-schema-build
-
-	@printf '\n%s\n' "📦 Creating the npm package"
-	WASM_BUILD_PROFILE=$(PROFILE) \
-	NPM_PACKAGE_VERSION=$(SCHEMA_WASM_VERSION) \
-	out="$(REPO_ROOT)/target/prisma-schema-wasm" \
-	./prisma-schema-wasm/scripts/install.sh
-
 # Emulate pedantic CI compilation.
 pedantic:
 	cargo fmt -- --check
 	cargo clippy --all-features --all-targets -- -Dwarnings
-	cargo clippy --all-features --all-targets \
-	    -p query-engine-wasm \
-		-p schema-engine-wasm \
-		-p query-compiler-wasm \
-		-p prisma-schema-build \
-		--target wasm32-unknown-unknown \
-		-- -Dwarnings
 
 release:
 	cargo build --release
@@ -123,16 +60,7 @@ release:
 #################
 
 test-qe:
-ifndef DRIVER_ADAPTER
 	cargo test --package query-engine-tests
-else
-	@echo "Executing query engine tests with $(DRIVER_ADAPTER) driver adapter"; \
-	if [ "$(ENGINE)" = "wasm" ]; then \
-		$(MAKE) test-driver-adapter-$(DRIVER_ADAPTER)-wasm; \
-	else \
-		$(MAKE) test-driver-adapter-$(DRIVER_ADAPTER); \
-	fi
-endif
 
 test-qe-verbose:
 	cargo test --package query-engine-tests -- --nocapture
@@ -159,14 +87,7 @@ test-unit:
 	    --exclude=sql-migration-tests \
 	    --exclude=schema-engine-cli \
 	    --exclude=sql-schema-describer \
-	    --exclude=sql-introspection-tests \
-	    --exclude=mongodb-schema-connector
-
-check-schema-wasm-package: build-schema-wasm
-	PRISMA_SCHEMA_WASM="$(REPO_ROOT)/target/prisma-schema-wasm" \
-	out=$(shell mktemp -d) \
-	NODE=$(shell which node) \
-	./prisma-schema-wasm/scripts/check.sh
+	    --exclude=sql-introspection-tests
 
 ###########################
 # Database setup commands #
@@ -261,28 +182,6 @@ start-pg-bench:
 
 setup-pg-bench: start-pg-bench build-qe-napi build-qe-wasm build-driver-adapters-kit-qe
 
-dev-pg-cockroachdb-wasm: start-cockroach_23_1 build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/pg-cockroachdb-wasm $(CONFIG_FILE)
-
-test-pg-cockroachdb-wasm: dev-pg-cockroachdb-wasm test-qe-st
-
-dev-pg-cockroachdb-qc: start-cockroach_23_1 build-qc-wasm build-driver-adapters-kit-qc
-	cp $(CONFIG_PATH)/pg-cockroachdb-qc $(CONFIG_FILE)
-
-dev-pg-cockroachdb-qc-join:
-	PRISMA_RELATION_LOAD_STRATEGY=join make dev-pg-cockroachdb-qc
-
-dev-pg-cockroachdb-qc-query:
-	PRISMA_RELATION_LOAD_STRATEGY=query make dev-pg-cockroachdb-qc
-
-test-pg-cockroachdb-qc: dev-pg-cockroachdb-qc test-qe
-
-test-pg-cockroachdb-qc-join:
-	PRISMA_RELATION_LOAD_STRATEGY=join make test-pg-cockroachdb-qc
-
-test-pg-cockroachdb-qc-query:
-	PRISMA_RELATION_LOAD_STRATEGY=query make test-pg-cockroachdb-qc
-
 run-bench:
 	DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bench?schema=imdb_bench&sslmode=disable" \
 	node --experimental-wasm-modules libs/driver-adapters/executor/dist/bench.mjs
@@ -335,30 +234,6 @@ start-postgres16:
 dev-postgres16: start-postgres16
 	cp $(CONFIG_PATH)/postgres16 $(CONFIG_FILE)
 
-start-cockroach_23_1:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans cockroach_23_1
-
-dev-cockroach_23_1: start-cockroach_23_1
-	cp $(CONFIG_PATH)/cockroach_23_1 $(CONFIG_FILE)
-
-start-cockroach_22_2:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans cockroach_22_2
-
-dev-cockroach_22_2: start-cockroach_22_2
-	cp $(CONFIG_PATH)/cockroach_22_2 $(CONFIG_FILE)
-
-start-cockroach_22_1_0:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans cockroach_22_1_0
-
-dev-cockroach_22_1_0: start-cockroach_22_1_0
-	cp $(CONFIG_PATH)/cockroach_22_1 $(CONFIG_FILE)
-
-start-cockroach_21_2_0_patched:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans cockroach_21_2_0_patched
-
-dev-cockroach_21_2_0_patched: start-cockroach_21_2_0_patched
-	cp $(CONFIG_PATH)/cockroach_21_2_0_patched $(CONFIG_FILE)
-
 dev-pgbouncer:
 	docker compose -f docker-compose.yml up --wait -d --remove-orphans pgbouncer postgres11
 
@@ -391,70 +266,6 @@ dev-mariadb: start-mysql_mariadb
 
 dev-mariadb11: start-mysql_mariadb_11
 	cp $(CONFIG_PATH)/mariadb $(CONFIG_FILE)
-
-start-mssql_2019:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mssql-2019
-
-dev-mssql2019: start-mssql_2019
-	cp $(CONFIG_PATH)/sqlserver2019 $(CONFIG_FILE)
-
-start-mssql_2022:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mssql-2022
-
-dev-mssql2022: start-mssql_2022
-	cp $(CONFIG_PATH)/sqlserver2022 $(CONFIG_FILE)
-
-start-mssql_edge:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans azure-edge
-
-dev-mssql_edge: start-mssql_edge
-	cp $(CONFIG_PATH)/sqlserver2019 $(CONFIG_FILE)
-
-dev-mssql-wasm: start-mssql_2022 build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/sqlserver-wasm $(CONFIG_FILE)
-
-dev-mssql-qc: start-mssql_2022 build-qc-wasm build-driver-adapters-kit-qc
-	cp $(CONFIG_PATH)/sqlserver-qc $(CONFIG_FILE)
-
-test-mssql-qc: dev-mssql-qc test-qe
-
-start-mssql_2017:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mssql-2017
-
-dev-mssql2017: start-mssql_2017
-	cp $(CONFIG_PATH)/sqlserver2017 $(CONFIG_FILE)
-
-start-mongodb42-single:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mongo42-single
-
-start-mongodb44-single:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mongo44-single
-
-start-mongodb4-single: start-mongodb44-single
-
-start-mongodb5-single:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mongo5-single
-
-start-mongodb_4_2:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mongo42
-
-start-mongodb_4_4:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mongo44
-
-dev-mongodb_4_4: start-mongodb_4_4
-	cp $(CONFIG_PATH)/mongodb44 $(CONFIG_FILE)
-
-start-mongodb_5:
-	docker compose -f docker-compose.yml up --wait -d --remove-orphans mongo5
-
-dev-mongodb_5: start-mongodb_5
-	cp $(CONFIG_PATH)/mongodb5 $(CONFIG_FILE)
-
-dev-mongodb_5_single: start-mongodb5-single
-	cp $(CONFIG_PATH)/mongodb5 $(CONFIG_FILE)
-
-dev-mongodb_4_2: start-mongodb_4_2
-	cp $(CONFIG_PATH)/mongodb42 $(CONFIG_FILE)
 
 start-vitess_8_0:
 	docker compose -f docker-compose.yml up --wait -d --remove-orphans vitess-test-8_0 vitess-shadow-8_0
@@ -559,9 +370,6 @@ qe-graphql:
 
 qe-dmmf:
 	cargo run --bin query-engine -- cli dmmf > dmmf.json
-
-qe-dev-mongo_4_4: start-mongodb_4_4
-	cp $(SCHEMA_EXAMPLES_PATH)/generic_mongo4.prisma $(DEV_SCHEMA_FILE)
 
 show-metrics:
 	docker compose -f docker-compose.yml up --wait -d --remove-orphans grafana prometheus

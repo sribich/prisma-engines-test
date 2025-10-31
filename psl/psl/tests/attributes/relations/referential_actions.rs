@@ -63,39 +63,6 @@ fn on_update_actions() {
 }
 
 #[test]
-fn actions_on_mongo() {
-    let actions = &[Restrict, SetNull, Cascade, NoAction];
-
-    for action in actions {
-        let dml = formatdoc!(
-            r#"
-            datasource db {{
-                provider = "mongodb"
-                url = "mongodb://"
-            }}
-
-            model A {{
-                id Int @id @map("_id")
-                bs B[]
-            }}
-
-            model B {{
-                id   Int @id @map("_id")
-                aId  Int?
-                a A? @relation(fields: [aId], references: [id], onDelete: {action})
-            }}
-        "#,
-            action = action
-        );
-
-        parse_schema(&dml)
-            .assert_has_model("B")
-            .assert_has_relation_field("a")
-            .assert_relation_delete_strategy(*action);
-    }
-}
-
-#[test]
 fn actions_on_mysql_with_prisma_relation_mode() {
     let actions = &[Cascade, Restrict, NoAction, SetNull];
 
@@ -352,94 +319,6 @@ fn on_update_no_action_should_work_on_prisma_relation_mode() {
         .assert_has_model("B")
         .assert_has_relation_field("a")
         .assert_relation_update_strategy(ReferentialAction::NoAction);
-}
-
-#[test]
-fn foreign_keys_not_allowed_on_mongo() {
-    let schema = indoc! {r#"
-        datasource db {
-          provider = "mongodb"
-          relationMode = "foreignKeys"
-          url = "mongodb://"
-        }
-
-        generator client {
-          provider = "prisma-client"
-        }
-
-        model A {
-          id Int @id
-          bs B[]
-        }
-
-        model B {
-          id Int @id
-          aId Int
-          a A @relation(fields: [aId], references: [id])
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating datasource `relationMode`: Invalid relation mode setting: "foreignKeys". Supported values: "prisma"[0m
-          [1;94m-->[0m  [4mschema.prisma:3[0m
-        [1;94m   | [0m
-        [1;94m 2 | [0m  provider = "mongodb"
-        [1;94m 3 | [0m  relationMode = [1;91m"foreignKeys"[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(schema, &expected)
-}
-
-#[test]
-fn prisma_level_integrity_should_be_allowed_on_mongo() {
-    let dml = indoc! {r#"
-        datasource db {
-          provider = "mongodb"
-          relationMode = "prisma"
-          url = "mongodb://"
-        }
-
-        generator client {
-          provider = "prisma-client"
-        }
-
-        model A {
-          id Int @id
-          bs B[]
-        }
-
-        model B {
-          id Int @id
-          aId Int
-          a A @relation(fields: [aId], references: [id])
-        }
-    "#};
-
-    assert!(parse_config(dml).is_ok());
-}
-
-#[test]
-fn mongo_uses_prisma_relation_mode_by_default() {
-    let dml = indoc! {r#"
-        datasource db {
-          provider = "mongodb"
-          url = "mongodb://"
-        }
-
-        model A {
-          id Int @id
-          bs B[]
-        }
-
-        model B {
-          id Int @id
-          aId Int
-          a A @relation(fields: [aId], references: [id])
-        }
-    "#};
-
-    assert_eq!(Some(RelationMode::Prisma), parse_config(dml).unwrap().relation_mode());
 }
 
 #[test]

@@ -1,7 +1,5 @@
 use quaint_test_setup::Tags;
 
-#[cfg(feature = "mssql")]
-pub mod mssql;
 #[cfg(feature = "mysql")]
 pub mod mysql;
 #[cfg(feature = "postgresql")]
@@ -9,8 +7,6 @@ pub mod postgres;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
-#[cfg(feature = "mssql")]
-pub use mssql::*;
 #[cfg(feature = "mysql")]
 pub use mysql::*;
 #[cfg(feature = "postgresql")]

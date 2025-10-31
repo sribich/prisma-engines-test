@@ -21,8 +21,9 @@ async fn table_does_not_exist(api: &mut dyn TestApi) -> crate::Result<()> {
     Ok(())
 }
 
-#[test_each_connector(tags("mssql"))]
+#[test_each_connector(tags("postgresql"))]
 async fn database_already_exists(api: &mut dyn TestApi) -> crate::Result<()> {
+    let query = "CREATE DATABASE master";
     let query = "CREATE DATABASE master";
 
     let err = api.conn().raw_cmd(query).await.unwrap_err();
@@ -188,7 +189,7 @@ async fn bigint_unsigned_positive_value_out_of_range(api: &mut dyn TestApi) -> c
     Ok(())
 }
 
-#[test_each_connector(tags("mysql", "mssql", "postgresql"))]
+#[test_each_connector(tags("mysql", "postgresql"))]
 async fn length_mismatch(api: &mut dyn TestApi) -> crate::Result<()> {
     let table = api.create_temp_table("value varchar(3)").await?;
     let insert = Insert::single_into(&table).value("value", "fooo");
@@ -223,7 +224,7 @@ async fn foreign_key_constraint_violation(api: &mut dyn TestApi) -> crate::Resul
 
 /// SQL Server and MySQL do not allow foreign keys in temporary tables, so
 /// we'll do them separately.
-#[test_each_connector(tags("mssql", "mysql"))]
+#[test_each_connector(tags("mysql"))]
 async fn ms_my_foreign_key_constraint_violation(api: &mut dyn TestApi) -> crate::Result<()> {
     let parent_table = api.get_name();
     let child_table = api.get_name();

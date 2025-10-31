@@ -1,6 +1,5 @@
 mod advisory_locking;
 mod basic;
-mod cockroachdb;
 mod db_execute;
 mod defaults;
 mod dev_diagnostic_tests;
@@ -18,7 +17,6 @@ mod mark_migration_applied_tests;
 mod mark_migration_rolled_back_tests;
 mod migrate_lock;
 mod migration_persistence_tests;
-mod mssql;
 mod multi_schema;
 mod mysql;
 mod postgres;

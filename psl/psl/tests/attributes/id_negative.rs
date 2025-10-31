@@ -634,31 +634,6 @@ fn sqlite_does_not_allow_id_sort_argument() {
 }
 
 #[test]
-fn mongodb_does_not_allow_id_sort_argument() {
-    let dml = indoc! {r#"
-        datasource test {
-          provider = "mongodb"
-          url      = env("DATABASE_URL")
-        }
-
-        model A {
-          id String @id(sort: Desc) @map("_id") @test.ObjectId
-        }
-    "#};
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@id": The sort argument is not supported in the primary key with the current connector[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
-        [1;94m   | [0m
-        [1;94m 6 | [0mmodel A {
-        [1;94m 7 | [0m  id String [1;91m@id(sort: Desc)[0m @map("_id") @test.ObjectId
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(dml, &expectation)
-}
-
-#[test]
 fn sqlite_does_not_allow_compound_id_sort_argument() {
     let dml = indoc! {r#"
         model A {
@@ -793,28 +768,6 @@ fn sqlite_does_not_allow_id_length_prefix() {
         [1;94m   | [0m
         [1;94m11 | [0mmodel A {
         [1;94m12 | [0m  id String [1;91m@id(length: 10)[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(&schema, &expectation)
-}
-
-#[test]
-fn mongodb_does_not_allow_id_length_prefix() {
-    let dml = indoc! {r#"
-        model A {
-          id String @id(length: 10) @map("_id") @test.ObjectId
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::Mongo, &[]);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@id": The length argument is not supported in the primary key with the current connector[0m
-          [1;94m-->[0m  [4mschema.prisma:12[0m
-        [1;94m   | [0m
-        [1;94m11 | [0mmodel A {
-        [1;94m12 | [0m  id String [1;91m@id(length: 10)[0m @map("_id") @test.ObjectId
         [1;94m   | [0m
     "#]];
 
@@ -1025,113 +978,6 @@ fn empty_fields_must_error() {
         [1;94m   | [0m
         [1;94m13 | [0m          name        String @db.VarChar(255)
         [1;94m14 | [0m          [1;91m@@id([])[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(schema, &expected)
-}
-
-#[test]
-fn mongodb_must_be_id_if_using_auto() {
-    let schema = indoc! {r#"
-        datasource test {
-          provider = "mongodb"
-          url      = env("DATABASE_URL")
-        }
-
-        model A {
-          og Int    @id @map("_id")
-          id String @default(auto()) @test.ObjectId
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating field `id` in model `A`: MongoDB `@default(auto())` fields must have the `@id` attribute.[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
-        [1;94m   | [0m
-        [1;94m 7 | [0m  og Int    @id @map("_id")
-        [1;94m 8 | [0m  [1;91mid String @default(auto()) @test.ObjectId[0m
-        [1;94m 9 | [0m}
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(schema, &expected)
-}
-
-#[test]
-fn compound_ids_are_not_allowed_on_mongo() {
-    let schema = indoc! {r#"
-        datasource test {
-          provider = "mongodb"
-          url      = env("DATABASE_URL")
-        }
-
-        model A {
-          id  String @map("_id") @default(auto()) @test.ObjectId
-          id2 String @default(auto()) @test.ObjectId
-
-          @@id([id, id2])
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating model "A": The current connector does not support compound ids.[0m
-          [1;94m-->[0m  [4mschema.prisma:10[0m
-        [1;94m   | [0m
-        [1;94m 9 | [0m
-        [1;94m10 | [0m  [1;91m@@id([id, id2])[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(schema, &expected)
-}
-
-#[test]
-fn mongodb_no_unique_index_for_id() {
-    let schema = indoc! {r#"
-        datasource test {
-          provider = "mongodb"
-          url      = env("DATABASE_URL")
-        }
-
-        model User {
-          id String @unique @id @map("_id") @test.ObjectId
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@unique": The same field cannot be an id and unique on MongoDB.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
-        [1;94m   | [0m
-        [1;94m 6 | [0mmodel User {
-        [1;94m 7 | [0m  id String [1;91m@unique [0m@id @map("_id") @test.ObjectId
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(schema, &expected)
-}
-
-#[test]
-fn mongodb_no_unique_index_for_id_model_attribute() {
-    let schema = indoc! {r#"
-        datasource test {
-          provider = "mongodb"
-          url      = env("DATABASE_URL")
-        }
-
-        model User {
-          id String @id @map("_id") @test.ObjectId
-
-          @@unique([id])
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@@unique": The same field cannot be an id and unique on MongoDB.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
-        [1;94m   | [0m
-        [1;94m 8 | [0m
-        [1;94m 9 | [0m  [1;91m@@unique([id])[0m
         [1;94m   | [0m
     "#]];
 

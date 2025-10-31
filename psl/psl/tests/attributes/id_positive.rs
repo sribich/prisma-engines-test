@@ -444,18 +444,3 @@ fn mssql_allows_compound_id_sort_argument() {
     let schema = with_header(dml, Provider::SqlServer, &[]);
     assert_valid(&schema);
 }
-
-#[test]
-fn mongodb_compound_unique_can_have_id_as_part_of_it() {
-    let dml = indoc! {r#"
-        model User {
-          id String @id @map("_id") @test.ObjectId
-          di Int
-
-          @@unique([id, di])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::Mongo, &[]);
-    assert_valid(&schema);
-}

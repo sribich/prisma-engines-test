@@ -1,5 +1,3 @@
-mod cockroachdb;
-mod mssql;
 mod mysql;
 mod postgres;
 mod sqlite;
@@ -36,7 +34,7 @@ async fn nul_default_bytes(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector()]
 async fn a_simple_table_with_gql_types(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
