@@ -681,7 +681,7 @@ fn fail_when_no_source_is_declared() {
 fn referential_integrity_works() {
     let schema = indoc! {r#"
         datasource ps {
-          provider = "sqlserver"
+          provider = "mysql"
           referentialIntegrity = "prisma"
           url = "mysql://root:prisma@localhost:3306/mydb"
         }
@@ -700,7 +700,7 @@ fn referential_integrity_works() {
 fn relation_mode_works() {
     let schema = indoc! {r#"
         datasource ps {
-          provider = "sqlserver"
+          provider = "mysql"
           relationMode = "prisma"
           url = "mysql://root:prisma@localhost:3306/mydb"
         }
@@ -719,7 +719,7 @@ fn relation_mode_works() {
 fn relation_mode_default() {
     let schema = indoc! {r#"
         datasource ps {
-          provider = "sqlserver"
+          provider = "mysql"
           url = "mysql://root:prisma@localhost:3306/mydb"
         }
 

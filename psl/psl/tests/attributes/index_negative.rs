@@ -260,32 +260,6 @@ fn hash_index_doesnt_allow_sorting() {
 }
 
 #[test]
-fn hash_index_doesnt_work_on_sqlserver() {
-    let dml = indoc! {r#"
-        model A {
-          id Int @id
-          a  Int
-
-          @@index([a], type: Hash)
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-    let error = parse_unwrap_err(&schema);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@@index": The given index type is not supported with the current connector[0m
-          [1;94m-->[0m  [4mschema.prisma:15[0m
-        [1;94m   | [0m
-        [1;94m14 | [0m
-        [1;94m15 | [0m  @@index([a], [1;91mtype: Hash[0m)
-        [1;94m   | [0m
-    "#]];
-
-    expectation.assert_eq(&error)
-}
-
-#[test]
 fn hash_index_doesnt_work_on_mysql() {
     let dml = indoc! {r#"
         model A {
@@ -404,33 +378,6 @@ fn fulltext_index_postgres() {
     "#};
 
     let schema = with_header(dml, Provider::Postgres, &[]);
-    let error = parse_unwrap_err(&schema);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@@fulltext": Defining fulltext indexes is not supported with the current connector.[0m
-          [1;94m-->[0m  [4mschema.prisma:16[0m
-        [1;94m   | [0m
-        [1;94m15 | [0m
-        [1;94m16 | [0m  [1;91m@@fulltext([a, b])[0m
-        [1;94m   | [0m
-    "#]];
-
-    expectation.assert_eq(&error)
-}
-
-#[test]
-fn fulltext_index_sql_server() {
-    let dml = indoc! {r#"
-        model A {
-          id Int    @id
-          a  String
-          b  String
-
-          @@fulltext([a, b])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
     let error = parse_unwrap_err(&schema);
 
     let expectation = expect![[r#"

@@ -362,37 +362,6 @@ fn id_accepts_length_arg_on_mysql() {
 }
 
 #[test]
-fn id_accepts_sort_arg_on_sqlserver() {
-    let dml = indoc! {r#"
-        model User {
-          firstName  String
-          middleName String
-          lastName   String
-
-          @@id([firstName, middleName(sort: Desc), lastName])
-        }
-
-        model Blog {
-          title  String @id(sort: Desc)
-        }
-    "#};
-
-    let schema = psl::parse_schema_without_extensions(with_header(dml, Provider::SqlServer, &[])).unwrap();
-
-    schema
-        .assert_has_model("User")
-        .assert_id_on_fields(&["firstName", "middleName", "lastName"])
-        .assert_field("middleName")
-        .assert_descending();
-
-    schema
-        .assert_has_model("Blog")
-        .assert_id_on_fields(&["title"])
-        .assert_field("title")
-        .assert_descending();
-}
-
-#[test]
 fn mysql_allows_id_length_prefix() {
     let dml = indoc! {r#"
         model A {
@@ -415,32 +384,5 @@ fn mysql_allows_compound_id_length_prefix() {
     "#};
 
     let schema = with_header(dml, Provider::Mysql, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
-fn mssql_allows_id_sort_argument() {
-    let dml = indoc! {r#"
-        model A {
-          id Int @id(sort: Desc)
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
-fn mssql_allows_compound_id_sort_argument() {
-    let dml = indoc! {r#"
-        model A {
-          a String @test.VarChar(255)
-          b String @test.VarChar(255)
-
-          @@id([a(sort: Asc), b(sort: Desc)])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
     assert_valid(&schema);
 }

@@ -79,9 +79,9 @@ pub(crate) const MYSQL_SOURCE: &str = r#"
     }
 "#;
 
-pub(crate) const MSSQL_SOURCE: &str = r#"
+pub(crate) const SQLITE_SOURCE: &str = r#"
     datasource db {
-        provider = "sqlserver"
-        url      = "jdbc:sqlserver://localhost:3306"
+        provider = "sqlite"
+        url      = "sqlite:"
     }
 "#;

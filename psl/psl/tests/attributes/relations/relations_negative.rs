@@ -816,7 +816,7 @@ fn mapping_foreign_keys_on_sqlite_should_error() {
 fn a_typoed_relation_should_fail_gracefully() {
     let dml = indoc! {r#"
         datasource db {
-          provider = "sqlserver"
+          provider = "postgres"
           url      = env("DATABASE_URL")
         }
 

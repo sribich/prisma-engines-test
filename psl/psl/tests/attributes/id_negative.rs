@@ -436,35 +436,6 @@ fn name_on_field_level_id_should_error() {
 }
 
 #[test]
-fn bytes_should_not_be_allowed_as_id_on_sql_server() {
-    let dml = indoc! {r#"
-        datasource db {
-            provider = "sqlserver"
-            url      = "sqlserver://"
-        }
-
-        generator client {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Bytes @id
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mInvalid model: Using Bytes type is not allowed in the model's id.[0m
-          [1;94m-->[0m  [4mschema.prisma:11[0m
-        [1;94m   | [0m
-        [1;94m10 | [0mmodel A {
-        [1;94m11 | [0m    id Bytes [1;91m@id[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(dml, &expected)
-}
-
-#[test]
 fn primary_key_and_foreign_key_names_cannot_clash() {
     let dml = indoc! { r#"
         datasource test {
@@ -692,53 +663,6 @@ fn postgresql_does_not_allow_compound_id_length_prefix() {
     "#};
 
     let schema = with_header(dml, Provider::Postgres, &[]);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@@id": The length argument is not supported in the primary key with the current connector[0m
-          [1;94m-->[0m  [4mschema.prisma:15[0m
-        [1;94m   | [0m
-        [1;94m14 | [0m
-        [1;94m15 | [0m  [1;91m@@id([a(length: 10), b(length: 20)])[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(&schema, &expectation)
-}
-
-#[test]
-fn sqlserver_does_not_allow_id_length_prefix() {
-    let dml = indoc! {r#"
-        model A {
-          id String @id(length: 10)
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@id": The length argument is not supported in the primary key with the current connector[0m
-          [1;94m-->[0m  [4mschema.prisma:12[0m
-        [1;94m   | [0m
-        [1;94m11 | [0mmodel A {
-        [1;94m12 | [0m  id String [1;91m@id(length: 10)[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(&schema, &expectation)
-}
-
-#[test]
-fn sqlserver_does_not_allow_compound_id_length_prefix() {
-    let dml = indoc! {r#"
-        model A {
-          a String
-          b String
-
-          @@id([a(length: 10), b(length: 20)])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@@id": The length argument is not supported in the primary key with the current connector[0m

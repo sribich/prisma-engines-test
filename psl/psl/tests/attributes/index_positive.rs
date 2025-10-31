@@ -209,18 +209,6 @@ fn sqlite_allows_unique_sort_order() {
 }
 
 #[test]
-fn sqlserver_allows_unique_sort_order() {
-    let dml = indoc! {r#"
-        model A {
-          id String @unique(sort: Desc)
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
 fn mysql_allows_compound_unique_sort_order() {
     let dml = indoc! {r#"
         model A {
@@ -249,20 +237,6 @@ fn sqlite_allows_compound_unique_sort_order() {
 }
 
 #[test]
-fn sqlserver_allows_compound_unique_sort_order() {
-    let dml = indoc! {r#"
-        model A {
-          a String
-          b String
-          @@unique([a(sort: Desc), b(sort: Asc)])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
 fn mysql_allows_index_sort_order() {
     let dml = indoc! {r#"
         model A {
@@ -274,21 +248,6 @@ fn mysql_allows_index_sort_order() {
     "#};
 
     let schema = with_header(dml, Provider::Mysql, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
-fn sqlserver_allows_index_sort_order() {
-    let dml = indoc! {r#"
-        model A {
-          id Int @id
-          a String
-
-          @@index([a(sort: Desc)])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
     assert_valid(&schema);
 }
 

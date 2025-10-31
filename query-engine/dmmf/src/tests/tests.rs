@@ -26,25 +26,6 @@ fn assert_comment(actual: Option<&String>, expected: &str) {
 }
 
 #[test]
-fn mongo_docs() {
-    let dmmf = dmmf_from_schema(include_str!("./test-schemas/mongo.prisma"));
-
-    for it in dmmf.data_model.types.iter() {
-        assert_eq!(it.name, "Post");
-        assert_comment(it.documentation.as_ref(), "Post comment");
-        for field in it.fields.iter() {
-            let name = field.name.as_str();
-            let comment = field.documentation.as_ref();
-            match name {
-                "published" => assert_comment(comment, "published comment"),
-                "authorId" => assert_comment(comment, "authorId comment"),
-                _ => assert!(comment.as_ref().is_none()),
-            };
-        }
-    }
-}
-
-#[test]
 fn enum_docs() {
     let dmmf = dmmf_from_schema(include_str!("./test-schemas/postgres.prisma"));
 
@@ -62,32 +43,6 @@ fn enum_docs() {
             };
         }
     }
-}
-
-// Regression test for https://github.com/prisma/prisma/issues/19694
-#[test]
-fn unsupported_in_composite_type() {
-    let schema = r#"
-        generator client {
-            provider = "prisma-client"
-        }
-
-        datasource db {
-            provider = "mongodb"
-            url      = env("DATABASE_URL")
-        }
-
-        type NestedType {
-            this_causes_error Unsupported("RegularExpression")
-        }
-
-        model sample_model {
-            id         String     @id @default(auto()) @map("_id") @db.ObjectId
-            some_field NestedType
-        }
-    "#;
-
-    dmmf_from_schema(schema);
 }
 
 // Regression test for https://github.com/prisma/prisma/issues/20986

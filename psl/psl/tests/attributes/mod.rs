@@ -1,6 +1,5 @@
 mod arg_parsing;
 mod builtin_attributes;
-mod cockroachdb_sequence;
 mod constraint_names_negative;
 mod constraint_names_positive;
 mod default_negative;
@@ -10,7 +9,6 @@ mod id_negative;
 mod id_positive;
 mod ignore_negative;
 mod ignore_positive;
-mod index_clustering;
 mod index_negative;
 mod index_positive;
 mod map_positive;

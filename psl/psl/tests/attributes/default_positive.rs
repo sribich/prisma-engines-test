@@ -144,33 +144,6 @@ fn db_generated_function_must_work_for_enum_fields() {
 }
 
 #[test]
-fn named_default_constraints_should_work_on_sql_server() {
-    let dml = indoc! { r#"
-        datasource test {
-          provider = "sqlserver"
-          url = "sqlserver://"
-        }
-
-        generator js {
-          provider = "prisma-client"
-        }
-
-        model A {
-          id Int @id @default(autoincrement())
-          data String @default("beeb buub", map: "meow")
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(dml)
-        .unwrap()
-        .assert_has_model("A")
-        .assert_has_scalar_field("data")
-        .assert_default_value()
-        .assert_string("beeb buub")
-        .assert_mapped_name("meow");
-}
-
-#[test]
 fn string_literals_with_double_quotes_work() {
     let schema = indoc! {r#"
         model Test {

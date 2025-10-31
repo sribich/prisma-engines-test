@@ -107,12 +107,6 @@ dev-sqlite:
 dev-react-native:
 	cp $(CONFIG_PATH)/react-native $(CONFIG_FILE)
 
-dev-libsql-wasm: build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/libsql-wasm $(CONFIG_FILE)
-
-test-libsql-wasm: dev-libsql-wasm test-qe-st
-test-driver-adapter-libsql-wasm: test-libsql-wasm
-
 dev-libsql-qc: build-qc-wasm build-driver-adapters-kit-qc
 	cp $(CONFIG_PATH)/libsql-qc $(CONFIG_FILE)
 
@@ -151,11 +145,6 @@ start-postgres13:
 
 dev-postgres13: start-postgres13
 	cp $(CONFIG_PATH)/postgres13 $(CONFIG_FILE)
-
-dev-pg-wasm: start-postgres13 build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/pg-wasm $(CONFIG_FILE)
-
-test-pg-wasm: dev-pg-wasm test-qe-st
 
 dev-pg-qc: start-postgres13 build-qc-wasm build-driver-adapters-kit-qc
 	cp $(CONFIG_PATH)/pg-qc $(CONFIG_FILE)
@@ -276,63 +265,24 @@ dev-vitess_8_0: start-vitess_8_0
 start-planetscale:
 	docker compose -f docker-compose.yml up -d --remove-orphans planetscale-proxy
 
-dev-planetscale-wasm: start-planetscale build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/planetscale-wasm $(CONFIG_FILE)
-
-test-planetscale-wasm: dev-planetscale-wasm test-qe-st
-
 dev-planetscale-qc: start-planetscale build-qc-wasm build-driver-adapters-kit-qc
 	cp $(CONFIG_PATH)/planetscale-qc $(CONFIG_FILE)
 
 test-planetscale-qc: dev-planetscale-qc test-qe-st
-
-test-driver-adapter-planetscale: test-planetscale-js
-test-driver-adapter-planetscale-wasm: test-planetscale-wasm
-
-dev-mariadb-mysql-wasm: start-mysql_8 build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/mariadb-mysql-wasm $(CONFIG_FILE)
-
-test-mariadb-mysql-wasm: dev-mariadb-mysql-wasm test-qe-st
 
 dev-mariadb-mysql-qc: start-mysql_8 build-qc-wasm build-driver-adapters-kit-qc
 	cp $(CONFIG_PATH)/mariadb-mysql-qc $(CONFIG_FILE)
 
 test-mariadb-mysql-qc: dev-mariadb-mysql-qc test-qe-st
 
-test-driver-adapter-mariadb-mysql: test-mariadb-mysql-js
-test-driver-adapter-mariadb-mysql-wasm: test-mariadb-mysql-wasm
-
-dev-mariadb-wasm: start-mysql_mariadb build-qe-wasm build-driver-adapters-kit-qe
-	cp $(CONFIG_PATH)/mariadb-wasm $(CONFIG_FILE)
-
-test-mariadb-wasm: dev-mariadb-wasm test-qe-st
-
 dev-mariadb-qc: start-mysql_mariadb build-qc-wasm build-driver-adapters-kit-qc
 	cp $(CONFIG_PATH)/mariadb-qc $(CONFIG_FILE)
 
 test-mariadb-qc: dev-mariadb-qc test-qe-st
 
-test-driver-adapter-mariadb: test-mariadb-js
-test-driver-adapter-mariadb-wasm: test-mariadb-wasm
-
 ######################
 # Local dev commands #
 ######################
-
-measure-qe-wasm: build-qe-wasm-gz
-	@cd query-engine/query-engine-wasm/pkg; \
-	for provider in postgresql mysql sqlite sqlserver cockroachdb; do \
-		echo "$${provider}_qe_size=$$(cat $$provider/query_engine_bg.wasm | wc -c | tr -d ' ')" >> $(ENGINE_SIZE_OUTPUT); \
-		echo "$${provider}_qe_size_gz=$$(cat $$provider.gz | wc -c | tr -d ' ')" >> $(ENGINE_SIZE_OUTPUT); \
-	done;
-
-measure-qc-wasm: build-qc-wasm-gz
-	@cd query-compiler/query-compiler-wasm/pkg; \
-	for provider in postgresql mysql sqlite sqlserver cockroachdb; do \
-		echo "$${provider}_qc_size=$$(cat $$provider/query_compiler_bg.wasm | wc -c | tr -d ' ')" >> $(ENGINE_SIZE_OUTPUT); \
-		echo "$${provider}_qc_size_gz=$$(cat $$provider.gz | wc -c | tr -d ' ')" >> $(ENGINE_SIZE_OUTPUT); \
-	done;
-
 install-driver-adapters-kit-deps: build-driver-adapters
 	cd libs/driver-adapters && pnpm i
 

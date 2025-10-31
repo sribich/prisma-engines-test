@@ -264,25 +264,6 @@ fn implicit_many_to_many_relations_work_on_mysql() {
 }
 
 #[test]
-fn implicit_many_to_many_relations_work_on_sql_server() {
-    let dml = indoc! {r#"
-        model A {
-          id Int @id
-          bs B[] @relation("foo")
-        }
-
-        model B {
-          id Int @id
-          as A[] @relation("foo")
-        }
-    "#};
-
-    let schema = parse_schema(&with_header(dml, Provider::SqlServer, &[]));
-    schema.assert_has_model("A").assert_has_relation_field("bs");
-    schema.assert_has_model("B").assert_has_relation_field("as");
-}
-
-#[test]
 fn implicit_many_to_many_relations_work_on_sqlite() {
     let dml = indoc! {r#"
         model A {
@@ -297,25 +278,6 @@ fn implicit_many_to_many_relations_work_on_sqlite() {
     "#};
 
     let schema = parse_schema(&with_header(dml, Provider::Sqlite, &[]));
-    schema.assert_has_model("A").assert_has_relation_field("bs");
-    schema.assert_has_model("B").assert_has_relation_field("as");
-}
-
-#[test]
-fn implicit_many_to_many_relations_work_on_cockroach() {
-    let dml = indoc! {r#"
-        model A {
-          id Int @id
-          bs B[] @relation("foo")
-        }
-
-        model B {
-          id Int @id
-          as A[] @relation("foo")
-        }
-    "#};
-
-    let schema = parse_schema(&with_header(dml, Provider::Cockroach, &["cockroachDb"]));
     schema.assert_has_model("A").assert_has_relation_field("bs");
     schema.assert_has_model("B").assert_has_relation_field("as");
 }

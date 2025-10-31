@@ -548,8 +548,8 @@ fn named_default_constraints_should_not_work_on_non_sql_server() {
 fn named_default_constraints_are_not_allowed_on_identity() {
     let dml = indoc! { r#"
         datasource test {
-          provider = "sqlserver"
-          url = "sqlserver://"
+          provider = "postgres"
+          url = "postgres://"
         }
 
         generator js {
@@ -569,132 +569,6 @@ fn named_default_constraints_are_not_allowed_on_identity() {
         [1;94m   | [0m
         [1;94m10 | [0mmodel A {
         [1;94m11 | [0m  id Int @id [1;91m@default(autoincrement(), map: "nope__nope__nope")[0m
-        [1;94m   | [0m
-    "#]];
-
-    expectation.assert_eq(&error)
-}
-
-#[test]
-fn named_default_constraints_cannot_have_duplicate_names() {
-    let dml = indoc! { r#"
-        datasource test {
-          provider = "sqlserver"
-          url = "sqlserver://"
-        }
-
-        generator js {
-          provider = "prisma-client"
-        }
-
-        model A {
-          id Int @id @default(autoincrement())
-          a  String @default("asdf", map: "reserved")
-        }
-
-        model B {
-          id Int @id @default(autoincrement())
-          b  String @default("asdf", map: "reserved")
-        }
-    "#};
-
-    let error = parse_unwrap_err(dml);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@default": The given constraint name `reserved` has to be unique in the following namespace: global for primary keys, foreign keys and default constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:12[0m
-        [1;94m   | [0m
-        [1;94m11 | [0m  id Int @id @default(autoincrement())
-        [1;94m12 | [0m  a  String @default("asdf", [1;91mmap: "reserved"[0m)
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError parsing attribute "@default": The given constraint name `reserved` has to be unique in the following namespace: global for primary keys, foreign keys and default constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:17[0m
-        [1;94m   | [0m
-        [1;94m16 | [0m  id Int @id @default(autoincrement())
-        [1;94m17 | [0m  b  String @default("asdf", [1;91mmap: "reserved"[0m)
-        [1;94m   | [0m
-    "#]];
-
-    expectation.assert_eq(&error)
-}
-
-#[test]
-fn named_default_constraints_cannot_clash_with_pk_names() {
-    let dml = indoc! { r#"
-        datasource test {
-          provider = "sqlserver"
-          url = "sqlserver://"
-        }
-
-        generator js {
-          provider = "prisma-client"
-        }
-
-        model A {
-          id Int @id @default(autoincrement())
-          a  String @default("asdf", map: "reserved")
-        }
-
-        model B {
-          id Int @id(map: "reserved") @default(autoincrement())
-        }
-    "#};
-
-    let error = parse_unwrap_err(dml);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@default": The given constraint name `reserved` has to be unique in the following namespace: global for primary keys, foreign keys and default constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:12[0m
-        [1;94m   | [0m
-        [1;94m11 | [0m  id Int @id @default(autoincrement())
-        [1;94m12 | [0m  a  String @default("asdf", [1;91mmap: "reserved"[0m)
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError parsing attribute "@id": The given constraint name `reserved` has to be unique in the following namespace: global for primary keys, foreign keys and default constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:16[0m
-        [1;94m   | [0m
-        [1;94m15 | [0mmodel B {
-        [1;94m16 | [0m  id Int @id([1;91mmap: "reserved"[0m) @default(autoincrement())
-        [1;94m   | [0m
-    "#]];
-
-    expectation.assert_eq(&error)
-}
-
-#[test]
-fn named_default_constraints_cannot_clash_with_fk_names() {
-    let dml = indoc! { r#"
-        datasource test {
-          provider = "sqlserver"
-          url = "sqlserver://"
-        }
-
-        model A {
-          id  Int @id @default(autoincrement())
-          a   String  @default("asdf", map: "reserved")
-          b   B       @relation(fields: [bId], references: [id], map: "reserved")
-          bId Int
-        }
-
-        model B {
-          id Int @id @default(autoincrement())
-          as A[]
-        }
-    "#};
-
-    let error = parse_unwrap_err(dml);
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@default": The given constraint name `reserved` has to be unique in the following namespace: global for primary keys, foreign keys and default constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
-        [1;94m   | [0m
-        [1;94m 7 | [0m  id  Int @id @default(autoincrement())
-        [1;94m 8 | [0m  a   String  @default("asdf", [1;91mmap: "reserved"[0m)
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError parsing attribute "@relation": The given constraint name `reserved` has to be unique in the following namespace: global for primary keys, foreign keys and default constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
-        [1;94m   | [0m
-        [1;94m 8 | [0m  a   String  @default("asdf", map: "reserved")
-        [1;94m 9 | [0m  b   B       @relation(fields: [bId], references: [id], [1;91mmap: "reserved"[0m)
         [1;94m   | [0m
     "#]];
 
@@ -762,33 +636,6 @@ fn must_error_if_using_auto_with_mysql() {
         datasource db {
             provider = "mysql"
             url = "mysql://"
-        }
-
-        model User {
-            id String @id @default(auto())
-        }
-    "#;
-
-    let error = parse_unwrap_err(schema);
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@default": The current connector does not support the `auto()` function.[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
-        [1;94m   | [0m
-        [1;94m 7 | [0m        model User {
-        [1;94m 8 | [0m            id String @id @default([1;91mauto()[0m)
-        [1;94m   | [0m
-    "#]];
-
-    expected.assert_eq(&error)
-}
-
-#[test]
-fn must_error_if_using_auto_with_sql_server() {
-    let schema = r#"
-        datasource db {
-            provider = "sqlserver"
-            url = "sqlserver://"
         }
 
         model User {
@@ -980,7 +827,7 @@ fn nested_scalar_list_defaults_are_disallowed() {
 fn scalar_list_default_on_connector_without_scalar_lists() {
     let schema = r#"
         datasource db {
-            provider = "sqlserver"
+            provider = "sqlite"
             url = env("DBURL")
         }
 

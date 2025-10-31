@@ -181,7 +181,6 @@ user-facing-error-macros.path = "./libs/user-facing-error-macros"
 test-setup.path = "./libs/test-setup"
 test-macros.path = "./libs/test-macros"
 query-engine-common.path = "./libs/query-engine-common"
-driver-adapters.path = "./libs/driver-adapters"
 sql-ddl.path = "./libs/sql-ddl"
 query-template.path = "libs/query-template"
 

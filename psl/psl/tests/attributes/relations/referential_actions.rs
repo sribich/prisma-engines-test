@@ -101,82 +101,6 @@ fn actions_on_mysql_with_prisma_relation_mode() {
 }
 
 #[test]
-fn actions_on_sqlserver_with_prisma_relation_mode() {
-    let actions = &[Cascade, NoAction, SetNull];
-
-    for action in actions {
-        let dml = formatdoc!(
-            r#"
-            generator client {{
-                provider = "prisma-client"
-            }}
-    
-            datasource db {{
-                provider = "sqlserver"
-                url = "sqlserver://"
-                relationMode = "prisma"
-            }}
-
-            model A {{
-                id Int @id
-                bs B[]
-            }}
-
-            model B {{
-                id  Int  @id
-                aId Int?
-                a   A?   @relation(fields: [aId], references: [id], onDelete: {action})
-            }}
-        "#,
-            action = action
-        );
-
-        parse_schema(&dml)
-            .assert_has_model("B")
-            .assert_has_relation_field("a")
-            .assert_relation_delete_strategy(*action);
-    }
-}
-
-#[test]
-fn actions_on_cockroachdb_with_prisma_relation_mode() {
-    let actions = &[Cascade, Restrict, NoAction, SetNull];
-
-    for action in actions {
-        let dml = formatdoc!(
-            r#"
-            generator client {{
-                provider = "prisma-client"
-            }}
-    
-            datasource db {{
-                provider = "cockroachdb"
-                url = "sqlserver://"
-                relationMode = "prisma"
-            }}
-
-            model A {{
-                id Int @id
-                bs B[]
-            }}
-
-            model B {{
-                id  Int  @id
-                aId Int?
-                a   A?   @relation(fields: [aId], references: [id], onDelete: {action})
-            }}
-        "#,
-            action = action
-        );
-
-        parse_schema(&dml)
-            .assert_has_model("B")
-            .assert_has_relation_field("a")
-            .assert_relation_delete_strategy(*action);
-    }
-}
-
-#[test]
 fn actions_on_postgres_with_prisma_relation_mode() {
     let actions = &[Cascade, Restrict, SetNull];
 
@@ -323,7 +247,7 @@ fn on_update_no_action_should_work_on_prisma_relation_mode() {
 
 #[test]
 fn sql_databases_use_foreign_keys_relation_mode_by_default() {
-    for db in ["postgres", "mysql", "sqlserver", "sqlite"] {
+    for db in ["postgres", "mysql", "sqlite"] {
         let dml = formatdoc! {r#"
             datasource db {{
               provider = "{db}"
@@ -397,44 +321,6 @@ fn invalid_on_update_action() {
         [1;94m   | [0m
         [1;94m 8 | [0m    aId Int
         [1;94m 9 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: [1;91mMeowMeow[0m)
-        [1;94m   | [0m
-    "#]];
-
-    expected.assert_eq(&parse_unwrap_err(dml));
-}
-
-#[test]
-fn restrict_should_not_work_on_sql_server() {
-    let dml = indoc! { r#"
-        datasource db {
-            provider = "sqlserver"
-            url = "sqlserver://"
-        }
-
-        model A {
-            id Int @id
-            bs B[]
-        }
-
-        model B {
-            id Int @id
-            aId Int
-            a A @relation(fields: [aId], references: [id], onUpdate: Restrict, onDelete: Restrict)
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating: Invalid referential action: `Restrict`. Allowed values: (`Cascade`, `NoAction`, `SetNull`, `SetDefault`)[0m
-          [1;94m-->[0m  [4mschema.prisma:14[0m
-        [1;94m   | [0m
-        [1;94m13 | [0m    aId Int
-        [1;94m14 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Restrict, [1;91monDelete: Restrict[0m)
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError validating: Invalid referential action: `Restrict`. Allowed values: (`Cascade`, `NoAction`, `SetNull`, `SetDefault`)[0m
-          [1;94m-->[0m  [4mschema.prisma:14[0m
-        [1;94m   | [0m
-        [1;94m13 | [0m    aId Int
-        [1;94m14 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: Restrict[0m, onDelete: Restrict)
         [1;94m   | [0m
     "#]];
 
@@ -593,8 +479,8 @@ fn on_delete_no_action_should_not_work_on_sqlite_with_prisma_relation_mode() {
 fn actions_should_be_defined_only_from_one_side() {
     let dml = indoc! { r#"
         datasource db {
-            provider = "sqlserver"
-            url = "sqlserver://"
+            provider = "mysql"
+            url = "mysql://"
         }
 
         model A {
