@@ -4,7 +4,7 @@ use query_engine_tests::*;
 // Skip databases that don't support `onDelete: SetDefault`
 #[test_suite(
     schema(schema),
-    exclude(MongoDb, MySql(5.6), MySql(5.7), Vitess("planetscale.js.wasm"))
+    exclude(MySql(5.6), MySql(5.7))
 )]
 mod prisma_24072 {
     fn schema() -> String {
@@ -37,7 +37,7 @@ mod prisma_24072 {
           &runner,
           "mutation { deleteOneParent(where: { id: 1 }) { id }}",
           2003,
-          CockroachDb(_) | Postgres(_) | SqlServer(_) | Vitess(_) => "Foreign key constraint violated on the constraint: `Child_parent_id_fkey`",
+          Postgres(_) | Vitess(_) => "Foreign key constraint violated on the constraint: `Child_parent_id_fkey`",
           MySql(_) => "Foreign key constraint violated on the fields: (`parent_id`)",
           Sqlite(_) => "Foreign key constraint violated on the foreign key",
           _ => "Foreign key constraint violated"

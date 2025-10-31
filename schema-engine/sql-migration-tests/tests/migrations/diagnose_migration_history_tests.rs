@@ -155,7 +155,7 @@ fn diagnose_migration_history_without_opt_in_to_shadow_database_does_not_calcula
     assert!(error_in_unapplied_migration.is_none());
 }
 
-#[test_connector(exclude(Postgres, Mssql))]
+#[test_connector(exclude(Postgres))]
 fn diagnose_migration_history_calculates_drift_in_presence_of_failed_migrations(api: TestApi) {
     let directory = api.create_migrations_directory();
 
@@ -874,75 +874,6 @@ fn shadow_database_creation_error_is_special_cased_postgres(api: TestApi) {
     );
 }
 
-#[test_connector(tags(Mssql2019))]
-fn shadow_database_creation_error_is_special_cased_mssql(api: TestApi) {
-    let directory = api.create_migrations_directory();
-
-    let dm1 = api.datamodel_with_provider(
-        r#"
-        model Cat {
-            id      Int @id @default(autoincrement())
-        }
-    "#,
-    );
-
-    api.create_migration("initial", &dm1, &directory).send_sync();
-
-    api.raw_cmd(
-        "
-            BEGIN TRY
-                CREATE LOGIN prismashadowdbtestuser WITH PASSWORD = '1234batmanZ';
-                GRANT SELECT TO prismashadowdbuser;
-            END TRY
-            BEGIN CATCH
-            END CATCH;
-            ",
-    );
-
-    let datamodel = format!(
-        r#"
-        datasource db {{
-            provider = "sqlserver"
-            url = "sqlserver://{dbhost}:{dbport};user=prismashadowdbtestuser;password=1234batmanZ;trustservercertificate=true"
-        }}
-        "#,
-        dbhost = api.connection_info().host(),
-        dbport = api.connection_info().port().unwrap(),
-    );
-
-    let mut tries = 0;
-
-    let migration_api = loop {
-        if tries > 5 {
-            panic!("Failed to connect to mssql more than five times.");
-        }
-
-        let result = schema_api_without_extensions(Some(datamodel.clone()), None);
-
-        match result {
-            Ok(api) => break api,
-            Err(err) => {
-                eprintln!("got err, sleeping\nerr:{err:?}");
-                tries += 1;
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-        }
-    };
-
-    let migrations_list = list_migrations(&directory.keep()).unwrap();
-
-    let output = tok(migration_api.diagnose_migration_history(DiagnoseMigrationHistoryInput {
-        migrations_list,
-        opt_in_to_shadow_database: true,
-        filters: SchemaFilter::default(),
-    }))
-    .unwrap();
-
-    assert!(
-        matches!(output.drift, Some(DriftDiagnostic::MigrationFailedToApply { error }) if error.to_user_facing().as_known().unwrap().error_code == ShadowDbCreationError::ERROR_CODE)
-    );
-}
-
 #[test_connector(tags(Sqlite))]
 fn empty_migration_directories_should_cause_known_errors(api: TestApi) {
     let migrations_directory = api.create_migrations_directory();
@@ -1026,7 +957,7 @@ fn indexes_on_same_columns_with_different_names_should_work(api: TestApi) {
     assert!(output.drift.is_none());
 }
 
-#[test_connector(exclude(Sqlite, Mssql))]
+#[test_connector(exclude(Sqlite))]
 fn foreign_keys_on_same_columns_should_work(api: TestApi) {
     let directory = api.create_migrations_directory();
 

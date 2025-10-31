@@ -5,5 +5,4 @@ mod prisma_3078;
 mod prisma_4088;
 mod prisma_4146;
 mod prisma_5941;
-mod prisma_8389;
 mod prisma_933;

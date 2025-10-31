@@ -11,7 +11,7 @@ use sql_migration_tests::{
 };
 use std::sync::Arc;
 
-#[test_connector(tags(Sqlite, Mysql, Postgres, CockroachDb, Mssql))]
+#[test_connector(tags(Sqlite, Mysql, Postgres))]
 fn from_unique_index_to_without(mut api: TestApi) {
     let tempdir = tempfile::tempdir().unwrap();
     let host = Arc::new(TestConnectorHost::default());
@@ -808,69 +808,6 @@ fn from_url_to_url(mut api: TestApi) {
 }
 
 #[test]
-fn diffing_mongo_schemas_to_script_returns_a_nice_error() {
-    let tempdir = tempfile::tempdir().unwrap();
-
-    let from = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String
-        }
-    "#;
-
-    let from_file = write_file_to_tmp(from, &tempdir, "from");
-
-    let to = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String[]
-
-            @@index([names])
-        }
-
-        model TestModel2 {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-        }
-    "#;
-
-    let to_file = write_file_to_tmp(to, &tempdir, "to");
-
-    let params = DiffParams {
-        exit_code: None,
-        from: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: from_file.to_string_lossy().into_owned(),
-                content: from.to_string(),
-            }],
-        }),
-        shadow_database_url: None,
-        to: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: to_file.to_string_lossy().into_owned(),
-                content: to.to_string(),
-            }],
-        }),
-        script: true,
-        filters: SchemaFilter::default(),
-    };
-
-    let expected = expect![[r#"
-        Rendering to a script is not supported on MongoDB.
-    "#]];
-    expected.assert_eq(&diff_error(params));
-}
-
-#[test]
 fn diff_sqlite_migration_directories() {
     let base_dir = tempfile::tempdir().unwrap();
     let base_dir_2 = tempfile::tempdir().unwrap();
@@ -900,73 +837,8 @@ fn diff_sqlite_migration_directories() {
 }
 
 #[test]
-fn diffing_mongo_schemas_works() {
-    let tempdir = tempfile::tempdir().unwrap();
-
-    let from = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String
-        }
-    "#;
-
-    let from_file = write_file_to_tmp(from, &tempdir, "from");
-
-    let to = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String[]
-
-            @@index([names])
-        }
-
-        model TestModel2 {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-        }
-    "#;
-
-    let to_file = write_file_to_tmp(to, &tempdir, "to");
-
-    let params = DiffParams {
-        exit_code: None,
-        from: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: from_file.to_string_lossy().into_owned(),
-                content: from.to_string(),
-            }],
-        }),
-        shadow_database_url: None,
-        to: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: to_file.to_string_lossy().into_owned(),
-                content: to.to_string(),
-            }],
-        }),
-        script: false,
-        filters: SchemaFilter::default(),
-    };
-
-    let expected_printed_messages = expect![[r#"
-        [+] Collection `TestModel2`
-        [+] Index `TestModel_names_idx` on ({"names":1})
-    "#]];
-
-    expected_printed_messages.assert_eq(&diff_output(params));
-}
-
-#[test]
 fn diffing_two_schema_datamodels_with_missing_datasource_env_vars() {
-    for provider in ["sqlite", "postgresql", "postgres", "mysql", "sqlserver"] {
+    for provider in ["sqlite", "postgresql", "postgres", "mysql"] {
         let schema_a = format!(
             r#"
             datasource db {{

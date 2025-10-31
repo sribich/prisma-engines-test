@@ -162,7 +162,7 @@ fn changing_an_int_array_column_to_scalar_is_not_possible(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn int_to_string_conversions_work(api: TestApi) {
     let dm1 = r#"
         model Cat {
@@ -195,7 +195,7 @@ fn int_to_string_conversions_work(api: TestApi) {
         .assert_single_row(|row| row.assert_text_value("tag", "20"));
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn string_to_int_conversions_are_risky(api: TestApi) {
     let dm1 = r#"
         model Cat {
@@ -266,8 +266,8 @@ fn string_to_int_conversions_are_risky(api: TestApi) {
 }
 
 // of course, 2018-01-18T08:01:02Z gets cast to 20180118080102.0 on MySQL
-// of course, 2018-01-18T08:01:02Z gets cast to 1516262462000.0 (UNIX timestamp) on SQLite and Cockroach
-#[test_connector(exclude(Mysql, Sqlite, CockroachDb))]
+// of course, 2018-01-18T08:01:02Z gets cast to 1516262462000.0 (UNIX timestamp) on SQLite
+#[test_connector(exclude(Mysql, Sqlite))]
 fn datetime_to_float_conversions_are_impossible(api: TestApi) {
     let dm1 = r#"
         model Cat {

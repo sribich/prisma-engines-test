@@ -16,7 +16,7 @@ mod bigint {
         schema.to_owned()
     }
 
-    #[connector_test(exclude(Sqlite("cfd1")))]
+    #[connector_test]
     // "Using a BigInt field" should "work".
     // On D1, this fails with:
     //

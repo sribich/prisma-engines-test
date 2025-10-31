@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schema), only(Postgres, CockroachDb, Sqlite))]
+#[test_suite(schema(schema), only(Postgres, Sqlite))]
 mod prisma_25290 {
     fn schema() -> String {
         indoc! {

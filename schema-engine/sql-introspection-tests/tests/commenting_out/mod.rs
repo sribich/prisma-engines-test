@@ -5,7 +5,7 @@ mod sqlite;
 use barrel::types;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(exclude(Mssql, Mysql, CockroachDb))]
+#[test_connector(exclude(Mysql))]
 async fn a_table_without_uniques_should_ignore(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -71,7 +71,7 @@ async fn a_table_without_required_uniques(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))] // there is no such thing on cockroach, you will get the rowid column
+#[test_connector]
 async fn a_table_without_fully_required_compound_unique(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -106,7 +106,7 @@ async fn a_table_without_fully_required_compound_unique(api: &mut TestApi) -> Te
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb, Mysql, Mssql, Sqlite))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn remapping_field_names_to_empty(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

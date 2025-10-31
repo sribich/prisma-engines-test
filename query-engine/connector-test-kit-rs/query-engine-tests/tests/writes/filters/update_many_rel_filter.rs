@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schema), exclude(SqlServer))]
+#[test_suite(schema(schema))]
 mod update_many_rel_filter {
     use indoc::indoc;
     use query_engine_tests::run_query;

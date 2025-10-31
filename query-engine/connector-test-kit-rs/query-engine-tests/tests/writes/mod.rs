@@ -1,4 +1,3 @@
-mod composites;
 mod data_types;
 mod filters;
 mod ids;

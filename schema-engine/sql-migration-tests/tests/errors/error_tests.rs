@@ -100,43 +100,8 @@ fn authentication_failure_must_return_a_known_error_on_mysql(api: TestApi) {
     assert_eq!(json_error, expected);
 }
 
-#[test_connector(tags(Mssql))]
-fn authentication_failure_must_return_a_known_error_on_mssql(api: TestApi) {
-    let mut url = JdbcString::from_str(&format!("jdbc:{}", api.connection_string())).unwrap();
-    let properties = url.properties_mut();
-    let user = properties.get("user").cloned().unwrap();
-
-    *properties.get_mut("password").unwrap() = "obviously-not-right".to_string();
-
-    let dm = format!(
-        r#"
-            datasource db {{
-              provider = "sqlserver"
-              url      = "{}"
-            }}
-        "#,
-        url.to_string().replace("jdbc:", "")
-    );
-
-    let error = tok(connection_error(dm));
-
-    let json_error = serde_json::to_value(error.to_user_facing()).unwrap();
-    let expected = json!({
-        "is_panic": false,
-        "message": format!("Authentication failed against database server, the provided database credentials for `{user}` are not valid.\n\nPlease make sure to provide valid database credentials for the database server at the configured address."),
-        "meta": {
-            "database_user": user,
-        },
-        "error_code": "P1000"
-    });
-
-    assert_eq!(json_error, expected);
-}
-
 // TODO(tech-debt): get rid of provider-specific PSL `dm` declaration, and use `test_api::datamodel_with_provider` utility instead.
 // See: https://github.com/prisma/team-orm/issues/835.
-// This issue also currently prevents us from defining an `Mssql`-specific copy of this `unreachable_database_*` test case,
-// due to url parsing differences between the `url` crate and `quaint`'s `MssqlUrl` struct.
 #[test_connector(tags(Mysql))]
 fn unreachable_database_must_return_a_proper_error_on_mysql(api: TestApi) {
     let mut url: Url = api.connection_string().parse().unwrap();
@@ -358,7 +323,7 @@ fn datamodel_parser_errors_must_return_a_known_error(api: TestApi) {
     assert_eq!(error, expected_error);
 }
 
-#[test_connector(exclude(CockroachDb, Sqlite))]
+#[test_connector(exclude(Sqlite))]
 fn unique_constraint_errors_in_migrations_must_return_a_known_error(api: TestApi) {
     let dm = r#"
         model Fruit {

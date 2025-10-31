@@ -12,7 +12,7 @@ use std::{
     path::{self, PathBuf},
 };
 use test_setup::{
-    mssql::init_mssql_database, mysql::create_mysql_database, postgres::create_postgres_database,
+    mysql::create_mysql_database, postgres::create_postgres_database,
     runtime::run_with_thread_local_runtime as tok, sqlite_test_url,
 };
 
@@ -91,12 +91,7 @@ source .test_database_urls/mysql_5_6
         std::fs::remove_file(file).ok();
     }
 
-    let conn = tok(Quaint::new(&database_url)).unwrap();
-    let version = tok(conn.version()).unwrap();
-
-    let provider = if version.map(|v| v.contains("CockroachDB")).unwrap_or(false) {
-        "cockroachdb"
-    } else {
+    let provider = {
         let provider = database_url
             .find(':')
             .map(|prefix_end| &database_url[..prefix_end])
@@ -106,26 +101,16 @@ source .test_database_urls/mysql_5_6
     };
 
     match provider {
-        "cockroachdb" | "postgres" | "postgresql" => {
+        "postgres" | "postgresql" => {
             tok(create_postgres_database(&database_url, test_function_name)).unwrap();
         }
         "mysql" => {
             tok(create_mysql_database(&database_url, test_function_name)).unwrap();
         }
-        "sqlserver" => {
-            tok(init_mssql_database(&database_url, test_function_name)).unwrap();
-        }
         _ => (),
     }
 
-    let database_url = if provider == "sqlserver" {
-        let mut jdbc: JdbcString = format!("jdbc:{database_url}").parse().unwrap();
-
-        jdbc.properties_mut()
-            .insert("database".to_string(), test_function_name.to_string());
-
-        jdbc.to_string().trim_start_matches("jdbc:").to_string()
-    } else if provider == "sqlite" {
+    let database_url = if provider == "sqlite" {
         database_url.clone()
     } else {
         format!("{database_url}/{test_function_name}")
@@ -142,10 +127,8 @@ source .test_database_urls/mysql_5_6
     };
 
     let mut api = match provider {
-        "cockroachdb" => SqlSchemaConnector::new_cockroach(params).unwrap(),
         "postgres" | "postgresql" => SqlSchemaConnector::new_postgres(params).unwrap(),
         "mysql" => SqlSchemaConnector::new_mysql(params).unwrap(),
-        "sqlserver" => SqlSchemaConnector::new_mssql(params).unwrap(),
         "sqlite" => SqlSchemaConnector::new_sqlite(params).unwrap(),
         _ => unreachable!(),
     };

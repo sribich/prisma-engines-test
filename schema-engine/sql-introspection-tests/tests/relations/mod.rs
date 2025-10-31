@@ -8,7 +8,7 @@ use indoc::*;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(exclude(Mssql, Mysql, Sqlite, CockroachDb))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn one_to_one_req_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -42,7 +42,7 @@ async fn one_to_one_req_relation(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Mysql, Sqlite, CockroachDb))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn one_to_one_relation_on_a_singular_primary_key(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -74,7 +74,7 @@ async fn one_to_one_relation_on_a_singular_primary_key(api: &mut TestApi) -> Tes
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Mysql, Sqlite, CockroachDb))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn two_one_to_one_relations_between_the_same_models(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -116,7 +116,7 @@ async fn two_one_to_one_relations_between_the_same_models(api: &mut TestApi) -> 
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Sqlite, CockroachDb))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn a_one_to_one_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -157,7 +157,7 @@ async fn a_one_to_one_relation(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Sqlite, Mysql, CockroachDb))]
+#[test_connector(exclude(Sqlite, Mysql))]
 async fn a_one_to_one_relation_referencing_non_id(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -202,7 +202,7 @@ async fn a_one_to_one_relation_referencing_non_id(api: &mut TestApi) -> TestResu
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Sqlite, CockroachDb))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn a_one_to_many_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -241,7 +241,7 @@ async fn a_one_to_many_relation(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Mssql, CockroachDb))]
+#[test_connector(exclude(Mysql))]
 async fn a_one_req_to_many_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -275,7 +275,7 @@ async fn a_one_req_to_many_relation(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Postgres, Vitess, CockroachDb))]
+#[test_connector(exclude(Postgres, Vitess))]
 async fn a_prisma_many_to_many_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -372,7 +372,7 @@ async fn a_broken_prisma_many_to_many_relation(api: &mut TestApi) -> TestResult 
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Mssql, CockroachDb, Sqlite))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn a_many_to_many_relation_with_an_id(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -420,7 +420,7 @@ async fn a_many_to_many_relation_with_an_id(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Sqlite, CockroachDb, Mssql))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn a_self_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -461,7 +461,7 @@ async fn a_self_relation(api: &mut TestApi) -> TestResult {
 
 // SQLite will always make the primary key autoincrement, which makes no sense
 // to build.
-#[test_connector(exclude(Sqlite, Mssql, Mysql, CockroachDb))]
+#[test_connector(exclude(Sqlite, Mysql))]
 async fn id_fields_with_foreign_key(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -493,7 +493,7 @@ async fn id_fields_with_foreign_key(api: &mut TestApi) -> TestResult {
 }
 
 // SQLite cannot alter tables to add foreign keys, so skipping the tests.
-#[test_connector(exclude(Sqlite, Mysql, CockroachDb))]
+#[test_connector(exclude(Sqlite, Mysql))]
 async fn duplicate_fks_should_ignore_one_of_them(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -536,7 +536,7 @@ async fn duplicate_fks_should_ignore_one_of_them(api: &mut TestApi) -> TestResul
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 async fn prisma_1_0_relations(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -586,7 +586,7 @@ async fn prisma_1_0_relations(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Sqlite, Mssql))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn relations_should_avoid_name_clashes(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -622,7 +622,7 @@ async fn relations_should_avoid_name_clashes(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Mssql, CockroachDb))]
+#[test_connector(exclude(Mysql))]
 async fn one_to_many_relation_field_names_do_not_conflict_with_many_to_many_relation_field_names(
     api: &mut TestApi,
 ) -> TestResult {
@@ -676,7 +676,7 @@ async fn one_to_many_relation_field_names_do_not_conflict_with_many_to_many_rela
     Ok(())
 }
 
-#[test_connector(exclude(Sqlite, Mssql, Mysql, CockroachDb))]
+#[test_connector(exclude(Sqlite, Mysql))]
 async fn one_to_one_req_relation_with_custom_fk_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {

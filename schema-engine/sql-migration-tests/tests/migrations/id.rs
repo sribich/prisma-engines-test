@@ -1,5 +1,3 @@
-mod cockroachdb;
-mod mssql;
 mod vitess;
 
 use indoc::formatdoc;
@@ -107,8 +105,7 @@ fn length_prefixed_compound_primary_key(api: TestApi) {
     });
 }
 
-// TODO: ignore because not possible on cockroachdb. We would need a multi-step process there.
-#[test_connector(exclude(Vitess, CockroachDb))]
+#[test_connector(exclude(Vitess))]
 fn changing_the_type_of_an_id_field_must_work(api: TestApi) {
     let dm1 = r#"
         model A {
@@ -154,7 +151,7 @@ fn changing_the_type_of_an_id_field_must_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Sqlite, CockroachDb))]
+#[test_connector(exclude(Sqlite))]
 fn models_with_an_autoincrement_field_as_part_of_a_multi_field_id_can_be_created(api: TestApi) {
     let dm = r#"
         model List {
@@ -184,7 +181,7 @@ fn models_with_an_autoincrement_field_as_part_of_a_multi_field_id_can_be_created
 }
 
 // Ignoring sqlite is OK, because sqlite integer primary keys are always auto-incrementing.
-#[test_connector(exclude(Sqlite, CockroachDb))]
+#[test_connector(exclude(Sqlite))]
 fn making_an_existing_id_field_autoincrement_works(api: TestApi) {
     use quaint::ast::{Insert, Select};
 
@@ -257,8 +254,7 @@ fn making_an_existing_id_field_autoincrement_works(api: TestApi) {
 }
 
 // Ignoring sqlite is OK, because sqlite integer primary keys are always auto-incrementing.
-// We test this separately on cockroachdb.
-#[test_connector(exclude(Sqlite, CockroachDb))]
+#[test_connector(exclude(Sqlite))]
 fn removing_autoincrement_from_an_existing_field_works(api: TestApi) {
     use quaint::ast::{Insert, Select};
 
@@ -323,8 +319,7 @@ fn removing_autoincrement_from_an_existing_field_works(api: TestApi) {
 }
 
 // Ignoring sqlite is OK, because sqlite integer primary keys are always auto-incrementing.
-// Cockroachdb is tested separately.
-#[test_connector(exclude(Sqlite, CockroachDb))]
+#[test_connector(exclude(Sqlite))]
 fn flipping_autoincrement_on_and_off_works(api: TestApi) {
     let dm_without = r#"
         model Post {
@@ -346,8 +341,7 @@ fn flipping_autoincrement_on_and_off_works(api: TestApi) {
 }
 
 // Ignoring sqlite is OK, because sqlite integer primary keys are always auto-incrementing.
-// Ignoring cockroachdb, because literal defaults on PKs on cockroachdb do not work.
-#[test_connector(exclude(Sqlite, CockroachDb))]
+#[test_connector(exclude(Sqlite))]
 fn making_an_autoincrement_default_an_expression_then_autoincrement_again_works(api: TestApi) {
     let dm1 = r#"
         model Post {
@@ -394,7 +388,7 @@ fn making_an_autoincrement_default_an_expression_then_autoincrement_again_works(
     });
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn migrating_a_unique_constraint_to_a_primary_key_works(api: TestApi) {
     let dm = r#"
         model model1 {

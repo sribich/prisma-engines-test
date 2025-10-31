@@ -23,7 +23,7 @@ jobs:
 
       - name: Build native engines
         run: |
-          cargo build --release -p query-engine -p query-engine-node-api
+          cargo build --release -p query-engine
           mv target/release/libquery_engine.{so,node}
 
       - name: Build WASM engines

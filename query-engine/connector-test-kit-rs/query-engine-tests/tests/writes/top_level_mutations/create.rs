@@ -38,8 +38,6 @@ mod create {
     // "A Create Mutation" should "create and return item"
     #[connector_test]
     async fn create_should_work(runner: Runner) -> TestResult<()> {
-        // This test is flaky on CockroachDB because of a TX write conflict.
-        // We mitigate this issue by retrying multiple times.
         let res = retry!(
             {
                 runner.query(format!(
@@ -93,8 +91,7 @@ mod create {
     }
 
     // A Create Mutation should create and return item with explicit null attributes
-    // TODO: Flaky test on Cockroach, re-enable once figured out
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn return_item_explicit_null_attrs(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -128,7 +125,7 @@ mod create {
     }
 
     // A Create Mutation should create and return item with explicit null values after previous mutation with explicit non-null values
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn return_item_non_null_attrs_then_explicit_null_attrs(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -204,10 +201,9 @@ mod create {
     }
 
     // "A Create Mutation" should "gracefully fail when a unique violation occurs"
-    // TODO(dom): Not working on mongo
     // TODO(dom): 'Expected result to return an error, but found success: {"data":{"createOneScalarModel":{"optUnique":"test"}}}'
     // Comment(dom): Expected, we're not enforcing uniqueness for the test setup yet.
-    #[connector_test(exclude(MongoDb))]
+    #[connector_test]
     async fn gracefully_fails_when_uniq_violation(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,
@@ -223,8 +219,7 @@ mod create {
     }
 
     // "A Create Mutation" should "create and return an item with enums passed as strings"
-    // TODO: Flaky test on Cockroach, re-enable once figured out
-    #[connector_test(exclude(CockroachDb))]
+        #[connector_test]
     async fn return_enums_passed_as_strings(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {createOneScalarModel(data: {id: "1", optEnum: "A"}){ optEnum }}"#),
@@ -303,31 +298,6 @@ mod create {
 mod json_create {
     use query_engine_tests::{assert_error, run_query};
 
-    #[connector_test(only(MongoDb))]
-    async fn create_json(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 1, json: "{}" }) { json }}"#),
-          @r###"{"data":{"createOneTestModel":{"json":"{}"}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 2, json: "null" }) { json }}"#),
-          @r###"{"data":{"createOneTestModel":{"json":null}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 3, json: null }) { json }}"#),
-          @r###"{"data":{"createOneTestModel":{"json":null}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 4 }) { json }}"#),
-          @r###"{"data":{"createOneTestModel":{"json":null}}}"###
-        );
-
-        Ok(())
-    }
-
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn create_json_adv(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
@@ -401,7 +371,7 @@ mod mapped_create {
         schema.to_owned()
     }
 
-    #[connector_test(exclude(mongodb, cockroachdb))]
+    #[connector_test]
     async fn mapped_name_with_space_does_not_break_returning(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {createOneGoodModel(data: {user_id: 1, txt_space: "test"}) {user_id, txt_space}}"#),

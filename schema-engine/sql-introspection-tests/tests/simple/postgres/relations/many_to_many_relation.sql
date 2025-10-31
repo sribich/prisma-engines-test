@@ -1,5 +1,4 @@
 -- tags=postgres
--- exclude=cockroachdb
 
 CREATE TABLE "Biscuit" (
     id SERIAL PRIMARY KEY

@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(exclude(CockroachDb))]
+#[test_suite]
 // update_many_inside_update
 mod um_inside_update {
     use query_engine_tests::{DatamodelWithParams, Runner, TestResult, assert_error, run_query, run_query_json};

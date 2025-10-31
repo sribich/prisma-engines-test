@@ -109,7 +109,7 @@ mod unchecked_update_many {
     }
 
     // "Unchecked updates" should "allow to write to autoincrement IDs directly"
-    #[connector_test(schema(schema_2), exclude(SqlServer, Sqlite))]
+    #[connector_test(schema(schema_2), exclude(Sqlite))]
     async fn allow_write_autoinc_id(runner: Runner) -> TestResult<()> {
         run_query!(&runner, r#"mutation { createOneModelA(data: { id: 1 }) { id } }"#);
         run_query!(&runner, r#"mutation { createOneModelA(data: { id: 2 }) { id } }"#);

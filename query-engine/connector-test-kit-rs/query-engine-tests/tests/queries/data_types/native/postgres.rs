@@ -1,7 +1,7 @@
 use indoc::indoc;
 use query_engine_tests::*;
 
-#[test_suite(only(Postgres, CockroachDb))]
+#[test_suite(only(Postgres))]
 mod postgres_datetime {
     fn schema_date() -> String {
         let schema = indoc! {
@@ -214,7 +214,7 @@ mod postgres_string {
 
 #[test_suite(
     schema(schema),
-    only(Postgres("9", "10", "11", "12", "13", "14", "15", "pg.js.wasm", "neon.js.wasm"))
+    only(Postgres("9", "10", "11", "12", "13", "14", "15"))
 )]
 mod postgres_others {
     fn schema_other_types() -> String {

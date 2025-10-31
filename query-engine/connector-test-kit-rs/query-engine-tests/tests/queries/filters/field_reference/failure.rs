@@ -143,7 +143,7 @@ mod failure {
     // Exclude connectors that supports `ScalarLists`
     // Connectors that don't supports ScalarLists cannot reference fields on inclusion filters
     // since those filters expect scalar lists.
-    #[connector_test(schema(schema), exclude(MongoDb, Postgres, CockroachDb))]
+    #[connector_test(schema(schema), exclude(Postgres))]
     async fn field_ref_inclusion_filter_fails(runner: Runner) -> TestResult<()> {
         assert_error!(
             runner,

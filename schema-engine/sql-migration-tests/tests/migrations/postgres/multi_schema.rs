@@ -1717,8 +1717,7 @@ fn migration_without_schema_change(api: TestApi) {
 }
 
 #[test_connector(
-    tags(Postgres, Mssql),
-    exclude(CockroachDb),
+    tags(Postgres),
     preview_features("multiSchema"),
     namespaces("one")
 )]

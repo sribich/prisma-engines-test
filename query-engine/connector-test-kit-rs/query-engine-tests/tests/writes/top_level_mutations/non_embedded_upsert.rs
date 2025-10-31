@@ -145,7 +145,7 @@ mod non_embedded_upsert {
     }
 
     // "An upsert on the top level" should "execute a nested delete in the update branch"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn nested_delete_in_update(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,

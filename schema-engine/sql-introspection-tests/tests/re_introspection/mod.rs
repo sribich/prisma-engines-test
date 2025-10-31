@@ -10,7 +10,7 @@ use indoc::{formatdoc, indoc};
 use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn mapped_model_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -60,7 +60,7 @@ async fn mapped_model_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn manually_overwritten_mapped_field_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -110,7 +110,7 @@ async fn manually_overwritten_mapped_field_name(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Mysql, CockroachDb))]
+#[test_connector(exclude(Mysql))]
 async fn mapped_model_and_field_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -254,7 +254,7 @@ async fn manually_mapped_model_and_field_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn mapped_field_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -330,7 +330,7 @@ async fn mapped_field_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(capabilities(Enums), exclude(CockroachDb, Sqlite))]
+#[test_connector(capabilities(Enums), exclude(Sqlite))]
 async fn mapped_enum_name(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
@@ -600,7 +600,7 @@ async fn manually_re_mapped_invalid_enum_values(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(exclude(Mysql, Mssql, CockroachDb, Sqlite))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn multiple_changed_relation_names(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -719,7 +719,7 @@ async fn custom_virtual_relation_field_names(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn custom_model_order(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -899,7 +899,7 @@ async fn custom_enum_order(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Mysql, Sqlite, CockroachDb))]
+#[test_connector(exclude(Mysql, Sqlite))]
 async fn multiple_changed_relation_names_due_to_mapped_models(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -1050,68 +1050,6 @@ async fn virtual_uid_default(api: &mut TestApi) {
     api.assert_eq_datamodels(final_dm, &result);
 }
 
-#[test_connector(tags(CockroachDb))]
-async fn virtual_cuid_default_cockroach(api: &mut TestApi) {
-    api.barrel()
-        .execute(|migration| {
-            migration.create_table("User", |t| {
-                t.add_column("id", types::varchar(30).primary(true));
-                t.add_column("non_id", types::varchar(30));
-            });
-
-            migration.create_table("User2", |t| {
-                t.add_column("id", types::varchar(36).primary(true));
-            });
-
-            migration.create_table("User3", |t| {
-                t.add_column("id", types::varchar(26).primary(true));
-            });
-
-            migration.create_table("Unrelated", |t| {
-                t.add_column("id", types::primary());
-            });
-        })
-        .await
-        .unwrap();
-
-    let input_dm = r#"
-        model User {
-            id        String    @id @default(cuid()) @db.String(30)
-            non_id    String    @default(cuid()) @db.String(30)
-        }
-
-        model User2 {
-            id        String    @id @default(uuid()) @db.String(36)
-        }
-
-        model User3 {
-            id        String    @id @default(ulid()) @db.String(26)
-        }
-        "#;
-
-    let final_dm = indoc! {r#"
-        model User {
-            id        String    @id @default(cuid()) @db.String(30)
-            non_id    String    @default(cuid()) @db.String(30)
-        }
-
-        model User2 {
-            id        String    @id @default(uuid()) @db.String(36)
-        }
-
-        model User3 {
-            id        String    @id @default(ulid()) @db.String(26)
-        }
-
-        model Unrelated {
-            id               BigInt @id @default(autoincrement())
-        }
-    "#};
-
-    let result = api.re_introspect(input_dm).await.unwrap();
-    api.assert_eq_datamodels(final_dm, &result);
-}
-
 #[test_connector(tags(Postgres))]
 async fn comments_should_be_kept(api: &mut TestApi) -> TestResult {
     api.raw_cmd("CREATE TYPE a AS ENUM (\'A\')").await;
@@ -1177,7 +1115,7 @@ async fn comments_should_be_kept(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, CockroachDb))]
+#[test_connector]
 async fn updated_at(api: &mut TestApi) {
     api.barrel()
         .execute(|migration| {
@@ -1224,7 +1162,7 @@ async fn updated_at(api: &mut TestApi) {
     api.assert_eq_datamodels(&final_dm, &result);
 }
 
-#[test_connector(exclude(Vitess, CockroachDb))]
+#[test_connector(exclude(Vitess))]
 async fn multiple_many_to_many_on_same_model(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -1461,7 +1399,7 @@ async fn custom_repro(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn re_introspecting_ignore(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -1524,7 +1462,7 @@ async fn re_introspecting_ignore(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Vitess, CockroachDb, Sqlite))]
+#[test_connector(exclude(Vitess, Sqlite))]
 async fn do_not_try_to_keep_custom_many_to_many_self_relation_names(api: &mut TestApi) -> TestResult {
     // We do not have enough information to correctly assign which field should point to column A in the
     // join table and which one to B
@@ -1573,7 +1511,7 @@ async fn do_not_try_to_keep_custom_many_to_many_self_relation_names(api: &mut Te
     Ok(())
 }
 
-#[test_connector(tags(Postgres, Mssql, Mysql, Sqlite))]
+#[test_connector(tags(Postgres, Mysql, Sqlite))]
 async fn re_introspecting_custom_compound_unique_upgrade(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

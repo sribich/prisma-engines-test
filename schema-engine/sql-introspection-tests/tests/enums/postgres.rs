@@ -91,7 +91,7 @@ async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &m
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb), tags(Postgres))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_an_enum_default_value_that_is_an_empty_string(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TYPE "color" AS ENUM ('black', '');

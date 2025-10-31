@@ -1,7 +1,7 @@
 use indoc::indoc;
 use query_engine_tests::*;
 
-#[test_suite(exclude(MongoDb))]
+#[test_suite]
 mod typed_output {
     use query_engine_tests::{fmt_query_raw, run_query, run_query_pretty};
 
@@ -337,93 +337,6 @@ mod typed_output {
         Ok(())
     }
 
-    #[connector_test(schema(schema_mysql), only(MySql("mariadb.js.wasm", "mariadb-mysql.js.wasm")))]
-    async fn all_scalars_mariadb_js(runner: Runner) -> TestResult<()> {
-        create_row(
-            &runner,
-            r#"{
-            id: 1,
-            string: "str",
-            int: 42,
-            bInt: "9223372036854775807",
-            float: 1.5432,
-            bytes: "AQID",
-            bool: true,
-            dt: "1900-10-10T01:10:10.001Z",
-            dec: "123.45678910",
-            json: "{\"a\": \"b\"}"
-          }"#,
-        )
-        .await?;
-        create_row(&runner, r#"{ id: 2 }"#).await?;
-
-        insta::assert_snapshot!(
-          run_query_pretty!(&runner, fmt_query_raw(r#"SELECT * FROM TestModel;"#, vec![])),
-          @r###"
-        {
-          "data": {
-            "queryRaw": {
-              "columns": [
-                "id",
-                "string",
-                "int",
-                "bInt",
-                "float",
-                "bytes",
-                "bool",
-                "dt",
-                "dec",
-                "json"
-              ],
-              "types": [
-                "int",
-                "string",
-                "int",
-                "bigint",
-                "double",
-                "bytes",
-                "int",
-                "datetime",
-                "decimal",
-                "json"
-              ],
-              "rows": [
-                [
-                  1,
-                  "str",
-                  42,
-                  "9223372036854775807",
-                  1.5432,
-                  "AQID",
-                  1,
-                  "1900-10-10T01:10:10.001+00:00",
-                  "123.4567891",
-                  {
-                    "a": "b"
-                  }
-                ],
-                [
-                  2,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null
-                ]
-              ]
-            }
-          }
-        }
-        "###
-        );
-
-        Ok(())
-    }
-
     fn schema_sqlite() -> String {
         let schema = indoc! {
             r#"model TestModel {
@@ -442,7 +355,7 @@ mod typed_output {
         schema.to_owned()
     }
 
-    #[connector_test(schema(schema_sqlite), only(Sqlite), exclude(Sqlite("cfd1")))]
+    #[connector_test(schema(schema_sqlite), only(Sqlite))]
     async fn all_scalars_sqlite(runner: Runner) -> TestResult<()> {
         create_row(
             &runner,
@@ -527,166 +440,6 @@ mod typed_output {
         Ok(())
     }
 
-    #[connector_test(schema(schema_sqlite), only(Sqlite("cfd1")), exclude_executors("QueryCompiler"))]
-    async fn all_scalars_cfd1(runner: Runner) -> TestResult<()> {
-        create_row(
-            &runner,
-            r#"{
-            id: 1,
-            string: "str",
-            int: 42,
-            bInt: 92233720368,
-            float: 1.5432,
-            bytes: "AQID",
-            bool: true,
-            dt: "1900-10-10T01:10:10.001Z",
-            dec: "123.45678910",
-          }"#,
-        )
-        .await?;
-        create_row(&runner, r#"{ id: 2 }"#).await?;
-
-        insta::assert_snapshot!(
-          run_query_pretty!(&runner, fmt_query_raw(r#"SELECT * FROM TestModel;"#, vec![])),
-          @r###"
-        {
-          "data": {
-            "queryRaw": {
-              "columns": [
-                "id",
-                "string",
-                "int",
-                "bInt",
-                "float",
-                "bytes",
-                "bool",
-                "dt",
-                "dec"
-              ],
-              "types": [
-                "int",
-                "string",
-                "int",
-                "bigint",
-                "double",
-                "bytes",
-                "int",
-                "datetime",
-                "double"
-              ],
-              "rows": [
-                [
-                  1,
-                  "str",
-                  42,
-                  "92233720368",
-                  1.5432,
-                  "AQID",
-                  1,
-                  "1900-10-10T01:10:10.001+00:00",
-                  123.4567891
-                ],
-                [
-                  2,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null
-                ]
-              ]
-            }
-          }
-        }
-        "###
-        );
-
-        Ok(())
-    }
-
-    #[connector_test(schema(schema_sqlite), only(Sqlite("cfd1")), only_executors("QueryCompiler"))]
-    async fn all_scalars_cfd1_qc(runner: Runner) -> TestResult<()> {
-        create_row(
-            &runner,
-            r#"{
-            id: 1,
-            string: "str",
-            int: 42,
-            bInt: 92233720368,
-            float: 1.5432,
-            bytes: "AQID",
-            bool: true,
-            dt: "1900-10-10T01:10:10.001Z",
-            dec: "123.45678910",
-          }"#,
-        )
-        .await?;
-        create_row(&runner, r#"{ id: 2 }"#).await?;
-
-        insta::assert_snapshot!(
-          run_query_pretty!(&runner, fmt_query_raw(r#"SELECT * FROM TestModel;"#, vec![])),
-          @r###"
-        {
-          "data": {
-            "queryRaw": {
-              "columns": [
-                "id",
-                "string",
-                "int",
-                "bInt",
-                "float",
-                "bytes",
-                "bool",
-                "dt",
-                "dec"
-              ],
-              "types": [
-                "unknown",
-                "string",
-                "unknown",
-                "unknown",
-                "unknown",
-                "bytes",
-                "unknown",
-                "datetime",
-                "unknown"
-              ],
-              "rows": [
-                [
-                  1,
-                  "str",
-                  42,
-                  92233720368,
-                  1.5432,
-                  "AQID",
-                  1,
-                  "1900-10-10T01:10:10.001+00:00",
-                  123.4567891
-                ],
-                [
-                  2,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null
-                ]
-              ]
-            }
-          }
-        }
-        "###
-        );
-
-        Ok(())
-    }
-
     #[connector_test(schema(generic), only(Mysql))]
     async fn unknown_type_mysql(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
@@ -704,30 +457,6 @@ mod typed_output {
             fmt_query_raw(r#"SELECT POINT(1, 1);"#, vec![]),
             2010,
             "Failed to deserialize column of type 'point'"
-        );
-
-        Ok(())
-    }
-
-    #[connector_test(schema(generic), only(SqlServer("2017", "2019", "2022")))]
-    async fn unknown_type_mssql(runner: Runner) -> TestResult<()> {
-        assert_error!(
-            &runner,
-            fmt_query_raw(r#"SELECT geometry::Parse('POINT(3 4 7 2.5)');"#, vec![]),
-            2010,
-            "not yet implemented for Udt"
-        );
-
-        Ok(())
-    }
-
-    #[connector_test(schema(generic), only(SqlServer("mssql.js.wasm")))]
-    async fn unknown_type_mssql_js(runner: Runner) -> TestResult<()> {
-        assert_error!(
-            &runner,
-            fmt_query_raw(r#"SELECT geometry::Parse('POINT(3 4 7 2.5)');"#, vec![]),
-            2010,
-            "Failed to deserialize column of type 'geometry'"
         );
 
         Ok(())

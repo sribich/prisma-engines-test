@@ -87,7 +87,7 @@ async fn a_simple_table_with_gql_types(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn should_ignore_prisma_helper_tables(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -167,7 +167,7 @@ async fn a_table_with_compound_primary_keys(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn a_table_with_unique_index(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -194,7 +194,7 @@ async fn a_table_with_unique_index(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn a_table_with_multi_column_unique_index(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -223,7 +223,7 @@ async fn a_table_with_multi_column_unique_index(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn a_table_with_required_and_optional_columns(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -251,7 +251,7 @@ async fn a_table_with_required_and_optional_columns(api: &mut TestApi) -> TestRe
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, CockroachDb))]
+#[test_connector]
 async fn a_table_with_default_values(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -294,7 +294,7 @@ async fn a_table_with_default_values(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn a_table_with_a_non_unique_index(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -322,7 +322,7 @@ async fn a_table_with_a_non_unique_index(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn a_table_with_a_multi_column_non_unique_index(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -353,7 +353,7 @@ async fn a_table_with_a_multi_column_non_unique_index(api: &mut TestApi) -> Test
 }
 
 // SQLite does not have a serial type that's not a primary key.
-#[test_connector(exclude(Sqlite, Mysql, CockroachDb))]
+#[test_connector(exclude(Sqlite, Mysql))]
 async fn a_table_with_non_id_autoincrement(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -379,7 +379,7 @@ async fn a_table_with_non_id_autoincrement(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, CockroachDb))]
+#[test_connector]
 async fn default_values(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -451,7 +451,7 @@ async fn default_values(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres14, Postgres15, Postgres16))]
+#[test_connector(tags(Postgres), exclude(Postgres14, Postgres15, Postgres16))]
 async fn pg_default_value_as_dbgenerated(api: &mut TestApi) -> TestResult {
     let sequence = "CREATE SEQUENCE test_seq START 1".to_string();
     api.database().execute_raw(&sequence, &[]).await?;
@@ -580,7 +580,7 @@ async fn a_table_with_an_index_that_contains_expressions_should_be_ignored(api: 
 }
 
 // MySQL doesn't have partial indices.
-#[test_connector(exclude(Mysql, CockroachDb))]
+#[test_connector(exclude(Mysql))]
 async fn a_table_with_partial_indexes_should_ignore_them(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -648,7 +648,7 @@ async fn different_default_values_should_work(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Sqlite, Mssql, CockroachDb))]
+#[test_connector(exclude(Sqlite))]
 async fn negative_default_values_should_work(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -827,39 +827,12 @@ async fn unique_and_id_on_same_field_works_sqlite(api: &mut TestApi) -> TestResu
     Ok(())
 }
 
-#[test_connector(tags(Mssql))]
-async fn unique_and_id_on_same_field_works_mssql(api: &mut TestApi) -> TestResult {
-    let setup = r#"
-        CREATE TABLE users (
-            id INT IDENTITY,
-
-            CONSTRAINT users_id_key UNIQUE (id),
-            CONSTRAINT users_pkey PRIMARY KEY (id)
-        );
-        "#;
-
-    api.raw_cmd(setup).await;
-
-    let dm = indoc! {r##"
-        model users {
-          id Int @id @unique @default(autoincrement())
-        }
-    "##};
-
-    let result = api.introspect().await?;
-    api.assert_eq_datamodels(dm, &result);
-
-    Ok(())
-}
-
 #[test_connector(tags(Postgres))]
 // If multiple constraints are created in the create table statement Postgres seems to collapse them
 // into the first named one. So on the db level there will be one named really_must_be_different that
 // is both unique and primary. We only render it as @id then.
 // If a later alter table statement adds another unique constraint then it is persisted as its own
 // entity and can be introspected.
-// In CockroachDB, index OIDs are statically hashed. However, the ordering means that either index
-// can be returned. As such, the test is skipped. See https://github.com/cockroachdb/cockroach/issues/71098.
 async fn unique_and_index_on_same_field_works_postgres(api: &mut TestApi) -> TestResult {
     api.raw_cmd(
         "

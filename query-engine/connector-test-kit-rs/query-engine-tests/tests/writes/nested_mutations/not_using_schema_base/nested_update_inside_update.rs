@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(exclude(CockroachDb))]
+#[test_suite]
 mod update_inside_update {
     use indoc::indoc;
     use query_engine_tests::{DatamodelWithParams, assert_error, run_query, run_query_json};
@@ -602,7 +602,7 @@ mod update_inside_update {
 
     // Transactionality
 
-    #[connector_test(schema(schema_1), exclude(Sqlite("cfd1")))]
+    #[connector_test(schema(schema_1))]
     // "TRANSACTIONAL: a many to many relation" should "fail gracefully on wrong where and assign error correctly and not execute partially"
     // On D1, this fails with:
     //

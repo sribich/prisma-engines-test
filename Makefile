@@ -40,7 +40,6 @@ profile-shell:
 ##################
 # Build commands #
 ##################
-
 build:
 	cargo build
 
@@ -58,6 +57,42 @@ release:
 #################
 # Test commands #
 #################
+test: export TEST_MYSQL = mysql://root:prisma@localhost:3306/prisma
+test: export TEST_MYSQL8 = mysql://root:prisma@localhost:3307/prisma
+test: export TEST_MYSQL_MARIADB = mysql://root:prisma@localhost:3308/prisma
+test: export TEST_PSQL = postgresql://postgres:prisma@localhost:5435/postgres
+test:
+    # cargo test --package=quaint --all-features
+	# cargo test --package=query-engine-tests --all-features
+	# cargo test --package=sql-introspection-tests --all-features
+	# cargo test --package=sql-schema-describer --all-features
+	# cargo test --package=schema-engine-cli --all-features
+	# cargo test --package=sql-migration-tests --all-features
+	# cargo test --package=black-box-tests --all-features
+	
+	
+	cargo test --workspace --all-features \
+	    --exclude=quaint
+	    --exclude=black-box-tests \
+	    --exclude=query-engine-tests \
+	    --exclude=sql-migration-tests \
+	    --exclude=schema-engine-cli \
+	    --exclude=sql-schema-describer \
+	    --exclude=sql-introspection-tests
+
+test-unit:
+	cargo test --workspace --all-features \
+	    --exclude=quaint \
+	    --exclude=query-engine \
+	    --exclude=black-box-tests \
+	    --exclude=query-engine-tests \
+	    --exclude=sql-migration-tests \
+	    --exclude=schema-engine-cli \
+	    --exclude=sql-schema-describer \
+	    --exclude=sql-introspection-tests
+
+test-quaint:
+	cargo test --package quaint --all-features
 
 test-qe:
 	cargo test --package query-engine-tests
@@ -76,18 +111,6 @@ test-qe-verbose-st:
 # Black-box tests, exercising the query engine HTTP apis (metrics, tracing, etc)
 test-qe-black-box: build-qe
 	cargo test --package black-box-tests -- --test-threads 1
-
-test-unit:
-	cargo test --workspace --all-features \
-	    --exclude=quaint \
-	    --exclude=query-engine \
-	    --exclude=query-engine-node-api \
-	    --exclude=black-box-tests \
-	    --exclude=query-engine-tests \
-	    --exclude=sql-migration-tests \
-	    --exclude=schema-engine-cli \
-	    --exclude=sql-schema-describer \
-	    --exclude=sql-introspection-tests
 
 ###########################
 # Database setup commands #

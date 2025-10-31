@@ -34,7 +34,7 @@ mod transactional {
         schema.to_owned()
     }
 
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn two_success(runner: Runner) -> TestResult<()> {
         let queries = vec![
             r#"mutation { createOneModelA(data: { id: 1 }) { id }}"#.to_string(),
@@ -50,7 +50,7 @@ mod transactional {
         Ok(())
     }
 
-    #[connector_test()]
+    #[connector_test]
     async fn two_query_for_batch(runner: Runner) -> TestResult<()> {
         let queries = vec![
             r#"mutation { createOneUser(data: { id: 1, email: "test@test.com", name: "page" }) { id } }"#.to_string(),
@@ -73,7 +73,7 @@ mod transactional {
         Ok(())
     }
 
-    #[connector_test(exclude(Sqlite("cfd1")))]
+    #[connector_test]
     // On D1, this fails with:
     //
     // ```diff
@@ -112,7 +112,7 @@ mod transactional {
         Ok(())
     }
 
-    #[connector_test(exclude(Sqlite("cfd1")))]
+    #[connector_test]
     // On D1, this fails with:
     //
     // ```diff
@@ -145,7 +145,7 @@ mod transactional {
         Ok(())
     }
 
-    #[connector_test(exclude(MongoDb))]
+    #[connector_test]
     async fn valid_isolation_level(runner: Runner) -> TestResult<()> {
         let queries = vec![r#"mutation { createOneModelB(data: { id: 1 }) { id }}"#.to_string()];
 
@@ -156,26 +156,13 @@ mod transactional {
         Ok(())
     }
 
-    #[connector_test(exclude(MongoDb))]
+    #[connector_test]
     async fn invalid_isolation_level(runner: Runner) -> TestResult<()> {
         let queries = vec![r#"mutation { createOneModelB(data: { id: 1 }) { id }}"#.to_string()];
 
         let batch_results = runner.batch(queries, true, Some("NotALevel".into())).await?;
 
         batch_results.assert_failure(2023, Some("Invalid isolation level `NotALevel`".into()));
-
-        Ok(())
-    }
-
-    #[connector_test(only(MongoDb))]
-    async fn isolation_level_mongo(runner: Runner) -> TestResult<()> {
-        let queries = vec![r#"mutation { createOneModelB(data: { id: 1 }) { id }}"#.to_string()];
-
-        let batch_results = runner.batch(queries, true, Some("Serializable".into())).await?;
-        batch_results.assert_failure(
-            2026,
-            Some("Mongo does not support setting transaction isolation levels".into()),
-        );
 
         Ok(())
     }

@@ -82,7 +82,7 @@ mod update_many_and_return {
     }
 
     // "An updateManyAndReturn mutation" should "correctly apply all number operations for Int"
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn apply_number_ops_for_int(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1, optStr: "str1" }"#).await?;
         create_row(&runner, r#"{ id: 2, optStr: "str2", optInt: 2 }"#).await?;
@@ -114,68 +114,12 @@ mod update_many_and_return {
             ]
         );
 
-        // Todo: Mongo divisions are broken
-        if !matches!(runner.connector_version(), ConnectorVersion::MongoDb(_)) {
-            // optInts before this op are now: null/0, 4, 6
-            is_one_of!(
-                query_number_operation(&runner, "optInt", "divide", "3").await?,
-                [
-                    r#"[{"optInt":null},{"optInt":1},{"optInt":2}]"#,
-                    r#"[{"optInt":0},{"optInt":1},{"optInt":2}]"#
-                ]
-            );
-        }
-
+        // optInts before this op are now: null/0, 4, 6
         is_one_of!(
-            query_number_operation(&runner, "optInt", "set", "5").await?,
+            query_number_operation(&runner, "optInt", "divide", "3").await?,
             [
-                r#"[{"optInt":5},{"optInt":5},{"optInt":5}]"#,
-                r#"[{"optInt":5},{"optInt":5},{"optInt":5}]"#
-            ]
-        );
-
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "set", "null").await?,
-            [
-                r#"[{"optInt":null},{"optInt":null},{"optInt":null}]"#,
-                r#"[{"optInt":null},{"optInt":null},{"optInt":null}]"#
-            ]
-        );
-
-        Ok(())
-    }
-
-    // CockroachDB does not support the "divide" operator as is.
-    // See https://github.com/cockroachdb/cockroach/issues/41448.
-    #[connector_test(only(CockroachDb))]
-    async fn apply_number_ops_for_int_cockroach(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, optStr: "str1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, optStr: "str2", optInt: 2 }"#).await?;
-        create_row(&runner, r#"{ id: 3, optStr: "str3", optInt: 3, optFloat: 3.1 }"#).await?;
-
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "increment", "10").await?,
-            [
-                r#"[{"optInt":null},{"optInt":12},{"optInt":13}]"#,
-                r#"[{"optInt":10},{"optInt":12},{"optInt":13}]"#
-            ]
-        );
-
-        // optInts before this op are now: null/10, 12, 13
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "decrement", "10").await?,
-            [
-                r#"[{"optInt":null},{"optInt":2},{"optInt":3}]"#,
-                r#"[{"optInt":0},{"optInt":2},{"optInt":3}]"#
-            ]
-        );
-
-        // optInts before this op are now: null/0, 2, 3
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "multiply", "2").await?,
-            [
-                r#"[{"optInt":null},{"optInt":4},{"optInt":6}]"#,
-                r#"[{"optInt":0},{"optInt":4},{"optInt":6}]"#
+                r#"[{"optInt":null},{"optInt":1},{"optInt":2}]"#,
+                r#"[{"optInt":0},{"optInt":1},{"optInt":2}]"#
             ]
         );
 

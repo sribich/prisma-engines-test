@@ -1,5 +1,3 @@
-mod cockroachdb;
-mod mssql;
 mod postgres;
 
 use indoc::{formatdoc, indoc};

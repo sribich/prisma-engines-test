@@ -2,7 +2,7 @@ use sql_migration_tests::multi_engine_test_api::*;
 use std::sync::Arc;
 use test_macros::test_connector;
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn advisory_locking_works(mut api: TestApi) {
     let mut first_me = api.new_engine();
     let migrations_directory = Arc::new(api.create_migrations_directory());

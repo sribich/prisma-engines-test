@@ -39,7 +39,7 @@ async fn preview_feature_is_required(api: &mut TestApi) -> TestResult {
 }
 
 // See next test after this one for PostgreSQL 16
-#[test_connector(tags(Postgres), exclude(Postgres16, CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), exclude(Postgres16), preview_features("views"))]
 async fn simple_view_from_one_table(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "User" (
@@ -749,7 +749,6 @@ async fn re_intro_keeps_the_field_map(api: &mut TestApi) -> TestResult {
 
 #[test_connector(
     tags(Postgres),
-    exclude(CockroachDb),
     preview_features("views"),
     namespaces("public")
 )]
@@ -862,7 +861,6 @@ async fn invalid_field_names_trigger_warnings(api: &mut TestApi) -> TestResult {
 
 #[test_connector(
     tags(Postgres),
-    exclude(CockroachDb),
     preview_features("views"),
     namespaces("public", "private")
 )]

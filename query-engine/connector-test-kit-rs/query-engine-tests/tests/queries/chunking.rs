@@ -4,11 +4,6 @@ use query_engine_tests::*;
 /// * It should be called QUERY_CHUNK_SIZE instead, because it's a knob to configure query chunking
 ///  which is splitting queries with more arguments than accepted by the database, in multiple
 ///  queries.
-/// * WASM versions of the engine don't allow for runtime configuration of this value so they default
-///  the mininum supported by any database on a SQL family (eg. Postgres, MySQL, SQLite, SQL Server,
-///  etc.) As such, in order to guarantee chunking happens, a large number of arguments --larger
-///  than the default-- needs to be used, to have actual coverage of chunking code while exercising
-///  WASM query engines.
 #[test_suite(schema(schema))]
 mod chunking {
     use indoc::indoc;
@@ -85,7 +80,7 @@ mod chunking {
             Ok(())
         }
 
-        #[connector_test(exclude_features("relationJoins"), exclude(Sqlite("cfd1")))]
+        #[connector_test(exclude_features("relationJoins"))]
         // It errors on D1 with
         // Error in performIO: Error: D1_ERROR: Expression tree is too large (maximum depth 100)
         // see https://github.com/prisma/prisma/issues/23919
@@ -202,7 +197,7 @@ mod chunking {
         Ok(())
     }
 
-    #[connector_test(exclude(MongoDb, Sqlite("cfd1")))]
+    #[connector_test]
     async fn order_by_aggregation_should_fail(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
@@ -218,7 +213,7 @@ mod chunking {
         Ok(())
     }
 
-    #[connector_test(capabilities(NativeFullTextSearchWithoutIndex), exclude(MongoDb))]
+    #[connector_test(capabilities(NativeFullTextSearchWithoutIndex))]
     async fn order_by_relevance_should_fail(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 

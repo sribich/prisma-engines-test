@@ -125,10 +125,7 @@ mod occ {
     // left: 3
     // right: 1
     // ```
-    #[connector_test(
-        schema(occ_simple),
-        exclude(MongoDB, CockroachDb, Vitess("planetscale.js.wasm"), Sqlite("cfd1"))
-    )]
+    #[connector_test(schema(occ_simple))]
     async fn occ_update_many_test(runner: Runner) -> TestResult<()> {
         let runner = Arc::new(runner);
 
@@ -143,7 +140,7 @@ mod occ {
         Ok(())
     }
 
-    #[connector_test(schema(occ_simple), exclude(CockroachDb, Vitess("planetscale.js.wasm")))]
+    #[connector_test(schema(occ_simple))]
     async fn occ_update_test(runner: Runner) -> TestResult<()> {
         let runner = Arc::new(runner);
 
@@ -174,7 +171,7 @@ mod occ {
         Ok(())
     }
 
-    #[connector_test(schema(occ_simple), exclude(Vitess("planetscale.js.wasm")))]
+    #[connector_test(schema(occ_simple))]
     async fn occ_delete_test(runner: Runner) -> TestResult<()> {
         let runner = Arc::new(runner);
 
@@ -260,27 +257,14 @@ mod occ {
 
         let res = find_one_resource(runner.clone()).await;
 
-        // MongoDB is different here and seems to only do one create with all the upserts
-        // where as all the sql databases will do one create and one upsert
-        let expected = if matches!(runner.connector_version(), ConnectorVersion::MongoDb(_)) {
-            serde_json::json!({
-                "data": {
+        let expected = serde_json::json!({
+            "data": {
                 "findFirstResource": {
-                  "occStamp": 0,
-                  "id": 1
+                    "occStamp": 1,
+                    "id": 1
                 }
-              }
-            })
-        } else {
-            serde_json::json!({
-                "data": {
-                "findFirstResource": {
-                  "occStamp": 1,
-                  "id": 1
-                }
-              }
-            })
-        };
+            }
+        });
         assert_eq!(res, expected);
 
         Ok(())

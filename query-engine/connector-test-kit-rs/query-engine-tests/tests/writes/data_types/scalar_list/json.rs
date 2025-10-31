@@ -16,7 +16,7 @@ mod json {
         schema.to_owned()
     }
 
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn behave_like_regular_val_for_create_and_update(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -61,9 +61,6 @@ mod json {
               jsons
             }
           }"#,
-          // MongoDB behaves differently. This is a bug.
-          // https://github.com/prisma/prisma/issues/18019
-          MongoDb(_) => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["{\"a\":\"b\"}","{}","2","[]","{}"]}}}"#],
           _ => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["{\"a\":\"b\"}","{}","2","[[],{}]"]}}}"#]
         );
 
@@ -72,7 +69,7 @@ mod json {
         // We're temporarily ignoring it for the JSON protocol because we can't differentiate a list of json values from a json array.
         // Similarly, this does not currently work with driver adapters.
         // https://github.com/prisma/prisma/issues/18019
-        if runner.protocol().is_graphql() && !runner.is_external_executor() {
+        if runner.protocol().is_graphql() {
             match_connector_result!(
               &runner,
               r#"mutation {
@@ -82,7 +79,6 @@ mod json {
                   jsons
                 }
               }"#,
-              MongoDb(_) => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["{\"a\":\"b\"}","{}","2","[]","{}","[]","{}"]}}}"#],
               _ => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["{\"a\":\"b\"}","{}","2","[[],{}]","[]","{}"]}}}"#]
             );
         }
@@ -127,8 +123,7 @@ mod json {
     }
 
     // "An Update Mutation that pushes to some empty scalar lists" should "work"
-    // Skipped for CockroachDB as enum array concatenation is not supported (https://github.com/cockroachdb/cockroach/issues/71388).
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn update_mut_push_empty_scalar_list(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1 }"#).await?;
         create_row(&runner, r#"{ id: 2 }"#).await?;
@@ -153,9 +148,6 @@ mod json {
               jsons
             }
           }"#,
-          // MongoDB behaves differently. This is a bug.
-          // https://github.com/prisma/prisma/issues/18019
-          MongoDb(_) => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["\"1\"","\"2\""]}}}"#],
           _ => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["[\"1\",\"2\"]"]}}}"#]
         );
 
@@ -164,7 +156,7 @@ mod json {
         // We're temporarily ignoring it for the JSON protocol because we can't differentiate a list of json values from a json array.
         // Similarly, this does not currently work with driver adapters.
         // https://github.com/prisma/prisma/issues/18019
-        if runner.protocol().is_graphql() && !runner.is_external_executor() {
+        if runner.protocol().is_graphql() {
             match_connector_result!(
               &runner,
               r#"mutation {
@@ -174,7 +166,6 @@ mod json {
                   jsons
                 }
               }"#,
-              MongoDb(_) => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["\"1\"","\"2\"","1","2"]}}}"#],
               _ => vec![r#"{"data":{"updateOneScalarModel":{"jsons":["[\"1\",\"2\"]","1","2"]}}}"#]
             );
         }

@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-// Note: In some DBs (Mongo, cough) null <any operation> something is not null, but 0.
+// Note: In some DBs null <any operation> something is not null, but 0.
 #[test_suite(schema(schema))]
 mod update_many {
     use indoc::indoc;
@@ -182,7 +182,7 @@ mod update_many {
     }
 
     // "An updateMany mutation" should "correctly apply all number operations for Int"
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn apply_number_ops_for_int(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1, optStr: "str1" }"#).await?;
         create_row(&runner, r#"{ id: 2, optStr: "str2", optInt: 2 }"#).await?;
@@ -214,68 +214,12 @@ mod update_many {
             ]
         );
 
-        // Todo: Mongo divisions are broken
-        if !matches!(runner.connector_version(), ConnectorVersion::MongoDb(_)) {
-            // optInts before this op are now: null/0, 4, 6
-            is_one_of!(
-                query_number_operation(&runner, "optInt", "divide", "3").await?,
-                [
-                    r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":1},{"optInt":2}]}}"#,
-                    r#"{"data":{"findManyTestModel":[{"optInt":0},{"optInt":1},{"optInt":2}]}}"#
-                ]
-            );
-        }
-
+        // optInts before this op are now: null/0, 4, 6
         is_one_of!(
-            query_number_operation(&runner, "optInt", "set", "5").await?,
+            query_number_operation(&runner, "optInt", "divide", "3").await?,
             [
-                r#"{"data":{"findManyTestModel":[{"optInt":5},{"optInt":5},{"optInt":5}]}}"#,
-                r#"{"data":{"findManyTestModel":[{"optInt":5},{"optInt":5},{"optInt":5}]}}"#
-            ]
-        );
-
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "set", "null").await?,
-            [
-                r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":null},{"optInt":null}]}}"#,
-                r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":null},{"optInt":null}]}}"#
-            ]
-        );
-
-        Ok(())
-    }
-
-    // CockroachDB does not support the "divide" operator as is.
-    // See https://github.com/cockroachdb/cockroach/issues/41448.
-    #[connector_test(only(CockroachDb))]
-    async fn apply_number_ops_for_int_cockroach(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, optStr: "str1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, optStr: "str2", optInt: 2 }"#).await?;
-        create_row(&runner, r#"{ id: 3, optStr: "str3", optInt: 3, optFloat: 3.1 }"#).await?;
-
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "increment", "10").await?,
-            [
-                r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":12},{"optInt":13}]}}"#,
-                r#"{"data":{"findManyTestModel":[{"optInt":10},{"optInt":12},{"optInt":13}]}}"#
-            ]
-        );
-
-        // optInts before this op are now: null/10, 12, 13
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "decrement", "10").await?,
-            [
-                r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":2},{"optInt":3}]}}"#,
-                r#"{"data":{"findManyTestModel":[{"optInt":0},{"optInt":2},{"optInt":3}]}}"#
-            ]
-        );
-
-        // optInts before this op are now: null/0, 2, 3
-        is_one_of!(
-            query_number_operation(&runner, "optInt", "multiply", "2").await?,
-            [
-                r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":4},{"optInt":6}]}}"#,
-                r#"{"data":{"findManyTestModel":[{"optInt":0},{"optInt":4},{"optInt":6}]}}"#
+                r#"{"data":{"findManyTestModel":[{"optInt":null},{"optInt":1},{"optInt":2}]}}"#,
+                r#"{"data":{"findManyTestModel":[{"optInt":0},{"optInt":1},{"optInt":2}]}}"#
             ]
         );
 
@@ -380,46 +324,6 @@ mod update_many {
 #[test_suite(schema(json_opt), exclude(MySql(5.6)), capabilities(Json))]
 mod json_update_many {
     use query_engine_tests::{assert_error, run_query};
-
-    #[connector_test(only(MongoDb))]
-    async fn update_json(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 1 }) { json }}"#),
-          @r###"{"data":{"createOneTestModel":{"json":null}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { updateManyTestModel(where: { id: 1 }, data: { json: "{}" }) { count }}"#),
-          @r###"{"data":{"updateManyTestModel":{"count":1}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { updateManyTestModel(where: { id: 1 }, data: { json: "null" }) { count }}"#),
-          @r###"{"data":{"updateManyTestModel":{"count":1}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"{ findFirstTestModel(where: {id: 1}) { id, json } }"#),
-          @r###"{"data":{"findFirstTestModel":{"id":1,"json":null}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { updateManyTestModel(where: { id: 1 }, data: { json: "{}" }) { count }}"#),
-          @r###"{"data":{"updateManyTestModel":{"count":1}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { updateManyTestModel(where: { id: 1 }, data: { json: null }) { count }}"#),
-          @r###"{"data":{"updateManyTestModel":{"count":1}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"{ findFirstTestModel(where: {id: 1}) { id, json } }"#),
-          @r###"{"data":{"findFirstTestModel":{"id":1,"json":null}}}"###
-        );
-
-        Ok(())
-    }
 
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn update_json_adv(runner: Runner) -> TestResult<()> {

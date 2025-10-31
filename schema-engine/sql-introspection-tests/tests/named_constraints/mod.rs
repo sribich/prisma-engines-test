@@ -4,11 +4,10 @@ mod sqlite;
 use barrel::types;
 use enumflags2::BitFlags;
 use expect_test::expect;
-use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(tags(Mssql, Postgres))]
+#[test_connector(tags(Postgres))]
 async fn introspecting_non_default_pkey_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -43,7 +42,7 @@ async fn introspecting_non_default_pkey_names_works(api: &mut TestApi) -> TestRe
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres))]
+#[test_connector(tags(Postgres))]
 async fn introspecting_default_pkey_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -78,7 +77,7 @@ async fn introspecting_default_pkey_names_works(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres))]
+#[test_connector(tags(Postgres))]
 async fn introspecting_non_default_unique_constraint_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -113,7 +112,7 @@ async fn introspecting_non_default_unique_constraint_names_works(api: &mut TestA
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres))]
+#[test_connector(tags(Postgres))]
 async fn introspecting_default_unique_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -148,7 +147,7 @@ async fn introspecting_default_unique_names_works(api: &mut TestApi) -> TestResu
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres))]
+#[test_connector(tags(Postgres))]
 async fn introspecting_non_default_index_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -189,7 +188,7 @@ async fn introspecting_non_default_index_names_works(api: &mut TestApi) -> TestR
     Ok(())
 }
 
-#[test_connector(tags(Mssql, Postgres))]
+#[test_connector(tags(Postgres))]
 async fn introspecting_default_index_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -230,7 +229,7 @@ async fn introspecting_default_index_names_works(api: &mut TestApi) -> TestResul
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Mysql, CockroachDb))]
+#[test_connector(exclude(Mysql))]
 async fn introspecting_default_fk_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -272,7 +271,7 @@ async fn introspecting_default_fk_names_works(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Sqlite, Mssql, Mysql, CockroachDb))]
+#[test_connector(exclude(Sqlite, Mysql))]
 async fn introspecting_custom_fk_names_works(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -306,48 +305,6 @@ async fn introspecting_custom_fk_names_works(api: &mut TestApi) -> TestResult {
         model User {
           id   Int    @id @default(autoincrement())
           Post Post[]
-        }
-    "#]];
-
-    expected.assert_eq(&api.introspect_dml().await?);
-
-    Ok(())
-}
-
-#[test_connector(tags(Mssql))]
-async fn introspecting_custom_default_names_should_output_to_dml(api: &mut TestApi) -> TestResult {
-    let create_table = format!(
-        "CREATE TABLE [{}].[custom_defaults_test] (id INT CONSTRAINT pk_meow PRIMARY KEY, data NVARCHAR(255) CONSTRAINT meow DEFAULT 'foo')",
-        api.schema_name()
-    );
-
-    api.database().raw_cmd(&create_table).await?;
-
-    let expected = expect![[r#"
-        model custom_defaults_test {
-          id   Int     @id(map: "pk_meow")
-          data String? @default("foo", map: "meow") @db.NVarChar(255)
-        }
-    "#]];
-
-    expected.assert_eq(&api.introspect_dml().await?);
-
-    Ok(())
-}
-
-#[test_connector(tags(Mssql))]
-async fn introspecting_default_default_names_should_not_output_to_dml(api: &mut TestApi) -> TestResult {
-    let create_table = format!(
-        "CREATE TABLE [{}].[custom_defaults_test] (id INT CONSTRAINT pk_meow PRIMARY KEY, data NVARCHAR(255) CONSTRAINT custom_defaults_test_data_df DEFAULT 'foo')",
-        api.schema_name()
-    );
-
-    api.database().raw_cmd(&create_table).await?;
-
-    let expected = expect![[r#"
-        model custom_defaults_test {
-          id   Int     @id(map: "pk_meow")
-          data String? @default("foo") @db.NVarChar(255)
         }
     "#]];
 

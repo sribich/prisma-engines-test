@@ -147,23 +147,6 @@ fn default_dbgenerated_with_type_definitions_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(tags(CockroachDb))]
-fn default_dbgenerated_with_type_definitions_should_work_cockroach(api: TestApi) {
-    let dm = r#"
-        model A {
-            id String @id @default(dbgenerated("(now()::text)"))
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("id", |col| {
-            col.assert_default(Some(DefaultValue::db_generated("now()::STRING")))
-        })
-    });
-}
-
 #[test_connector(tags(Postgres))]
 fn default_dbgenerated_should_work(api: TestApi) {
     let dm = r#"
@@ -178,21 +161,6 @@ fn default_dbgenerated_should_work(api: TestApi) {
         table.assert_column("id", |col| {
             col.assert_default(Some(DefaultValue::db_generated("now()")))
         })
-    });
-}
-
-#[test_connector(tags(CockroachDb))]
-fn default_dbgenerated_should_work_cockroach(api: TestApi) {
-    let dm = r#"
-        model A {
-            id DateTime @id @default(dbgenerated("(now())"))
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("id", |col| col.assert_default(Some(DefaultValue::now())))
     });
 }
 
@@ -211,26 +179,6 @@ fn uuid_default(api: TestApi) {
         table.assert_column("uuid", |col| {
             col.assert_default(Some(DefaultValue::db_generated(
                 "'00000000-0000-0000-0016-000000000004'::uuid",
-            )))
-        })
-    });
-}
-
-#[test_connector(tags(CockroachDb))]
-fn uuid_default_cockroach(api: TestApi) {
-    let dm = r#"
-        model A {
-            id   String @id @db.Uuid
-            uuid String @db.Uuid @default("00000000-0000-0000-0016-000000000004")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("uuid", |col| {
-            col.assert_default(Some(DefaultValue::db_generated(
-                "'00000000-0000-0000-0016-000000000004'::UUID",
             )))
         })
     });
@@ -367,83 +315,6 @@ fn column_defaults_must_be_migrated(api: TestApi) {
     api.assert_schema().assert_table("Fruit", |table| {
         table.assert_column("name", |col| {
             col.assert_default_kind(Some(DefaultKind::Value(PrismaValue::String("mango".to_string()))))
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn default_constraint_names_should_work(api: TestApi) {
-    let dm = r#"
-        generator js {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Int @id @default(autoincrement())
-            data String @default("beeb buub", map: "meow")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("data", |col| {
-            let mut expected = DefaultValue::value("beeb buub");
-            expected.set_constraint_name("meow");
-
-            col.assert_default(Some(expected))
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn default_constraint_name_default_values_should_work(api: TestApi) {
-    let dm = r#"
-        generator js {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Int @id @default(autoincrement())
-            data String @default("beeb buub")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("data", |col| {
-            let mut expected = DefaultValue::value("beeb buub");
-            expected.set_constraint_name("A_data_df");
-
-            col.assert_default(Some(expected))
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn default_constraint_name_default_values_with_mapping_should_work(api: TestApi) {
-    let dm = r#"
-        generator js {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Int @id @default(autoincrement())
-            data String @default("beeb buub") @map("purr")
-
-            @@map("meow")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("meow", |table| {
-        table.assert_column("purr", |col| {
-            let mut expected = DefaultValue::value("beeb buub");
-            expected.set_constraint_name("meow_purr_df");
-
-            col.assert_default(Some(expected))
         })
     });
 }

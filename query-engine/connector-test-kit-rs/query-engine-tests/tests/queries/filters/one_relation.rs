@@ -80,7 +80,6 @@ mod one_relation {
         match_connector_result!(
             &runner,
             r#"{findManyBlog(where: { post: { isNot:{ popularity: { gte: 500 }}}}){name}}"#,
-            MongoDb(_) => vec![r#"{"data":{"findManyBlog":[{"name":"blog 1"},{"name":"blog 2"}]}}"#],
             _ => vec![r#"{"data":{"findManyBlog":[{"name":"blog 1"},{"name":"blog 2"},{"name":"blog 4"}]}}"#]
         );
 
@@ -278,7 +277,7 @@ mod one_relation {
         schema.to_owned()
     }
 
-    #[connector_test(schema(special_case_schema), exclude(SqlServer))]
+    #[connector_test(schema(special_case_schema))]
     async fn one2one_join_relation_1level(runner: Runner) -> TestResult<()> {
         runner
             .query(r#"mutation { createOnePost(data: { title:"Title1"}) { title }}"#)

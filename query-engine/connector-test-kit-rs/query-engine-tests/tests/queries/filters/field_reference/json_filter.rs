@@ -270,7 +270,6 @@ mod json_filter {
         schema.to_owned()
     }
 
-    // Cockroach doesn't support json list
     #[connector_test(schema(schema_list), capabilities(JsonFiltering, ScalarLists))]
     async fn scalar_list_filters(runner: Runner) -> TestResult<()> {
         test_data_list(&runner).await?;
@@ -483,7 +482,7 @@ mod json_filter {
 
     fn json_path(runner: &Runner) -> &'static str {
         match runner.connector_version() {
-            ConnectorVersion::Postgres(_) | ConnectorVersion::CockroachDb(_) => r#"path: ["a", "b"]"#,
+            ConnectorVersion::Postgres(_) => r#"path: ["a", "b"]"#,
             ConnectorVersion::Sqlite(_) | ConnectorVersion::MySql(_) | ConnectorVersion::Vitess(_) => {
                 r#"path: "$.a.b""#
             }

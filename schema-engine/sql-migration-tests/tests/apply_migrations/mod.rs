@@ -33,7 +33,7 @@ fn applying_a_single_migration_should_work(api: TestApi) {
     api.apply_migrations(&dir).send_sync().assert_applied_migrations(&[]);
 }
 
-#[test_connector(tags(Mssql, Postgres), namespaces("one", "two"))]
+#[test_connector(tags(Postgres), namespaces("one", "two"))]
 fn multi_schema_applying_two_migrations_works(api: TestApi) {
     let dm1 = api.datamodel_with_provider_and_features(
         r#"
@@ -73,174 +73,6 @@ fn multi_schema_applying_two_migrations_works(api: TestApi) {
     api.apply_migrations(&migrations_directory)
         .send_sync()
         .assert_applied_migrations(&[]);
-}
-
-#[test_connector(tags(Mssql), namespaces("one", "two"))]
-fn multi_schema_two_migrations_drop_fks(api: TestApi) {
-    let dm1 = api.datamodel_with_provider_and_features(
-        r#"
-        model First {
-            id      Int @id
-            name    String
-
-            r1_second Second? @relation("r1")
-
-            r2_second Second? @relation("r2", fields: [r2_secondId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r2_secondId Int? @unique
-
-            @@schema("one")
-        }
-        model Second {
-            id      Int @id
-            name    String
-
-            r1_first First @relation("r1", fields: [r1_firstId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r1_firstId Int @unique
-
-            r2_first First? @relation("r2")
-
-            @@schema("two")
-        }
-    "#,
-        &[("schemas", "[\"one\", \"two\"]")],
-        &[],
-    );
-
-    let migrations_directory = api.create_migrations_directory();
-
-    api.create_migration("initial", &dm1, &migrations_directory).send_sync();
-
-    api.apply_migrations(&migrations_directory)
-        .send_sync()
-        .assert_applied_migrations(&["initial"]);
-
-    api.raw_cmd("INSERT INTO one.First (id, name, r2_secondId) VALUES(1, 'first', NULL)");
-    api.raw_cmd("INSERT INTO two.Second (id, name, r1_firstId) VALUES(1, 'second', 1)");
-    api.raw_cmd("INSERT INTO one.First (id, name, r2_secondId) VALUES(2, 'other', 1)");
-
-    let dm2 = api.datamodel_with_provider_and_features(r#"
-        model First {
-            id      Int @id
-            name    String
-
-            r1_second Second? @relation("r1")
-
-            r2_second Second? @relation("r2", fields: [r2_secondId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r2_secondId Int? @unique
-
-            @@schema("two")
-        }
-        model Second {
-            id      Int @id
-            name    String
-
-            r1_first First @relation("r1", fields: [r1_firstId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r1_firstId Int @unique
-
-            r2_first First? @relation("r2")
-
-            @@schema("one")
-        }
-      "#, &[("schemas", "[\"one\", \"two\"]")], &[]);
-
-    api.create_migration("second-migration", &dm2, &migrations_directory)
-        .send_sync();
-
-    api.apply_migrations(&migrations_directory)
-        .send_sync()
-        .assert_applied_migrations(&["second-migration"]);
-
-    api.apply_migrations(&migrations_directory)
-        .send_sync()
-        .assert_applied_migrations(&[]);
-}
-
-#[test_connector(tags(Mssql), namespaces("one", "two"))]
-fn multi_schema_two_migrations_reset(api: TestApi) {
-    let dm1 = api.datamodel_with_provider_and_features(
-        r#"
-        model First {
-            id      Int @id
-            name    String
-
-            r1_second Second? @relation("r1")
-
-            r2_second Second? @relation("r2", fields: [r2_secondId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r2_secondId Int? @unique
-
-            @@schema("one")
-        }
-        model Second {
-            id      Int @id
-            name    String
-
-            r1_first First @relation("r1", fields: [r1_firstId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r1_firstId Int @unique
-
-            r2_first First? @relation("r2")
-
-            @@schema("two")
-        }
-    "#,
-        &[("schemas", "[\"one\", \"two\"]")],
-        &[],
-    );
-
-    let migrations_directory = api.create_migrations_directory();
-
-    api.create_migration("initial", &dm1, &migrations_directory).send_sync();
-
-    api.apply_migrations(&migrations_directory)
-        .send_sync()
-        .assert_applied_migrations(&["initial"]);
-
-    api.raw_cmd("INSERT INTO one.First (id, name, r2_secondId) VALUES(1, 'first', NULL)");
-    api.raw_cmd("INSERT INTO two.Second (id, name, r1_firstId) VALUES(1, 'second', 1)");
-    api.raw_cmd("INSERT INTO one.First (id, name, r2_secondId) VALUES(2, 'other', 1)");
-
-    let dm2 = api.datamodel_with_provider_and_features(r#"
-        model First {
-            id      Int @id
-            name    String
-
-            r1_second Second? @relation("r1")
-
-            r2_second Second? @relation("r2", fields: [r2_secondId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r2_secondId Int? @unique
-
-            @@schema("two")
-        }
-        model Second {
-            id      Int @id
-            name    String
-
-            r1_first First @relation("r1", fields: [r1_firstId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-            r1_firstId Int @unique
-
-            r2_first First? @relation("r2")
-
-            @@schema("one")
-        }
-      "#, &[("schemas", "[\"one\", \"two\"]")], &[]);
-
-    api.create_migration("second-migration", &dm2, &migrations_directory)
-        .send_sync();
-
-    api.apply_migrations(&migrations_directory)
-        .send_sync()
-        .assert_applied_migrations(&["second-migration"]);
-
-    api.apply_migrations(&migrations_directory)
-        .send_sync()
-        .assert_applied_migrations(&[]);
-
-    let mut vec = vec![String::from("one"), String::from("two")];
-    let namespaces = Namespaces::from_vec(&mut vec);
-    api.reset().send_sync(namespaces.clone());
-
-    api.assert_schema_with_namespaces(namespaces)
-        .assert_has_no_table("First")
-        .assert_has_no_table("Second");
 }
 
 #[test_connector]
@@ -335,25 +167,16 @@ fn migrations_should_fail_when_the_script_is_invalid(api: TestApi) {
             error_code = match api.tags() {
                 t if t.contains(Tags::Vitess) => 1105,
                 t if t.contains(Tags::Mysql) => 1064,
-                t if t.contains(Tags::Mssql) => 102,
                 t if t.contains(Tags::Postgres) => 42601,
                 t if t.contains(Tags::Sqlite) => 1,
                 _ => todo!(),
             },
             message = match api.tags() {
-                t if t.contains(Tags::CockroachDb) => indoc! {r#"
-                    ERROR: at or near "^": syntax error
-                    DETAIL: source SQL:
-                    SELECT (^.^)_n
-                            ^
-                    HINT: try \h SELECT
-                "#},
                 t if t.contains(Tags::Vitess) => "syntax error at position 10",
                 t if t.contains(Tags::Mariadb) =>
                     "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near \'^.^)_n\' at line 1",
                 t if t.contains(Tags::Mysql) =>
                     "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near \'^.^)_n\' at line 1",
-                t if t.contains(Tags::Mssql) => "Incorrect syntax near \'^\'.",
                 t if t.contains(Tags::Postgres) => "ERROR: syntax error at or near \"^\"",
                 t if t.contains(Tags::Sqlite) => "unrecognized token: \"^\" in \n\nSELECT (^.^)_n;\n at offset 10",
                 _ => todo!(),

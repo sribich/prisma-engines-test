@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(exclude(CockroachDb))]
+#[test_suite]
 mod delete_many_rels {
     use indoc::indoc;
     use query_engine_tests::{Runner, run_query};
@@ -9,8 +9,7 @@ mod delete_many_rels {
     #[relation_link_test(
         on_parent = "ToOneOpt",
         on_child = "ToOneOpt",
-        id_only = true,
-        exclude(Sqlite("cfd1"))
+        id_only = true
     )]
     // "a P1 to C1  relation " should "succeed when trying to delete the parent"
     // On D1, this fails with:
@@ -126,7 +125,7 @@ mod delete_many_rels {
         Ok(())
     }
 
-    #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt", exclude(Sqlite("cfd1")))]
+    #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
     // "a PM to C1 relation " should "succeed in deleting the parent"
     // On D1, this fails with:
     //
@@ -279,7 +278,7 @@ mod delete_many_rels {
         Ok(())
     }
 
-    #[relation_link_test(on_parent = "ToMany", on_child = "ToMany", exclude(Sqlite("cfd1")))]
+    #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
     // "a PM to CM relation" should "succeed in deleting the parent"
     // On D1, this fails with:
     //
@@ -372,7 +371,7 @@ mod delete_many_rels {
         schema.to_owned()
     }
 
-    #[connector_test(schema(additional_schema), exclude(Sqlite("cfd1")))]
+    #[connector_test(schema(additional_schema))]
     // "a PM to CM  relation" should "delete the parent from other relations as well"
     // On D1, this fails with:
     //

@@ -1,7 +1,7 @@
 use query_engine_tests::*;
 
 #[test_suite(schema(schema))]
-mod mongodb {
+mod prisma_8265 {
     use indoc::indoc;
     use query_engine_tests::{Runner, run_query_json};
     use std::time::Duration;

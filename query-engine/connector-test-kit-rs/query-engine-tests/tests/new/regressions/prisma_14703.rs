@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schema), exclude(MongoDB, Sqlite))]
+#[test_suite(schema(schema), exclude(Sqlite))]
 mod prisma_14703 {
     fn schema() -> String {
         String::from(indoc! {r#"

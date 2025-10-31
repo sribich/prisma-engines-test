@@ -1,4 +1,3 @@
-mod cockroachdb;
 mod vitess;
 
 use psl::parser_database::ReferentialAction;
@@ -505,7 +504,7 @@ fn relations_with_mappings_on_referencing_side_can_reference_multiple_fields(api
     });
 }
 
-#[test_connector(exclude(Vitess, CockroachDb))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_referential_actions_should_work(api: TestApi) {
     let actions = &[
         (ReferentialAction::SetNull, ForeignKeyAction::SetNull),
@@ -545,7 +544,7 @@ fn on_delete_referential_actions_should_work(api: TestApi) {
 // 5.6 and 5.7 doesn't let you `SET DEFAULT` without setting the default value
 // (even if nullable). MySQL 8.0+ & MariaDB 10.0 allow you to create a table with
 // `SET DEFAULT`, but will silently use `NO ACTION` / `RESTRICT` instead.
-#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Mssql, Vitess, CockroachDb))]
+#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Vitess))]
 fn on_delete_set_default_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -570,7 +569,7 @@ fn on_delete_set_default_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_restrict_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -633,7 +632,7 @@ fn on_update_referential_actions_should_work(api: TestApi) {
 // 5.6 and 5.7 doesn't let you `SET DEFAULT` without setting the default value
 // (even if nullable). MySQL 8.0+ & MariaDB 10.0 allow you to create a table with
 // `SET DEFAULT`, but will silently use `NO ACTION` / `RESTRICT` instead.
-#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Mssql, Vitess, CockroachDb))]
+#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Vitess))]
 fn on_update_set_default_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -658,7 +657,7 @@ fn on_update_set_default_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_update_restrict_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -683,7 +682,7 @@ fn on_update_restrict_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_required_default_action(api: TestApi) {
     let dm = r#"
         model A {
@@ -704,31 +703,6 @@ fn on_delete_required_default_action(api: TestApi) {
         table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
             fk.assert_references("A", &["id"])
                 .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn on_delete_required_default_action_with_no_restrict(api: TestApi) {
-    let dm = r#"
-        model A {
-            id Int @id
-            b      B[]
-        }
-
-        model B {
-            id   Int @id
-            aId  Int
-            a    A    @relation(fields: [aId], references: [id])
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_delete(ForeignKeyAction::NoAction)
         })
     });
 }
@@ -788,7 +762,7 @@ fn on_delete_compound_optional_optional_default_action(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_compound_required_optional_default_action_with_restrict(api: TestApi) {
     let dm = r#"
         model A {
@@ -814,36 +788,6 @@ fn on_delete_compound_required_optional_default_action_with_restrict(api: TestAp
             .assert_fk_on_columns(&["aId1", "aId2"], |fk| {
                 fk.assert_references("A", &["id", "id2"])
                     .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-            })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn on_delete_compound_required_optional_default_action_without_restrict(api: TestApi) {
-    let dm = r#"
-        model A {
-            id  Int @id
-            id2 Int
-            b      B[]
-            @@unique([id, id2])
-        }
-
-        model B {
-            id    Int @id
-            aId1  Int?
-            aId2  Int
-            a     A?    @relation(fields: [aId1, aId2], references: [id, id2])
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("B", |table| {
-        table
-            .assert_foreign_keys_count(1)
-            .assert_fk_on_columns(&["aId1", "aId2"], |fk| {
-                fk.assert_references("A", &["id", "id2"])
-                    .assert_referential_action_on_delete(ForeignKeyAction::NoAction)
             })
     });
 }
@@ -898,7 +842,7 @@ fn on_update_required_default_action(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Vitess, CockroachDb))]
+#[test_connector(exclude(Vitess))]
 fn adding_mutual_references_on_existing_tables_works(api: TestApi) {
     let dm1 = r#"
         model A {

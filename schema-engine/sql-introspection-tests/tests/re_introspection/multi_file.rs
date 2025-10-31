@@ -7,7 +7,7 @@ fn with_config(dm: &str, config: String) -> String {
 
 // ----- Models -----
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_new_model_single_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -50,7 +50,7 @@ async fn reintrospect_new_model_single_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_new_model_multi_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -109,7 +109,7 @@ async fn reintrospect_new_model_multi_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_removed_model_single_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -147,7 +147,7 @@ async fn reintrospect_removed_model_single_file(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_removed_model_multi_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -199,7 +199,7 @@ async fn reintrospect_removed_model_multi_file(api: &mut TestApi) -> TestResult 
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_force_single_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -248,7 +248,7 @@ async fn reintrospect_force_single_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_force_multi_file(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -305,7 +305,7 @@ async fn reintrospect_force_multi_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reintrospect_force_invalid_config(api: &mut TestApi) -> TestResult {
     let invalid_config_dm = indoc! {r#"
       datasource db {
@@ -566,7 +566,7 @@ async fn introspect_multi_view_preview_feature_is_required(api: &mut TestApi) ->
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(Postgres16, CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), exclude(Postgres16), preview_features("views"))]
 // the expect_view_definition is slightly different than for Postgres16
 async fn reintrospect_new_view_single_file(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
@@ -625,7 +625,7 @@ async fn reintrospect_new_view_single_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(Postgres16, CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), exclude(Postgres16), preview_features("views"))]
 // the expect_view_definition is slightly different than for Postgres16
 async fn reintrospect_removed_view_single_file(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
@@ -673,7 +673,7 @@ async fn reintrospect_removed_view_single_file(api: &mut TestApi) -> TestResult 
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(Postgres16, CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), exclude(Postgres16), preview_features("views"))]
 // the expect_view_definition is slightly different than for Postgres16
 async fn reintrospect_new_view_multi_file(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
@@ -747,7 +747,7 @@ async fn reintrospect_new_view_multi_file(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(Postgres16, CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), exclude(Postgres16), preview_features("views"))]
 // the expect_view_definition is slightly different than for Postgres16
 async fn reintrospect_removed_view_multi_file(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"

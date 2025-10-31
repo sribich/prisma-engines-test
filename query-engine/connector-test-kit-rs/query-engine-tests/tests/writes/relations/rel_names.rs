@@ -4,9 +4,7 @@ use query_engine_tests::*;
 // https://github.com/prisma/prisma/issues/14696
 //
 // This was due to a relation resolution logic issue.
-//
-// exclude: mongodb has very specific constraint on id fields
-#[test_suite(exclude(MongoDB))]
+#[test_suite]
 mod rel_names {
     fn schema() -> String {
         let schema = r#"

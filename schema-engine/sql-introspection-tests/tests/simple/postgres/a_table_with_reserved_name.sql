@@ -1,5 +1,4 @@
 -- tags=postgres
--- exclude=cockroachdb
 
 CREATE TABLE "PrismaClient" (
     id SERIAL PRIMARY KEY

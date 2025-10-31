@@ -113,7 +113,7 @@ mod bigint_in_schema {
     }
 }
 
-#[test_suite(schema(schema), exclude(MongoDb))]
+#[test_suite(schema(schema))]
 mod decimal_in_schema {
     fn schema() -> String {
         let schema = indoc! {

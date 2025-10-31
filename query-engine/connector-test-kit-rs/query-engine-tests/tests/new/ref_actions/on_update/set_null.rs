@@ -1,4 +1,4 @@
-//! Only Postgres (except CockroachDB) allows SetNull on a non-nullable FK at all, rest fail during migration.
+//! Only Postgres allows SetNull on a non-nullable FK at all, rest fail during migration.
 //! D1 also seems to silently ignore Restrict.
 
 use indoc::indoc;
@@ -181,7 +181,7 @@ mod one2one_opt {
     }
 
     // SET_NULL should recurse if there are relations sharing a common fk
-    #[connector_test(schema(one2one2one_opt_restrict), exclude(SqlServer))]
+    #[connector_test(schema(one2one2one_opt_restrict))]
     async fn update_parent_recurse_restrict_failure(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(runner, r#"mutation {
@@ -621,7 +621,7 @@ mod one2many_opt {
     }
 
     // SET_NULL should recurse if there are relations sharing a common fk
-    #[connector_test(schema(one2m2m_opt_restrict), exclude(SqlServer))]
+    #[connector_test(schema(one2m2m_opt_restrict))]
     async fn update_parent_recurse_restrict_failure(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(runner, r#"mutation {

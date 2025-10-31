@@ -51,8 +51,6 @@ mod decimal_filter_spec {
         match_connector_result!(
           &runner,
           r#"query { findManyTestModel(where: { decimal: null }) { id }}"#,
-          // MongoDB excludes undefined fields
-          MongoDb(_) => vec![r#"{"data":{"findManyTestModel":[]}}"#],
           _ => vec![r#"{"data":{"findManyTestModel":[{"id":3}]}}"#]
         );
 

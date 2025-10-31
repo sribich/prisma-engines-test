@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schema), exclude(SqlServer))]
+#[test_suite(schema(schema))]
 // non_embedded_setting_node_selector_to_null
 mod non_embedded_node_sel_to_null {
     use indoc::indoc;

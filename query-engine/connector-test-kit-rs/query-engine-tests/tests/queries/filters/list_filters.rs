@@ -622,8 +622,7 @@ mod lists {
         Ok(())
     }
 
-    // Cockroachdb does not like the bytes empty array check in v21 but this will be fixed in 22.
-    #[connector_test(exclude(CockroachDB))]
+    #[connector_test]
     async fn is_empty_bytes(runner: Runner) -> TestResult<()> {
         test_data(&runner).await?;
 
@@ -883,8 +882,6 @@ mod decimal_lists {
     }
 }
 
-// CockroachDB cannot store Json[], but can process them in memory.
-// See https://github.com/cockroachdb/cockroach/issues/23468.
 #[test_suite(schema(schema), capabilities(ScalarLists, Json))]
 mod json_lists {
     use indoc::indoc;
@@ -1107,7 +1104,7 @@ mod enum_lists {
     }
 
     // This will be fixed in v22
-    #[connector_test(exclude(CockroachDB))]
+    #[connector_test]
     async fn equality(runner: Runner) -> TestResult<()> {
         test_data(&runner).await?;
 
@@ -1184,7 +1181,7 @@ mod enum_lists {
     }
 
     // This will be fixed in v22
-    #[connector_test(exclude(CockroachDB))]
+    #[connector_test]
     async fn is_empty(runner: Runner) -> TestResult<()> {
         test_data(&runner).await?;
 

@@ -34,8 +34,7 @@ mod order_by_dependent_pag {
     }
 
     // "[Hops: 1] Ordering by related record field ascending" should "work"
-    // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_1_related_record_asc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -56,8 +55,7 @@ mod order_by_dependent_pag {
     }
 
     // "[Hops: 1] Ordering by related record field descending" should "work"
-    // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_1_related_record_desc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -79,7 +77,7 @@ mod order_by_dependent_pag {
 
     // "[Hops: 1] Ordering by related record field ascending with nulls" should "work"
     // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_1_related_record_asc_nulls(runner: Runner) -> TestResult<()> {
         // 1 record has the "full chain", one half, one none
         create_row(&runner, 1, Some(1), Some(1), None).await?;
@@ -97,11 +95,8 @@ mod order_by_dependent_pag {
               }
             }"#,
             // Depends on how null values are handled.
-            MongoDb(_)
-            | Sqlite(_)
-            | MySql(_)
-            | CockroachDb(_)
-            | Vitess(Some(VitessVersion::PlanetscaleJsWasm)) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"id":1}},{"id":2,"b":{"id":2}}]}}"#],
+            Sqlite(_)
+            | MySql(_) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"id":1}},{"id":2,"b":{"id":2}}]}}"#],
             _ => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"id":1}},{"id":2,"b":{"id":2}},{"id":3,"b":null}]}}"#]
         );
 
@@ -110,7 +105,7 @@ mod order_by_dependent_pag {
 
     // "[Hops: 2] Ordering by related record field ascending" should "work"
     // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_2_related_record_asc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -130,7 +125,7 @@ mod order_by_dependent_pag {
 
     // "[Hops: 2] Ordering by related record field descending" should "work"
     // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_2_related_record_desc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -150,7 +145,7 @@ mod order_by_dependent_pag {
 
     // "[Hops: 2] Ordering by related record field ascending with nulls" should "work"
     // TODO(garren): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_2_related_record_asc_null(runner: Runner) -> TestResult<()> {
         // 1 record has the "full chain", one half, one none
         create_row(&runner, 1, Some(1), Some(1), None).await?;
@@ -170,11 +165,8 @@ mod order_by_dependent_pag {
               }
             }"#,
             // Depends on how null values are handled.
-            MongoDb(_)
-            | Sqlite(_)
-            | MySql(_)
-            | CockroachDb(_)
-            | Vitess(Some(VitessVersion::PlanetscaleJsWasm)) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"id":1}}}]}}"#],
+            Sqlite(_)
+            | MySql(_) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"id":1}}}]}}"#],
             _ => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"id":1}}},{"id":2,"b":{"c":null}},{"id":3,"b":null}]}}"#]
         );
 
@@ -235,7 +227,7 @@ mod order_by_dependent_pag {
 
     // "[Circular with differing records] Ordering by related record field ascending" should "work"
     // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn circular_diff_related_record_asc(runner: Runner) -> TestResult<()> {
         // Records form circles with their relations
         create_row(&runner, 1, Some(1), Some(1), Some(3)).await?;
@@ -256,11 +248,8 @@ mod order_by_dependent_pag {
               }
             }"#,
             // Depends on how null values are handled.
-            MongoDb(_)
-            | Sqlite(_)
-            | MySql(_)
-            | CockroachDb(_)
-            | Vitess(Some(VitessVersion::PlanetscaleJsWasm)) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}}]}}"#],
+            Sqlite(_)
+            | MySql(_) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}}]}}"#],
             _ => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}},{"id":3,"b":null},{"id":4,"b":null}]}}"#]
         );
 
@@ -269,7 +258,7 @@ mod order_by_dependent_pag {
 
     // "[Circular with differing records] Ordering by related record field descending" should "work"
     // TODO(julius): should enable for SQL Server when partial indices are in the PSL
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn circular_diff_related_record_desc(runner: Runner) -> TestResult<()> {
         // Records form circles with their relations
         create_row(&runner, 1, Some(1), Some(1), Some(3)).await?;

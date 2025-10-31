@@ -3,7 +3,7 @@ use indoc::indoc;
 use sql_introspection_tests::{TestResult, test_api::*};
 use test_macros::test_connector;
 
-#[test_connector(exclude(Postgres, CockroachDb))]
+#[test_connector(exclude(Postgres))]
 async fn a_table_with_reserved_name(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -29,7 +29,7 @@ async fn a_table_with_reserved_name(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn reserved_names_case_sensitivity(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

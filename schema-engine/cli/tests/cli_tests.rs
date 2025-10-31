@@ -68,8 +68,6 @@ impl TestApi {
             tok(args.create_postgres_database()).2
         } else if args.tags().contains(Tags::Mysql) {
             tok(args.create_mysql_database()).1
-        } else if args.tags().contains(Tags::Mssql) {
-            tok(args.create_mssql_database()).1
         } else if args.tags().contains(Tags::Sqlite) {
             args.database_url().to_owned()
         } else {
@@ -180,17 +178,6 @@ fn test_connecting_with_a_non_working_psql_connection_string(api: TestApi) {
     assert!(stderr.contains(r#""error_code":"P1003""#), "{}", stderr);
 }
 
-#[test_connector(tags(Mssql))]
-fn test_connecting_with_a_working_mssql_connection_string(api: TestApi) {
-    let connection_string = api.connection_string();
-
-    let output = api.run(&["--datasource", &connection_string, "can-connect-to-database"]);
-
-    assert!(output.status.success(), "{output:?}");
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("Connection successful"), "{stderr:?}");
-}
-
 #[test_connector(tags(Postgres, Mysql))]
 fn test_create_database(api: TestApi) {
     let connection_string = api.connection_string();
@@ -201,25 +188,6 @@ fn test_create_database(api: TestApi) {
     assert!(output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("Database 'test_create_database\' was successfully created."));
-
-    let output = api.run(&["--datasource", &connection_string, "can-connect-to-database"]);
-    assert!(output.status.success());
-}
-
-#[test_connector(tags(Mssql))]
-fn test_create_database_mssql(api: TestApi) {
-    let connection_string = api
-        .connection_string()
-        .replace("test_create_database_mssql", "test_create_database_NEW");
-
-    let output = api.run(&["--datasource", &connection_string, "drop-database"]);
-    assert!(output.status.success());
-
-    let output = api.run(&["--datasource", &connection_string, "create-database"]);
-    assert!(output.status.success());
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("Database 'test_create_database_NEW\' was successfully created."));
 
     let output = api.run(&["--datasource", &connection_string, "can-connect-to-database"]);
     assert!(output.status.success());
@@ -279,29 +247,6 @@ fn test_drop_database(api: TestApi) {
     assert!(output.status.success(), "{output:#?}");
 
     let output = run(&["--datasource", &connection_string, "can-connect-to-database"]);
-    assert_eq!(output.status.code(), Some(1));
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains(DatabaseDoesNotExist::ERROR_CODE));
-}
-
-#[test_connector(tags(Mssql))]
-fn test_drop_sqlserver_database(api: TestApi) {
-    let mut connection_string: JdbcString = format!("jdbc:{}", api.connection_string()).parse().unwrap();
-
-    connection_string
-        .properties_mut()
-        .insert(String::from("database"), String::from("NEWDATABASE"));
-
-    let connection_string = connection_string.to_string().replace("jdbc:", "");
-
-    let output = api.run(&["--datasource", &connection_string, "create-database"]);
-    assert!(output.status.success());
-
-    let output = api.run(&["--datasource", &connection_string, "drop-database"]);
-    assert!(output.status.success());
-
-    let output = api.run(&["--datasource", &connection_string, "can-connect-to-database"]);
     assert_eq!(output.status.code(), Some(1));
 
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -379,7 +324,7 @@ fn basic_jsonrpc_roundtrip_works_with_no_params(_api: TestApi) {
             let mut response = String::new();
             stdout.read_line(&mut response).unwrap();
 
-            assert!(response.contains("PostgreSQL") || response.contains("CockroachDB"));
+            assert!(response.contains("PostgreSQL"));
         }
     });
 }
@@ -435,7 +380,7 @@ fn basic_jsonrpc_roundtrip_works_with_params(_api: TestApi) {
                 let mut response = String::new();
                 stdout.read_line(&mut response).unwrap();
 
-                assert!(response.contains("PostgreSQL") || response.contains("CockroachDB"));
+                assert!(response.contains("PostgreSQL"));
             }
         }
     });
@@ -921,7 +866,7 @@ fn get_database_version_multi_file(_api: TestApi) {
                 let mut response = String::new();
                 stdout.read_line(&mut response).unwrap();
 
-                assert!(response.contains("PostgreSQL") || response.contains("CockroachDB"));
+                assert!(response.contains("PostgreSQL"));
             }
         }
     });

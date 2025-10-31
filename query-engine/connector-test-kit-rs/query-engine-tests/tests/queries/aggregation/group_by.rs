@@ -549,7 +549,7 @@ mod aggregation_group_by {
     }
 
     // regression test for https://github.com/prisma/prisma/issues/21789
-    #[connector_test(schema(schema_21789), only(Postgres, CockroachDB))]
+    #[connector_test(schema(schema_21789), only(Postgres))]
     async fn regression_21789(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,

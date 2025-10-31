@@ -1,6 +1,5 @@
 mod auto_inc_create;
 mod byoid;
-mod byoid_mongo;
 mod int_id_create;
 mod int_id_update;
 mod named_compounds;

@@ -43,8 +43,6 @@ async fn kanjis(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(tags(Postgres))]
-// Cockroach can return either order for multiple foreign keys. This is hard to deterministically
-// test, so disable for now. See: https://github.com/cockroachdb/cockroach/issues/71098.
 async fn multiple_foreign_key_constraints_are_taken_always_in_the_same_order(api: &mut TestApi) -> TestResult {
     let migration = indoc! {r#"
         CREATE TABLE "A"

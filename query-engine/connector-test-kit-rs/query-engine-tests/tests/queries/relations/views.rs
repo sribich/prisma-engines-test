@@ -3,7 +3,7 @@ use query_engine_tests::*;
 // https://stackoverflow.com/questions/4380813/how-to-get-rid-of-mysql-error-prepared-statement-needs-to-be-re-prepared
 // Looks like there's a bug with create view stmt on MariaDB.
 // On D1, the migration setup fails because Schema Engine doesn't know anything about Driver Adapters.
-#[test_suite(schema(schema), exclude(MongoDb, MySQL("mariadb"), Vitess, Sqlite("cfd1")))]
+#[test_suite(schema(schema), exclude(MySQL("mariadb"), Vitess))]
 mod views_with_relations {
     use query_engine_tests::{Runner, connector_test, run_query};
 
@@ -99,7 +99,6 @@ mod views_with_relations {
     async fn migrate_view_sql(runner: &Runner, schema_name: &str) -> String {
         match runner.connector_version() {
                 ConnectorVersion::Postgres(_)
-                | ConnectorVersion::CockroachDb(_)
                  => {
                     r#"CREATE VIEW "TestView" AS SELECT "TestModel".id, "TestModel"."firstName", "TestModel"."lastName", CONCAT("TestModel"."firstName", ' ', "TestModel"."lastName") as "fullName" From "TestModel""#.to_owned()
                 }
@@ -110,10 +109,6 @@ mod views_with_relations {
                 ConnectorVersion::Sqlite(_) => {
                   r#"CREATE VIEW TestView AS SELECT TestModel.*, TestModel.firstName || ' ' || TestModel.lastName AS "fullName" FROM TestModel"#.to_owned()
                 }
-                ConnectorVersion::SqlServer(_) => {
-                  format!(r#"CREATE VIEW [views_with_relations_{schema_name}].[TestView] AS SELECT [views_with_relations_{schema_name}].[TestModel].[id], [views_with_relations_{schema_name}].[TestModel].[firstName], [views_with_relations_{schema_name}].[TestModel].[lastName], CONCAT([views_with_relations_{schema_name}].[TestModel].[firstName], ' ', [views_with_relations_{schema_name}].[TestModel].[lastName]) as "fullName" FROM [views_with_relations_{schema_name}].[TestModel];"#)
-                },
-                ConnectorVersion::MongoDb(_) => unreachable!(),
             }
     }
 

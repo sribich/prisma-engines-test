@@ -13,7 +13,6 @@ async fn connection_string_problems_give_a_nice_error() {
             "postgresql",
             "postgresql://root:password-with-#@localhost:5432/postgres",
         ),
-        ("sqlserver", "sqlserver://root:password-with-#@localhost:5432/postgres"),
     ];
 
     for provider in providers {
@@ -51,14 +50,6 @@ async fn connection_string_problems_give_a_nice_error() {
         let json_error = serde_json::to_value(&error).unwrap();
 
         let details = match provider.0 {
-            "sqlserver" => {
-                indoc!(
-                    "Error parsing connection string: Conversion error: invalid digit found in string in database URL.
-                    Please refer to the documentation in https://www.prisma.io/docs/reference/database-reference/connection-urls
-                    for constructing a correct connection string. In some cases, certain characters must be escaped.
-                    Please check the string for any illegal characters.",
-                ).replace('\n', " ")
-            },
             _ => {
                 indoc!(
                     "Error parsing connection string: invalid port number in database URL.

@@ -371,11 +371,9 @@ mod many_relation {
         );
 
         // some / isNot
-        // TODO: Investigate why MongoDB returns a different result
         match_connector_result!(
           &runner,
           r#"query { findManyBlog(where: { posts: { some: { comment: { isNot: { popularity: { gt: 100 } } } } } }) { name }}"#,
-          MongoDb(_) => vec![r#"{"data":{"findManyBlog":[{"name":"blog1"}]}}"#],
           _ => vec![r#"{"data":{"findManyBlog":[{"name":"blog1"},{"name":"blog3"}]}}"#]
         );
 
@@ -392,11 +390,9 @@ mod many_relation {
         );
 
         // none / isNot
-        // TODO: Investigate why MongoDB returns a different result
         match_connector_result!(
           &runner,
           r#"query { findManyBlog(where: { posts: { none: { comment: { isNot: { popularity: { gt: 100 } } } } } }) { name }}"#,
-          MongoDb(_) => vec![r#"{"data":{"findManyBlog":[{"name":"blog2"},{"name":"blog3"},{"name":"blog4"}]}}"#],
           _ => vec![r#"{"data":{"findManyBlog":[{"name":"blog2"},{"name":"blog4"}]}}"#]
         );
 
@@ -407,7 +403,6 @@ mod many_relation {
         );
 
         // every / isNot
-        // TODO: Investigate why MongoDB returns a different result
         match_connector_result!(
           &runner,
           r#"
@@ -417,7 +412,6 @@ mod many_relation {
               orderBy: { name: asc }
             ) { name }
           }"#,
-          MongoDb(_) => vec![r#"{"data":{"findManyBlog":[{"name":"blog1"},{"name":"blog4"}]}}"#],
           _ => vec![r#"{"data":{"findManyBlog":[{"name":"blog1"},{"name":"blog3"},{"name":"blog4"}]}}"#]
         );
 
@@ -561,7 +555,7 @@ mod many_relation {
 
     // Regression test for https://github.com/prisma/prisma/issues/25103
     // SQL Server excluded because the m2m fragment does not support onUpdate/onDelete args which are needed.
-    #[connector_test(schema(schema_25103), exclude(SqlServer))]
+    #[connector_test(schema(schema_25103))]
     async fn prisma_25103(runner: Runner) -> TestResult<()> {
         // Create some sample audiences
         run_query!(
@@ -679,7 +673,7 @@ mod many_relation {
         schema.to_owned()
     }
 
-    #[connector_test(schema(schema_25104), exclude(MongoDb))]
+    #[connector_test(schema(schema_25104))]
     async fn prisma_25104(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
             run_query!(
@@ -739,7 +733,7 @@ mod many_relation {
 
     // Regression test for https://github.com/prisma/prisma/issues/23742
     // SQL Server excluded because the m2m fragment does not support onUpdate/onDelete args which are needed.
-    #[connector_test(schema(schema_23742), exclude(SqlServer))]
+    #[connector_test(schema(schema_23742))]
     async fn prisma_23742(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,
@@ -804,7 +798,7 @@ mod many_relation {
         schema.to_owned()
     }
 
-    #[connector_test(schema(schema_nested_some_filter_m2m_different_pk), exclude(SqlServer))]
+    #[connector_test(schema(schema_nested_some_filter_m2m_different_pk))]
     async fn nested_some_filter_m2m_different_pk(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,

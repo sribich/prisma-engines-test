@@ -137,8 +137,7 @@ mod string_filter {
         Ok(())
     }
 
-    // FIXME: MongoDB numeric insensitive filters are broken
-    #[connector_test(exclude(MongoDB), capabilities(InsensitiveFilters))]
+    #[connector_test(capabilities(InsensitiveFilters))]
     async fn numeric_comparison_filters_insensitive(runner: Runner) -> TestResult<()> {
         test_data_insensitive(&runner).await?;
 

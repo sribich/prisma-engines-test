@@ -1,5 +1,4 @@
 -- tags=postgres
--- exclude=cockroachdb
 
 CREATE TABLE "Category" (
     id serial NOT NULL PRIMARY KEY,

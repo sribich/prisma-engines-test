@@ -323,7 +323,7 @@ mod nested_unchecked_update {
     }
 
     // "Unchecked nested updates" should "allow to write to autoincrement IDs directly"
-    #[connector_test(schema(schema_5), exclude(SqlServer))]
+    #[connector_test(schema(schema_5))]
     async fn allow_write_autoinc_id(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,

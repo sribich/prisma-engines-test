@@ -1,9 +1,7 @@
 use query_engine_tests::*;
 
 // https://stackoverflow.com/questions/4380813/how-to-get-rid-of-mysql-error-prepared-statement-needs-to-be-re-prepared
-// Looks like there's a bug with create view stmt on MariaDB.
-// On D1, the migration setup fails because Schema Engine doesn't know anything about Driver Adapters.
-#[test_suite(schema(schema), exclude(MongoDb, MySQL("mariadb"), Vitess, Sqlite("cfd1")))]
+#[test_suite(schema(schema), exclude(MySQL("mariadb"), Vitess))]
 mod views {
     fn schema() -> String {
         let schema = indoc! {
@@ -453,7 +451,7 @@ mod views {
     // schema name must be the name of the test in which it's called.
     async fn migrate_view_sql(runner: &Runner, schema_name: &str, view_name: &str) -> String {
         match runner.connector_version() {
-            ConnectorVersion::Postgres(_) | ConnectorVersion::CockroachDb(_) => {
+            ConnectorVersion::Postgres(_) => {
                 format!(
                     r#"CREATE VIEW "{view_name}" AS SELECT "TestModel".id, "TestModel"."firstName", "TestModel"."lastName", CONCAT("TestModel"."firstName", ' ', "TestModel"."lastName") as "fullName" From "TestModel""#
                 )
@@ -468,12 +466,6 @@ mod views {
                     r#"CREATE VIEW {view_name} AS SELECT TestModel.*, TestModel.firstName || ' ' || TestModel.lastName AS "fullName" FROM TestModel"#
                 )
             }
-            ConnectorVersion::SqlServer(_) => {
-                format!(
-                    r#"CREATE VIEW [views_{schema_name}].[{view_name}] AS SELECT [views_{schema_name}].[TestModel].[id], [views_{schema_name}].[TestModel].[firstName], [views_{schema_name}].[TestModel].[lastName], CONCAT([views_{schema_name}].[TestModel].[firstName], ' ', [views_{schema_name}].[TestModel].[lastName]) as "fullName" FROM [views_{schema_name}].[TestModel];"#
-                )
-            }
-            ConnectorVersion::MongoDb(_) => unreachable!(),
         }
     }
 

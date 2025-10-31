@@ -2,16 +2,7 @@ use query_engine_tests::*;
 
 // This test inserts lots of m2m relations to specifically test the chunking logic for
 // dynamically generated rows in the query compiler.
-// Planetscale and MySQL via MariaDB driver consistently time out when running this test.
-#[test_suite(
-    schema(schema),
-    exclude(
-        MongoDb,
-        Vitess("planetscale.js.wasm"),
-        Mysql("mariadb.js.wasm"),
-        Mysql("mariadb-mysql.js.wasm")
-    )
-)]
+#[test_suite(schema(schema))]
 mod chunking_qc {
     use indoc::indoc;
 

@@ -1,7 +1,7 @@
 use query_engine_tests::test_suite;
 use std::borrow::Cow;
 
-#[test_suite(schema(generic), exclude(Sqlite("cfd1")))]
+#[test_suite(schema(generic))]
 mod interactive_tx {
     use std::time::{Duration, Instant};
 
@@ -219,7 +219,7 @@ mod interactive_tx {
         Ok(())
     }
 
-    #[connector_test(exclude(Sqlite("cfd1")))]
+    #[connector_test]
     async fn batch_queries_failure(mut runner: Runner) -> TestResult<()> {
         // Tx expires after five second.
         let tx_id = runner.start_tx(5000, 5000, None).await?;
@@ -241,21 +241,14 @@ mod interactive_tx {
         let res = runner.commit_tx(tx_id.clone()).await?;
         assert!(now.elapsed() <= Duration::from_millis(5000));
 
-        if matches!(runner.connector_version(), ConnectorVersion::MongoDb(_)) {
-            let err = res.unwrap_err();
-            let known_err = err.as_known().unwrap();
-            assert!(known_err.message.contains("has been aborted."));
-            assert_eq!(known_err.error_code, "P2028");
-        } else {
-            res.unwrap();
-        }
+        res.unwrap();
         runner.clear_active_tx();
 
         match_connector_result!(
           &runner,
           "query { findManyTestModel { id }}",
-          // Postgres and Mongo abort transactions, data is lost.
-          Postgres(_) | MongoDb(_) | CockroachDb(_) => vec![r#"{"data":{"findManyTestModel":[]}}"#],
+          // Postgres aborts transactions, data is lost.
+          Postgres(_) => vec![r#"{"data":{"findManyTestModel":[]}}"#],
           // Partial data still there because a batch will not be auto-rolled back by other connectors.
           _ => vec![r#"{"data":{"findManyTestModel":[{"id":1},{"id":2}]}}"#]
         );
@@ -365,7 +358,6 @@ mod interactive_tx {
         // Back to first transaction, do a final read and commit.
         runner.set_active_tx(tx_id_a.clone());
 
-        // Mongo for example doesn't read the inner commit value.
         is_one_of!(
             run_query!(&runner, r#"query { findManyTestModel { id }}"#),
             [
@@ -587,7 +579,7 @@ mod interactive_tx {
     }
 }
 
-#[test_suite(schema(generic), exclude(Sqlite("cfd1")))]
+#[test_suite(schema(generic))]
 mod itx_isolation {
     use std::sync::Arc;
 
@@ -595,7 +587,7 @@ mod itx_isolation {
     use tokio::task::JoinSet;
 
     // All (SQL) connectors support serializable.
-    #[connector_test(exclude(MongoDb, Sqlite("cfd1")))]
+    #[connector_test()]
     async fn basic_serializable(mut runner: Runner) -> TestResult<()> {
         let tx_id = runner.start_tx(5000, 5000, Some("Serializable".to_owned())).await?;
         runner.set_active_tx(tx_id.clone());
@@ -617,7 +609,7 @@ mod itx_isolation {
         Ok(())
     }
 
-    #[connector_test(exclude(MongoDb, Sqlite("cfd1")))]
+    #[connector_test()]
     async fn casing_doesnt_matter(mut runner: Runner) -> TestResult<()> {
         let tx_id = runner.start_tx(5000, 5000, Some("sErIaLiZaBlE".to_owned())).await?;
         runner.set_active_tx(tx_id.clone());
@@ -645,28 +637,13 @@ mod itx_isolation {
         Ok(())
     }
 
-    #[connector_test(exclude(MongoDb))]
+    #[connector_test()]
     async fn invalid_isolation(runner: Runner) -> TestResult<()> {
         let tx_id = runner.start_tx(5000, 5000, Some("test".to_owned())).await;
 
         match tx_id {
             Ok(_) => panic!("Expected invalid isolation level string to throw an error, but it succeeded instead."),
             Err(err) => assert!(err.to_string().contains("Invalid isolation level `test`")),
-        };
-
-        Ok(())
-    }
-
-    // Mongo doesn't support isolation levels.
-    #[connector_test(only(MongoDb))]
-    async fn mongo_failure(runner: Runner) -> TestResult<()> {
-        let tx_id = runner.start_tx(5000, 5000, Some("Serializable".to_owned())).await;
-
-        match tx_id {
-            Ok(_) => panic!("Expected mongo to throw an unsupported error, but it succeeded instead."),
-            Err(err) => assert!(err.to_string().contains(
-                "Unsupported connector feature: Mongo does not support setting transaction isolation levels"
-            )),
         };
 
         Ok(())
