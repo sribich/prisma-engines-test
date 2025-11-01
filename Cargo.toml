@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "apps/*",
     "schema-engine/cli",
     "schema-engine/commands",
     "schema-engine/core",
@@ -41,6 +42,8 @@ level = "warn"
 check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)', 'cfg(debug_assert)']
 
 [workspace.dependencies]
+schema-context = { path = "./psl/schema-context" }
+
 gix = "0.74.1"
 
 ahash = "0.8"
