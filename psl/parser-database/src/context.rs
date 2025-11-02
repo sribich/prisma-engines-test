@@ -32,7 +32,6 @@ pub(crate) struct Context<'db> {
 
     // @map'ed names indexes. These are not in the db because they are only used for validation.
     pub(super) mapped_model_scalar_field_names: HashMap<(crate::ModelId, StringId), ast::FieldId>,
-    pub(super) mapped_composite_type_names: HashMap<(crate::CompositeTypeId, StringId), ast::FieldId>,
     pub(super) mapped_enum_names: HashMap<StringId, crate::EnumId>,
     pub(super) mapped_enum_value_names: HashMap<(crate::EnumId, StringId), EnumValueId>,
 }
@@ -60,7 +59,6 @@ impl<'db> Context<'db> {
             mapped_model_scalar_field_names: Default::default(),
             mapped_enum_names: Default::default(),
             mapped_enum_value_names: Default::default(),
-            mapped_composite_type_names: Default::default(),
         }
     }
 
@@ -317,20 +315,6 @@ impl<'db> Context<'db> {
     pub(crate) fn find_model_field(&self, model_id: crate::ModelId, field_name: &str) -> Option<ast::FieldId> {
         let name = self.interner.lookup(field_name)?;
         self.names.model_fields.get(&(model_id, name)).cloned()
-    }
-
-    /// Find a specific field in a specific composite type.
-    pub(crate) fn find_composite_type_field(
-        &self,
-        composite_type_id: crate::CompositeTypeId,
-        field_name: &str,
-    ) -> Option<ast::FieldId> {
-        let name = self.interner.lookup(field_name)?;
-
-        self.names
-            .composite_type_fields
-            .get(&(composite_type_id, name))
-            .cloned()
     }
 
     pub(crate) fn iter_tops(&self) -> impl Iterator<Item = (crate::TopId, &'db ast::Top)> + 'db {

@@ -52,7 +52,6 @@ ALTER TABLE blocks
     };
 
     let result = tok(me.introspect(schema_core::json_rpc::types::IntrospectParams {
-        composite_type_depth: -1,
         force: false,
         schema: SchemasContainer {
             files: vec![SchemaContainer {
@@ -127,7 +126,6 @@ CREATE TABLE capitals (
     };
 
     let result = tok(me.introspect(schema_core::json_rpc::types::IntrospectParams {
-        composite_type_depth: -1,
         force: false,
         schema: SchemasContainer {
             files: vec![SchemaContainer {
@@ -203,7 +201,6 @@ CREATE TABLE capitals (
     };
 
     let result = tok(me.introspect(schema_core::json_rpc::types::IntrospectParams {
-        composite_type_depth: -1,
         force: false,
         schema: SchemasContainer {
             files: vec![SchemaContainer {

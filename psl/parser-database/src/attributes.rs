@@ -11,7 +11,7 @@ use crate::{
     coerce, coerce_array,
     context::Context,
     types::{
-        CompositeTypeField, EnumAttributes, FieldWithArgs, IndexAlgorithm, IndexAttribute, IndexFieldPath, IndexType,
+        EnumAttributes, FieldWithArgs, IndexAlgorithm, IndexAttribute, IndexFieldPath, IndexType,
         ModelAttributes, OperatorClassStore, RelationField, ScalarField, ScalarFieldType, SortOrder,
     },
     walkers::RelationFieldId,
@@ -33,55 +33,8 @@ pub(super) fn resolve_attributes(ctx: &mut Context<'_>) {
             ((file_id, ast::TopId::Enum(enum_id)), ast::Top::Enum(ast_enum)) => {
                 resolve_enum_attributes((file_id, enum_id), ast_enum, ctx)
             }
-            ((file_id, ast::TopId::CompositeType(ctid)), ast::Top::CompositeType(ct)) => {
-                resolve_composite_type_attributes((file_id, ctid), ct, ctx)
-            }
             _ => (),
         }
-    }
-}
-
-fn resolve_composite_type_attributes<'db>(
-    ctid: crate::CompositeTypeId,
-    ct: &'db ast::CompositeType,
-    ctx: &mut Context<'db>,
-) {
-    for (field_id, field) in ct.iter_fields() {
-        let CompositeTypeField { r#type, .. } =
-            if let Some(val) = ctx.types.composite_type_fields.get(&(ctid, field_id)) {
-                val.clone()
-            } else {
-                continue;
-            };
-
-        ctx.visit_attributes((ctid.0, (ctid.1, field_id)));
-
-        if let ScalarFieldType::BuiltInScalar(_scalar_type) = r#type {
-            // native type attributes
-            if let Some((datasource_name, type_name, args)) = ctx.visit_datasource_scoped() {
-                native_types::visit_composite_type_field_native_type_attribute(
-                    (ctid, field_id),
-                    datasource_name,
-                    type_name,
-                    &ctx.asts[args],
-                    ctx,
-                )
-            }
-        }
-
-        // @map
-        if ctx.visit_optional_single_attr("map") {
-            map::composite_type_field(ct, field, ctid, field_id, ctx);
-            ctx.validate_visited_arguments();
-        }
-
-        // @default
-        if ctx.visit_optional_single_attr("default") {
-            default::visit_composite_field_default(ctid, field_id, r#type, ctx);
-            ctx.validate_visited_arguments();
-        }
-
-        ctx.validate_visited_attributes();
     }
 }
 
@@ -445,7 +398,6 @@ fn model_fulltext(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mu
     common_index_validations(
         &mut index_attribute,
         model_id,
-        FieldResolvingSetup::FollowComposites,
         ctx,
     );
 
@@ -476,7 +428,6 @@ fn model_index(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut C
     common_index_validations(
         &mut index_attribute,
         model_id,
-        FieldResolvingSetup::FollowComposites,
         ctx,
     );
 
@@ -550,7 +501,6 @@ fn model_unique(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut 
     common_index_validations(
         &mut index_attribute,
         model_id,
-        FieldResolvingSetup::FollowComposites,
         ctx,
     );
 
@@ -599,7 +549,6 @@ fn model_unique(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut 
 fn common_index_validations(
     index_data: &mut IndexAttribute,
     model_id: crate::ModelId,
-    resolving: FieldResolvingSetup,
     ctx: &mut Context<'_>,
 ) {
     let current_attribute = ctx.current_attribute();
@@ -610,7 +559,7 @@ fn common_index_validations(
         }
     };
 
-    match resolve_field_array_with_args(fields, current_attribute.span, model_id, resolving, ctx) {
+    match resolve_field_array_with_args(fields, current_attribute.span, model_id, ctx) {
         Ok(fields) => {
             index_data.fields = fields;
         }
@@ -623,11 +572,6 @@ fn common_index_validations(
                 let fields = unresolvable_fields
                     .iter()
                     .map(|((file_id, top_id), field_name)| match top_id {
-                        ast::TopId::CompositeType(ctid) => {
-                            let composite_type = &ctx.asts[(*file_id, *ctid)].name();
-
-                            Cow::from(format!("{field_name} in type {composite_type}"))
-                        }
                         ast::TopId::Model(_) => Cow::from(*field_name),
                         _ => unreachable!(),
                     })
@@ -913,18 +857,6 @@ fn resolve_field_array_without_args<'db>(
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-enum FieldResolvingSetup {
-    OnlyTopLevel,
-    FollowComposites,
-}
-
-impl FieldResolvingSetup {
-    fn follow_composites(self) -> bool {
-        matches!(self, Self::FollowComposites)
-    }
-}
-
 /// Takes an attribute argument, validates it as an array of fields with potentially args,
 /// then resolves  the constant literal as field names on the model. The error variant
 /// contains the fields that are not in the model.
@@ -932,7 +864,6 @@ fn resolve_field_array_with_args<'db>(
     values: &'db ast::Expression,
     attribute_span: ast::Span,
     model_id: crate::ModelId,
-    resolving: FieldResolvingSetup,
     ctx: &mut Context<'db>,
 ) -> Result<Vec<FieldWithArgs>, FieldResolutionError<'db>> {
     let file_id = model_id.0;
@@ -947,72 +878,10 @@ fn resolve_field_array_with_args<'db>(
 
     let ast_model = &ctx.asts[model_id];
 
-    'fields: for attrs in &constant_array {
+    for attrs in &constant_array {
         let path = if attrs.field_name.contains('.') {
-            if !resolving.follow_composites() {
-                unknown_fields.push(((file_id, ast::TopId::Model(model_id.1)), attrs.field_name));
-                continue 'fields;
-            }
-
-            let field_count = attrs.field_name.split('.').count();
-            let mut path_in_schema = attrs.field_name.split('.').enumerate();
-
-            let (mut path, mut next_type) = match path_in_schema.next() {
-                Some((_, field_shard)) => {
-                    let field_id = match ctx.find_model_field(model_id, field_shard) {
-                        Some(field_id) => field_id,
-                        None => {
-                            unknown_fields.push(((file_id, ast::TopId::Model(model_id.1)), field_shard));
-                            continue 'fields;
-                        }
-                    };
-
-                    let sfid = if let Some(sfid) = ctx.types.find_model_scalar_field(model_id, field_id) {
-                        sfid
-                    } else {
-                        relation_fields.push((&ctx.asts[model_id][field_id], field_id));
-                        continue 'fields;
-                    };
-
-                    match &ctx.types[sfid].r#type {
-                        ScalarFieldType::CompositeType(ctid) => (IndexFieldPath::new(sfid), ctid),
-                        _ => {
-                            unknown_fields.push(((file_id, ast::TopId::Model(model_id.1)), attrs.field_name));
-                            continue 'fields;
-                        }
-                    }
-                }
-                None => {
-                    // TODO: See if we need to actually error here, or if this
-                    // case is handled earlier.
-                    continue 'fields;
-                }
-            };
-
-            for (i, field_shard) in path_in_schema {
-                let field_id = match ctx.find_composite_type_field(*next_type, field_shard) {
-                    Some(field_id) => field_id,
-                    None => {
-                        unknown_fields.push(((next_type.0, ast::TopId::CompositeType(next_type.1)), field_shard));
-                        continue 'fields;
-                    }
-                };
-
-                path.push_field(*next_type, field_id);
-
-                match &ctx.types.composite_type_fields[&(*next_type, field_id)].r#type {
-                    ScalarFieldType::CompositeType(ctid) => {
-                        next_type = ctid;
-                    }
-                    _ if i < field_count - 1 => {
-                        unknown_fields.push(((model_id.0, ast::TopId::Model(model_id.1)), attrs.field_name));
-                        continue 'fields;
-                    }
-                    _ => (),
-                }
-            }
-
-            path
+            ctx.diagnostics.push_error(DatamodelError::new_validation_error("Composite indexes not supported as MongoDB is no longer supported", attribute_span));
+            continue;
         } else if let Some(field_id) = ctx.find_model_field(model_id, attrs.field_name) {
             // Is the field a scalar field?
             match ctx.types.find_model_scalar_field(model_id, field_id) {
@@ -1029,15 +898,7 @@ fn resolve_field_array_with_args<'db>(
 
         // Is the field used twice?
         if field_ids.contains(&path) {
-            let path_str = match path.field_in_index() {
-                either::Either::Left(_) => Cow::from(attrs.field_name),
-                either::Either::Right((ctid, field_id)) => {
-                    let field_name = &ctx.asts[ctid][field_id].name();
-                    let composite_type = &ctx.asts[ctid].name();
-
-                    Cow::from(format!("{field_name} in type {composite_type}"))
-                }
-            };
+            let path_str = Cow::from(attrs.field_name);
 
             ctx.push_error(DatamodelError::new_model_validation_error(
                 &format!("The unique index definition refers to the field {path_str} multiple times.",),

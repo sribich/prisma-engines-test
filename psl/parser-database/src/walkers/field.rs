@@ -1,4 +1,4 @@
-use super::{CompositeTypeFieldWalker, ModelWalker, RelationFieldWalker, ScalarFieldWalker, Walker};
+use super::{ModelWalker, RelationFieldWalker, ScalarFieldWalker, Walker};
 use crate::{
     ScalarFieldType, ScalarType,
     types::{RefinedFieldVariant, RelationField, ScalarField},
@@ -67,21 +67,12 @@ impl<'db> From<RelationFieldWalker<'db>> for FieldWalker<'db> {
 #[derive(Copy, Clone)]
 enum InnerTypedFieldWalker<'db> {
     Scalar(ScalarFieldWalker<'db>),
-    Composite(CompositeTypeFieldWalker<'db>),
 }
 
 impl<'db> From<ScalarFieldWalker<'db>> for TypedFieldWalker<'db> {
     fn from(w: ScalarFieldWalker<'db>) -> Self {
         Self {
             inner: InnerTypedFieldWalker::Scalar(w),
-        }
-    }
-}
-
-impl<'db> From<CompositeTypeFieldWalker<'db>> for TypedFieldWalker<'db> {
-    fn from(w: CompositeTypeFieldWalker<'db>) -> Self {
-        Self {
-            inner: InnerTypedFieldWalker::Composite(w),
         }
     }
 }
@@ -97,7 +88,6 @@ impl<'db> TypedFieldWalker<'db> {
     pub fn scalar_field_type(self) -> ScalarFieldType {
         match self.inner {
             InnerTypedFieldWalker::Scalar(field) => field.scalar_field_type(),
-            InnerTypedFieldWalker::Composite(field) => field.r#type(),
         }
     }
 
@@ -105,7 +95,6 @@ impl<'db> TypedFieldWalker<'db> {
     pub fn scalar_type(self) -> Option<ScalarType> {
         match self.inner {
             InnerTypedFieldWalker::Scalar(field) => field.scalar_type(),
-            InnerTypedFieldWalker::Composite(field) => field.scalar_type(),
         }
     }
 
@@ -115,7 +104,6 @@ impl<'db> TypedFieldWalker<'db> {
     pub fn raw_native_type(self) -> Option<(&'db str, &'db str, &'db [String], ast::Span)> {
         match self.inner {
             InnerTypedFieldWalker::Scalar(sf) => sf.raw_native_type(),
-            InnerTypedFieldWalker::Composite(cf) => cf.raw_native_type(),
         }
     }
 }

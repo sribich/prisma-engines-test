@@ -124,9 +124,6 @@ fn filter_checked_create_fields(
                     .is_some();
                 !field_was_traversed_to
             }
-
-            // Always keep composites
-            ModelField::Composite(_) => true,
         }
     })
 }
@@ -168,8 +165,5 @@ fn filter_unchecked_create_fields<'a>(
 
             field_was_not_traversed_to && is_not_inlined
         }
-
-        // Always keep composites
-        ModelField::Composite(_) => true,
     })
 }

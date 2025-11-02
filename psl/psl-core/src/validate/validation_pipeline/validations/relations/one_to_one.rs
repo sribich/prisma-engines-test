@@ -10,11 +10,7 @@ pub(crate) fn both_sides_are_defined(relation: InlineRelationWalker<'_>, ctx: &m
 
     let field = relation.forward_relation_field().expect(STATE_ERROR);
 
-    let container = if field.model().ast_model().is_view() {
-        "view"
-    } else {
-        "model"
-    };
+    let container = "model";
 
     let message = format!(
         "The relation field `{}` on {container} `{}` is missing an opposite relation field on the model `{}`. Either run `prisma format` or add it manually.",

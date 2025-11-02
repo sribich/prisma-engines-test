@@ -9,11 +9,7 @@ use parser_database::{
 /// referential actions, the other side just as a list.
 pub(crate) fn both_sides_are_defined(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
     let mut error_fn = |relation_field: RelationFieldWalker<'_>| {
-        let container = if relation_field.model().ast_model().is_view() {
-            "view"
-        } else {
-            "model"
-        };
+        let container = "model";
 
         let message = format!(
             "The relation field `{}` on {container} `{}` is missing an opposite relation field on the model `{}`. Either run `prisma format` or add it manually.",

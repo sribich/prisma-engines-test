@@ -128,7 +128,6 @@ impl<Q: Queryable + ?Sized> QueryExt for Q {
             .flat_map(|f| match f {
                 Field::Scalar(sf) => vec![sf.type_identifier_with_arity()],
                 Field::Relation(rf) => rf.type_identifiers_with_arities(),
-                Field::Composite(_) => unimplemented!(),
             })
             .collect();
 

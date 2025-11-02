@@ -1,8 +1,6 @@
-mod composite;
 mod relation;
 mod scalar;
 
-pub use composite::*;
 use prisma_value::PrismaValueType;
 pub use relation::*;
 pub use scalar::*;
@@ -18,7 +16,6 @@ use std::{borrow::Cow, hash::Hash};
 pub enum Field {
     Relation(RelationFieldRef),
     Scalar(ScalarFieldRef),
-    Composite(CompositeFieldRef),
 }
 
 impl Field {
@@ -26,7 +23,6 @@ impl Field {
         match self {
             Field::Relation(rf) => schema.db.walk(rf.id).name(),
             Field::Scalar(sf) => sf.borrowed_name(schema),
-            Field::Composite(cf) => cf.borrowed_name(schema),
         }
     }
 
@@ -34,7 +30,6 @@ impl Field {
         match self {
             Field::Scalar(sf) => sf.name(),
             Field::Relation(rf) => rf.walker().name(),
-            Field::Composite(cf) => cf.name(),
         }
     }
 
@@ -42,7 +37,6 @@ impl Field {
         match self {
             Field::Scalar(sf) => sf.db_name(),
             Field::Relation(rf) => rf.name(),
-            Field::Composite(cf) => cf.db_name(),
         }
     }
 
@@ -52,10 +46,6 @@ impl Field {
 
     pub fn is_relation(&self) -> bool {
         matches!(self, Self::Relation(..))
-    }
-
-    pub fn is_composite(&self) -> bool {
-        matches!(self, Self::Composite(_))
     }
 
     pub fn into_scalar(self) -> Option<ScalarFieldRef> {
@@ -69,7 +59,6 @@ impl Field {
         match self {
             Field::Scalar(sf) => sf.is_id(),
             Field::Relation(_) => false,
-            Field::Composite(_) => false,
         }
     }
 
@@ -77,7 +66,6 @@ impl Field {
         match self {
             Field::Scalar(sf) => sf.is_list(),
             Field::Relation(rf) => rf.is_list(),
-            Field::Composite(cf) => cf.is_list(),
         }
     }
 
@@ -85,7 +73,6 @@ impl Field {
         match self {
             Field::Scalar(sf) => sf.is_required(),
             Field::Relation(rf) => rf.is_required(),
-            Field::Composite(cf) => cf.is_required(),
         }
     }
 
@@ -93,7 +80,6 @@ impl Field {
         match self {
             Field::Scalar(sf) => sf.unique(),
             Field::Relation(_) => false,
-            Field::Composite(_) => false,
         }
     }
 
@@ -101,7 +87,6 @@ impl Field {
         match self {
             Self::Scalar(sf) => sf.container().as_model(),
             Self::Relation(rf) => Some(rf.model()),
-            Self::Composite(cf) => cf.container().as_model(),
         }
     }
 
@@ -109,12 +94,7 @@ impl Field {
         match self {
             Self::Scalar(sf) => vec![sf.clone()],
             Self::Relation(rf) => rf.scalar_fields(),
-            Self::Composite(_cf) => vec![], // [Composites] todo
         }
-    }
-
-    pub fn as_composite(&self) -> Option<&CompositeFieldRef> {
-        if let Self::Composite(v) = self { Some(v) } else { None }
     }
 
     pub fn as_scalar(&self) -> Option<&ScalarFieldRef> {
@@ -125,7 +105,6 @@ impl Field {
         match self {
             Field::Relation(rf) => ParentContainer::from(rf.related_model()),
             Field::Scalar(sf) => sf.container(),
-            Field::Composite(cf) => ParentContainer::from(cf.typ()),
         }
     }
 }
@@ -231,23 +210,9 @@ pub enum DateType {
     DateTime,
 }
 
-impl From<(crate::InternalDataModelRef, walkers::CompositeTypeFieldWalker<'_>)> for Field {
-    fn from((dm, sf): (crate::InternalDataModelRef, walkers::CompositeTypeFieldWalker<'_>)) -> Self {
-        if sf.r#type().as_composite_type().is_some() {
-            Field::Composite(dm.zip(CompositeFieldId::InCompositeType(sf.id)))
-        } else {
-            Field::Scalar(dm.zip(ScalarFieldId::InCompositeType(sf.id)))
-        }
-    }
-}
-
 impl From<(crate::InternalDataModelRef, walkers::ScalarFieldWalker<'_>)> for Field {
     fn from((dm, sf): (crate::InternalDataModelRef, walkers::ScalarFieldWalker<'_>)) -> Self {
-        if sf.scalar_field_type().as_composite_type().is_some() {
-            Field::Composite(dm.zip(CompositeFieldId::InModel(sf.id)))
-        } else {
-            Field::Scalar(dm.zip(ScalarFieldId::InModel(sf.id)))
-        }
+        Field::Scalar(dm.zip(ScalarFieldId::InModel(sf.id)))
     }
 }
 
@@ -266,12 +231,6 @@ impl From<ScalarFieldRef> for Field {
 impl From<RelationFieldRef> for Field {
     fn from(rf: RelationFieldRef) -> Self {
         Field::Relation(rf)
-    }
-}
-
-impl From<CompositeFieldRef> for Field {
-    fn from(cf: CompositeFieldRef) -> Self {
-        Field::Composite(cf)
     }
 }
 

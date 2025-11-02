@@ -52,7 +52,6 @@ pub enum AttributeContainer {
     ModelField(super::ModelId, super::FieldId),
     Enum(super::EnumId),
     EnumValue(super::EnumId, super::EnumValueId),
-    CompositeTypeField(super::CompositeTypeId, super::FieldId),
 }
 
 impl From<super::ModelId> for AttributeContainer {
@@ -70,12 +69,6 @@ impl From<(super::ModelId, super::FieldId)> for AttributeContainer {
 impl From<super::EnumId> for AttributeContainer {
     fn from(v: super::EnumId) -> Self {
         Self::Enum(v)
-    }
-}
-
-impl From<(super::CompositeTypeId, super::FieldId)> for AttributeContainer {
-    fn from((ct, field): (super::CompositeTypeId, super::FieldId)) -> Self {
-        Self::CompositeTypeField(ct, field)
     }
 }
 
@@ -104,7 +97,6 @@ impl Index<AttributeContainer> for super::SchemaAst {
             AttributeContainer::ModelField(model_id, field_id) => &self[model_id][field_id].attributes,
             AttributeContainer::Enum(enum_id) => &self[enum_id].attributes,
             AttributeContainer::EnumValue(enum_id, value_idx) => &self[enum_id][value_idx].attributes,
-            AttributeContainer::CompositeTypeField(ctid, field_id) => &self[ctid][field_id].attributes,
         }
     }
 }

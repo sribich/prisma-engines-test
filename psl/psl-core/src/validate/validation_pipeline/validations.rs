@@ -1,5 +1,4 @@
 mod autoincrement;
-mod composite_types;
 mod constraint_namespace;
 mod database_name;
 mod datasource;
@@ -11,7 +10,6 @@ mod models;
 mod names;
 mod relation_fields;
 mod relations;
-mod views;
 
 use crate::datamodel_connector::ConnectorCapability;
 
@@ -21,20 +19,6 @@ use parser_database::walkers::RefinedRelationWalker;
 
 pub(super) fn validate(ctx: &mut Context<'_>) {
     let names = Names::new(ctx);
-
-    composite_types::detect_composite_cycles(ctx);
-    for composite_type in ctx.db.walk_composite_types() {
-        composite_types::composite_types_support(composite_type, ctx);
-
-        if !ctx.diagnostics.has_errors() {
-            composite_types::more_than_one_field(composite_type, ctx);
-
-            for field in composite_type.fields() {
-                composite_types::validate_default_value(field, ctx);
-                fields::validate_native_type_arguments(field, ctx);
-            }
-        }
-    }
 
     ctx.connector
         .validate_scalar_field_unknown_default_functions(ctx.db, ctx.diagnostics);
@@ -48,38 +32,28 @@ pub(super) fn validate(ctx: &mut Context<'_>) {
     // Model validations
     models::database_name_clashes(ctx);
 
-    for model in ctx.db.walk_models().chain(ctx.db.walk_views()) {
-        if model.ast_model().is_view() {
-            // view-specific validations
-            views::view_definition_without_preview_flag(model, ctx);
-            views::connector_specific(model, ctx);
-        } else {
-            // table-specific validations
-            models::has_a_strict_unique_criteria(model, ctx);
-            models::has_a_unique_primary_key_name(model, &names, ctx);
-            models::has_a_unique_custom_primary_key_name_per_model(model, &names, ctx);
-            models::id_has_fields(model, ctx);
-            models::id_client_name_does_not_clash_with_field(model, ctx);
-            models::primary_key_connector_specific(model, ctx);
-            models::primary_key_length_prefix_supported(model, ctx);
-            models::primary_key_sort_order_supported(model, ctx);
-            models::only_one_fulltext_attribute_allowed(model, ctx);
-            models::shard_key_is_supported(model, ctx);
-            models::shard_key_has_fields(model, ctx);
-            models::connector_specific(model, ctx);
-            autoincrement::validate_auto_increment(model, ctx);
-        }
+    for model in ctx.db.walk_models() {
+        // table-specific validations
+        models::has_a_strict_unique_criteria(model, ctx);
+        models::has_a_unique_primary_key_name(model, &names, ctx);
+        models::has_a_unique_custom_primary_key_name_per_model(model, &names, ctx);
+        models::id_has_fields(model, ctx);
+        models::id_client_name_does_not_clash_with_field(model, ctx);
+        models::primary_key_connector_specific(model, ctx);
+        models::primary_key_length_prefix_supported(model, ctx);
+        models::primary_key_sort_order_supported(model, ctx);
+        models::only_one_fulltext_attribute_allowed(model, ctx);
+        models::shard_key_is_supported(model, ctx);
+        models::shard_key_has_fields(model, ctx);
+        models::connector_specific(model, ctx);
+        autoincrement::validate_auto_increment(model, ctx);
 
         // common validations
         models::schema_is_defined_in_the_datasource(model, ctx);
         models::schema_attribute_supported_in_connector(model, ctx);
         models::schema_attribute_missing(model, ctx);
 
-        if let Some(pk) = model.primary_key()
-            && model.ast_model().is_view()
-        {
-            views::primary_key(pk, ctx);
-        } else if let Some(pk) = model.primary_key() {
+        if let Some(pk) = model.primary_key() {
             for field_attribute in pk.scalar_field_attributes() {
                 let span = pk.ast_attribute().span;
                 let attribute = (pk.attribute_name(), span);
@@ -117,36 +91,27 @@ pub(super) fn validate(ctx: &mut Context<'_>) {
         }
 
         for index in model.indexes() {
-            if model.ast_model().is_view() {
-                views::index(index, ctx);
-                indexes::unique_client_name_does_not_clash_with_field(index, ctx);
-            } else {
-                indexes::has_fields(index, ctx);
-                indexes::has_a_unique_constraint_name(index, &names, ctx);
-                indexes::unique_client_name_does_not_clash_with_field(index, ctx);
-                indexes::unique_index_has_a_unique_custom_name_per_model(index, &names, ctx);
-                indexes::field_length_prefix_supported(index, ctx);
-                indexes::index_algorithm_is_supported(index, ctx);
-                indexes::hash_index_must_not_use_sort_param(index, ctx);
-                indexes::fulltext_index_supported(index, ctx);
-                indexes::fulltext_columns_should_not_define_length(index, ctx);
-                indexes::fulltext_column_sort_is_supported(index, ctx);
-                indexes::fulltext_text_columns_should_be_bundled_together(index, ctx);
-                indexes::has_valid_mapped_name(index, ctx);
-                indexes::supports_clustering_setting(index, ctx);
-                indexes::clustering_can_be_defined_only_once(index, ctx);
-                indexes::opclasses_are_not_allowed_with_other_than_normal_indices(index, ctx);
-            }
+            indexes::has_fields(index, ctx);
+            indexes::has_a_unique_constraint_name(index, &names, ctx);
+            indexes::unique_client_name_does_not_clash_with_field(index, ctx);
+            indexes::unique_index_has_a_unique_custom_name_per_model(index, &names, ctx);
+            indexes::field_length_prefix_supported(index, ctx);
+            indexes::index_algorithm_is_supported(index, ctx);
+            indexes::hash_index_must_not_use_sort_param(index, ctx);
+            indexes::fulltext_index_supported(index, ctx);
+            indexes::fulltext_columns_should_not_define_length(index, ctx);
+            indexes::fulltext_column_sort_is_supported(index, ctx);
+            indexes::fulltext_text_columns_should_be_bundled_together(index, ctx);
+            indexes::has_valid_mapped_name(index, ctx);
+            indexes::supports_clustering_setting(index, ctx);
+            indexes::clustering_can_be_defined_only_once(index, ctx);
+            indexes::opclasses_are_not_allowed_with_other_than_normal_indices(index, ctx);
 
             for field_attribute in index.scalar_field_attributes() {
-                if model.ast_model().is_view() {
-                    views::index_field_attribute(index, field_attribute, ctx);
-                } else {
-                    let span = index.ast_attribute().span;
-                    let attribute = (index.attribute_name(), span);
+                let span = index.ast_attribute().span;
+                let attribute = (index.attribute_name(), span);
 
-                    fields::validate_length_used_with_correct_types(field_attribute, attribute, ctx);
-                }
+                fields::validate_length_used_with_correct_types(field_attribute, attribute, ctx);
             }
         }
     }

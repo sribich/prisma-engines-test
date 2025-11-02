@@ -1,7 +1,6 @@
 mod argument;
 mod attribute;
 mod comment;
-mod composite_type;
 mod config;
 mod r#enum;
 mod expression;
@@ -20,7 +19,6 @@ pub(crate) use self::comment::Comment;
 
 pub use argument::{Argument, ArgumentsList, EmptyArgument};
 pub use attribute::{Attribute, AttributeContainer, AttributeId};
-pub use composite_type::{CompositeType, CompositeTypeId};
 pub use config::ConfigBlockProperty;
 pub use diagnostics::Span;
 pub use r#enum::{Enum, EnumValue, EnumValueId};
@@ -131,8 +129,6 @@ impl std::ops::Index<SourceId> for SchemaAst {
 /// syntax to resolve the id to an `ast::Top`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TopId {
-    /// A composite type
-    CompositeType(CompositeTypeId),
     /// A model declaration
     Model(ModelId),
     /// An enum declaration
@@ -159,14 +155,6 @@ impl TopId {
             _ => None,
         }
     }
-
-    /// Try to interpret the top as a composite type.
-    pub fn as_composite_type_id(&self) -> Option<CompositeTypeId> {
-        match self {
-            TopId::CompositeType(ctid) => Some(*ctid),
-            _ => None,
-        }
-    }
 }
 
 impl std::ops::Index<TopId> for SchemaAst {
@@ -174,7 +162,6 @@ impl std::ops::Index<TopId> for SchemaAst {
 
     fn index(&self, index: TopId) -> &Self::Output {
         let idx = match index {
-            TopId::CompositeType(CompositeTypeId(idx)) => idx,
             TopId::Enum(EnumId(idx)) => idx,
             TopId::Model(ModelId(idx)) => idx,
             TopId::Generator(GeneratorId(idx)) => idx,
@@ -191,6 +178,5 @@ fn top_idx_to_top_id(top_idx: usize, top: &Top) -> TopId {
         Top::Model(_) => TopId::Model(ModelId(top_idx as u32)),
         Top::Source(_) => TopId::Source(SourceId(top_idx as u32)),
         Top::Generator(_) => TopId::Generator(GeneratorId(top_idx as u32)),
-        Top::CompositeType(_) => TopId::CompositeType(CompositeTypeId(top_idx as u32)),
     }
 }

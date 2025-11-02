@@ -853,23 +853,6 @@ fn reformatting_ignore_with_relations_works() {
 }
 
 #[test]
-fn composite_types_are_not_reformatted_into_models() {
-    let input = indoc! {r#"
-      type User {
-        id       Int       @id
-      }
-    "#};
-
-    let expected = expect![[r#"
-      type User {
-        id Int @id
-      }
-  "#]];
-
-    expected.assert_eq(&reformat(input));
-}
-
-#[test]
 fn reformatting_extended_indexes_works() {
     let input = indoc! {r#"
         generator client {

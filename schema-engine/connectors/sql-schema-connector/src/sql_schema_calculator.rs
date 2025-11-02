@@ -148,10 +148,6 @@ fn push_model_indexes(model: ModelWalker<'_>, table_id: sql::TableId, ctx: &mut 
 
 fn push_inline_relations(ctx: &mut Context<'_>) {
     for relation in ctx.datamodel.db.walk_relations().filter_map(|r| r.refine().as_inline()) {
-        if relation.referencing_model().ast_model().is_view() || relation.referenced_model().ast_model().is_view() {
-            continue;
-        }
-
         let relation_field = relation
             .forward_relation_field()
             .expect("Expecting a complete relation in sql_schmea_calculator");
@@ -201,8 +197,7 @@ fn push_relation_tables(ctx: &mut Context<'_>) {
     let m2m_relations = datamodel
         .db
         .walk_relations()
-        .filter_map(|relation| relation.refine().as_many_to_many())
-        .filter(|m2m| !m2m.one_side_is_view());
+        .filter_map(|relation| relation.refine().as_many_to_many());
 
     for m2m in m2m_relations {
         let table_name = m2m.table_name().to_string();
@@ -372,9 +367,6 @@ fn push_column_for_scalar_field(field: ScalarFieldWalker<'_>, table_id: sql::Tab
     match field.scalar_field_type() {
         ScalarFieldType::Enum(enum_id) => push_column_for_model_enum_scalar_field(field, enum_id, table_id, ctx),
         ScalarFieldType::Extension(id) => push_column_for_extension_type(field, id, table_id, ctx),
-        ScalarFieldType::CompositeType(_) => {
-            push_column_for_builtin_scalar_type(field, ScalarType::Json, table_id, ctx)
-        }
         ScalarFieldType::BuiltInScalar(scalar_type) => {
             push_column_for_builtin_scalar_type(field, scalar_type, table_id, ctx)
         }

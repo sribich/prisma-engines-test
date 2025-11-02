@@ -18,9 +18,9 @@ model MyModel {
   @@unique([field1, field3]) // there too
 }
 
-/* Types */
+/* More Models */
 
-type YourType {
+model YourModel {
   // Example Comment
   field1 Int // Comment Field 1
   field2 Int // Comment Field 2

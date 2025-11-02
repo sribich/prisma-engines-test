@@ -98,16 +98,9 @@ where
                 selected_fields.push(sf.into());
             }
 
-            (pf, Some(Field::Composite(cf))) => {
-                selected_fields.push(extract_composite_selection(pf, cf, query_schema)?);
-            }
-
             (pf, None) if pf.name == UNDERSCORE_COUNT => match parent {
                 ParentContainer::Model(ref model) => {
                     selected_fields.extend(extract_relation_count_selections(pf, model)?);
-                }
-                ParentContainer::CompositeType(_) => {
-                    unreachable!("Unexpected relation aggregation selection inside a composite type query")
                 }
             },
 
@@ -119,23 +112,6 @@ where
     }
 
     Ok(selected_fields)
-}
-
-fn extract_composite_selection(
-    pf: ParsedField<'_>,
-    cf: CompositeFieldRef,
-    query_schema: &QuerySchema,
-) -> QueryGraphBuilderResult<SelectedField> {
-    let object = pf
-        .nested_fields
-        .expect("Invalid composite query shape: Composite field selected without sub-selection.");
-
-    let typ = cf.typ();
-
-    Ok(SelectedField::Composite(CompositeSelection {
-        field: cf,
-        selections: pairs_to_selections(typ, &object.fields, query_schema)?,
-    }))
 }
 
 fn extract_relation_selection(
@@ -201,7 +177,6 @@ pub(crate) fn collect_nested_queries(
 
             match model_field {
                 Field::Scalar(_) => None,
-                Field::Composite(_) => None,
                 Field::Relation(ref rf) => {
                     let model = rf.related_model();
                     let parent = rf.clone();

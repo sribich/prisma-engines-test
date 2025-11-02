@@ -55,8 +55,6 @@ pub(crate) fn order_by_object_type(
             .fields()
             .iter()
             .filter_map(|field| match field {
-                // We exclude composites if we're in aggregations land (groupBy).
-                ModelField::Composite(_) if options.include_scalar_aggregations => None,
                 _ => orderby_field_mapper(field, ctx, options),
             })
             .collect();
@@ -137,25 +135,6 @@ fn orderby_field_mapper<'a>(
             }
 
             Some(input_field(sf.name().to_owned(), types, None).optional())
-        }
-
-        // Composite field.
-        ModelField::Composite(cf) if cf.is_list() => {
-            let to_many_aggregate_type = order_by_to_many_aggregate_object_type(&(cf.typ()).into());
-            Some(simple_input_field(cf.name().to_owned(), InputType::object(to_many_aggregate_type), None).optional())
-        }
-
-        ModelField::Composite(cf) => {
-            let composite_order_object_type = order_by_object_type(ctx, cf.clone().typ().into(), OrderByOptions::new());
-
-            Some(
-                simple_input_field(
-                    cf.name().to_owned(),
-                    InputType::object(composite_order_object_type),
-                    None,
-                )
-                .optional(),
-            )
         }
 
         _ => None,

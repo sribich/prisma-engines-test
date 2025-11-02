@@ -26,10 +26,6 @@ impl<'a> ParsedInputMap<'a> {
         matches!(&self.tag, Some(ObjectTag::RelationEnvelope))
     }
 
-    pub(crate) fn is_composite_envelope(&self) -> bool {
-        matches!(&self.tag, Some(ObjectTag::CompositeEnvelope))
-    }
-
     pub(crate) fn is_nested_to_one_update_envelope(&self) -> bool {
         matches!(&self.tag, Some(ObjectTag::NestedToOneUpdateEnvelope))
     }

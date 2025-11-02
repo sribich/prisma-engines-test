@@ -3,7 +3,7 @@ use constants::args;
 use input_types::objects::order_by_objects::OrderByOptions;
 use mutations::create_one;
 use objects::*;
-use query_structure::{CompositeFieldRef, prelude::ParentContainer};
+use query_structure::{prelude::ParentContainer};
 
 /// Builds "where" argument.
 pub(crate) fn where_argument<'a>(ctx: &'a QuerySchema, model: &Model) -> InputField<'a> {
@@ -109,12 +109,6 @@ pub(crate) fn many_records_output_field_arguments(ctx: &QuerySchema, field: Mode
 
         // To-one required relation.
         ModelField::Relation(_) => vec![],
-
-        // To-many composite.
-        ModelField::Composite(cf) if cf.is_list() => composite_selection_arguments(ctx, cf),
-
-        // To-one composite.
-        ModelField::Composite(_) => vec![],
     }
 }
 
@@ -128,11 +122,6 @@ pub(crate) fn relation_to_many_selection_arguments(ctx: &QuerySchema, model: Mod
 /// Builds "many records where" arguments for to-many relation selection sets.
 pub(crate) fn relation_to_one_selection_arguments(ctx: &QuerySchema, model: Model) -> Vec<InputField<'_>> {
     vec![where_argument(ctx, &model)]
-}
-
-/// Builds "many composite where" arguments for to-many composite selection sets.
-pub(crate) fn composite_selection_arguments(_ctx: &QuerySchema, _cf: CompositeFieldRef) -> Vec<InputField<'_>> {
-    vec![]
 }
 
 // Builds "orderBy" argument.

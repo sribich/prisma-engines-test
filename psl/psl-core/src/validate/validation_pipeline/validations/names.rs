@@ -29,7 +29,7 @@ impl<'db> Names<'db> {
         let mut unique_names: HashSet<(ModelId, &'db str)> = HashSet::new();
         let mut primary_key_names: HashMap<ModelId, &'db str> = HashMap::new();
 
-        for model in ctx.db.walk_models().chain(ctx.db.walk_views()) {
+        for model in ctx.db.walk_models() {
             let model_id = model.id;
 
             for field in model.relation_fields() {

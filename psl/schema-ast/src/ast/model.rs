@@ -66,14 +66,6 @@ pub struct Model {
     /// }
     /// ```
     pub(crate) documentation: Option<Comment>,
-    /// Is the model defined as a view in the database.
-    ///
-    /// ```ignore
-    /// view Foo {
-    ///   val Int @unique
-    /// }
-    /// ```
-    pub(crate) is_view: bool,
     /// The location of this model in the text representation.
     pub(crate) span: Span,
 }
@@ -84,10 +76,6 @@ impl Model {
             .iter()
             .enumerate()
             .map(|(idx, field)| (FieldId(idx as u32), field))
-    }
-
-    pub fn is_view(&self) -> bool {
-        self.is_view
     }
 }
 

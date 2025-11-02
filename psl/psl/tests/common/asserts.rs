@@ -13,7 +13,6 @@ use psl::{Diagnostics, StringFromEnvVar};
 
 pub(crate) trait DatamodelAssert<'a> {
     fn assert_has_model(&'a self, name: &str) -> walkers::ModelWalker<'a>;
-    fn assert_has_type(&'a self, name: &str) -> walkers::CompositeTypeWalker<'a>;
 }
 
 pub(crate) trait DatasourceAsserts {
@@ -39,10 +38,6 @@ pub(crate) trait ModelAssert<'a> {
     fn assert_mapped_name(&self, name: &str) -> &Self;
 }
 
-pub(crate) trait TypeAssert<'a> {
-    fn assert_has_scalar_field(&self, t: &str) -> walkers::CompositeTypeFieldWalker<'a>;
-}
-
 pub(crate) trait ScalarFieldAssert {
     fn assert_scalar_field_type(&self, t: ScalarFieldType) -> &Self;
     fn assert_scalar_type(&self, t: ScalarType) -> &Self;
@@ -61,12 +56,6 @@ pub(crate) trait ScalarFieldAssert {
     fn assert_native_type<T>(&self, connector: &dyn Connector, typ: &T) -> &Self
     where
         T: Debug + PartialEq + 'static;
-}
-
-pub(crate) trait CompositeFieldAssert {
-    fn assert_scalar_type(&self, t: ScalarType) -> &Self;
-    fn assert_default_value(&self) -> &ast::Expression;
-    fn assert_mapped_name(&self, name: &str) -> &Self;
 }
 
 pub(crate) trait RelationFieldAssert {
@@ -145,14 +134,6 @@ impl<'a> DatamodelAssert<'a> for psl::ValidatedSchema {
             .walk_models()
             .find(|m| m.name() == name)
             .expect("Model {name} not found")
-    }
-
-    #[track_caller]
-    fn assert_has_type(&'a self, name: &str) -> walkers::CompositeTypeWalker<'a> {
-        self.db
-            .walk_composite_types()
-            .find(|m| m.name() == name)
-            .expect("Type {name} not found")
     }
 }
 
@@ -543,34 +524,6 @@ impl IndexFieldAssert for walkers::ScalarFieldAttributeWalker<'_> {
     fn assert_raw_ops(&self, ops: &str) -> &Self {
         assert_eq!(Some(Right(ops)), self.operator_class().map(|ops| ops.get()));
         self
-    }
-}
-
-impl<'a> TypeAssert<'a> for walkers::CompositeTypeWalker<'a> {
-    #[track_caller]
-    fn assert_has_scalar_field(&self, t: &str) -> walkers::CompositeTypeFieldWalker<'a> {
-        self.fields()
-            .find(|f| f.name() == t)
-            .expect("Could not find field {t}.")
-    }
-}
-
-impl CompositeFieldAssert for walkers::CompositeTypeFieldWalker<'_> {
-    #[track_caller]
-    fn assert_scalar_type(&self, t: ScalarType) -> &Self {
-        assert_eq!(Some(t), self.scalar_type());
-        self
-    }
-
-    #[track_caller]
-    fn assert_mapped_name(&self, t: &str) -> &Self {
-        assert_eq!(Some(t), self.mapped_name());
-        self
-    }
-
-    #[track_caller]
-    fn assert_default_value(&self) -> &ast::Expression {
-        self.default_value().expect("Field does not have a default value")
     }
 }
 

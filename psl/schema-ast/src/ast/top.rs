@@ -1,12 +1,10 @@
-use crate::ast::{CompositeType, Enum, GeneratorConfig, Identifier, Model, SourceConfig, Span, traits::WithSpan};
+use crate::ast::{Enum, GeneratorConfig, Identifier, Model, SourceConfig, Span, traits::WithSpan};
 
 use super::WithDocumentation;
 
 /// Enum for distinguishing between top-level entries
 #[derive(Debug, Clone)]
 pub enum Top {
-    /// A composite type
-    CompositeType(CompositeType),
     /// An enum declaration
     Enum(Enum),
     /// A model declaration
@@ -21,9 +19,7 @@ impl Top {
     /// A string saying what kind of item this is.
     pub fn get_type(&self) -> &str {
         match self {
-            Top::CompositeType(_) => "composite type",
             Top::Enum(_) => "enum",
-            Top::Model(m) if m.is_view => "view",
             Top::Model(_) => "model",
             Top::Source(_) => "source",
             Top::Generator(_) => "generator",
@@ -33,7 +29,6 @@ impl Top {
     /// The name of the item.
     pub fn identifier(&self) -> &Identifier {
         match self {
-            Top::CompositeType(ct) => &ct.name,
             Top::Enum(x) => &x.name,
             Top::Model(x) => &x.name,
             Top::Source(x) => &x.name,
@@ -48,19 +43,10 @@ impl Top {
 
     pub fn documentation(&self) -> Option<&str> {
         match self {
-            Top::CompositeType(t) => t.documentation(),
             Top::Enum(t) => t.documentation(),
             Top::Model(t) => t.documentation(),
             Top::Source(t) => t.documentation(),
             Top::Generator(t) => t.documentation(),
-        }
-    }
-
-    /// Try to interpret the item as a composite type declaration.
-    pub fn as_composite_type(&self) -> Option<&CompositeType> {
-        match self {
-            Top::CompositeType(ct) => Some(ct),
-            _ => None,
         }
     }
 
@@ -100,7 +86,6 @@ impl Top {
 impl WithSpan for Top {
     fn span(&self) -> Span {
         match self {
-            Top::CompositeType(ct) => ct.span,
             Top::Enum(en) => en.span(),
             Top::Model(model) => model.span(),
             Top::Source(source) => source.span(),

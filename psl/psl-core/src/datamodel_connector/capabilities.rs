@@ -50,7 +50,6 @@ capabilities!(
     JsonLists,
     AutoIncrement,
     RelationFieldsInArbitraryOrder,
-    CompositeTypes,
     DefaultValueAuto,
     TwoWayEmbeddedManyToManyRelation,
     ImplicitManyToManyRelation,

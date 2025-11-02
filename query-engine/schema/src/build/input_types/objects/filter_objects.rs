@@ -1,6 +1,6 @@
 use super::*;
 use constants::filters;
-use query_structure::{CompositeFieldRef, prelude::ParentContainer};
+use query_structure::{prelude::ParentContainer};
 
 pub(crate) fn scalar_filter_object_type(
     ctx: &'_ QuerySchema,
@@ -34,7 +34,6 @@ pub(crate) fn scalar_filter_object_type(
         input_fields.extend(model.fields().all().filter_map(|f| match f {
             ModelField::Scalar(_) => Some(input_fields::filter_input_field(ctx, f, include_aggregates)),
             ModelField::Relation(_) => None,
-            ModelField::Composite(_) => None, // [Composites] todo
         }));
         input_fields
     });
@@ -225,46 +224,6 @@ fn compound_field_unique_object_type<'a>(
                 simple_input_field(name, typ, None)
             })
             .collect()
-    });
-    input_object
-}
-
-/// Object used for full composite equality, e.g. `{ field: "value", field2: 123 } == { field: "value" }`.
-/// If the composite is a list, only lists are allowed for comparison, no shorthands are used.
-pub(crate) fn composite_equality_object(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(format!("{}ObjectEqualityInput", cf.typ().name()));
-
-    let mut input_object = init_input_object_type(ident);
-    input_object.set_container(cf.container());
-    input_object.set_fields(move || {
-        let mut fields = vec![];
-
-        let composite_type = cf.typ();
-        let input_fields = composite_type.fields().map(|f| match f {
-            ModelField::Scalar(sf) => {
-                let map_scalar_input_type_for_field = map_scalar_input_type_for_field(ctx, &sf);
-                simple_input_field(sf.name().to_owned(), map_scalar_input_type_for_field, None)
-                    .optional_if(!sf.is_required())
-                    .nullable_if(!sf.is_required() && !sf.is_list())
-            }
-
-            ModelField::Composite(cf) => {
-                let field_type = if cf.is_list() {
-                    InputType::list(InputType::object(composite_equality_object(ctx, cf.clone())))
-                } else {
-                    InputType::object(composite_equality_object(ctx, cf.clone()))
-                };
-
-                simple_input_field(cf.name().to_owned(), field_type, None)
-                    .optional_if(!cf.is_required())
-                    .nullable_if(!cf.is_required() && !cf.is_list())
-            }
-
-            ModelField::Relation(_) => unimplemented!(),
-        });
-
-        fields.extend(input_fields);
-        fields
     });
     input_object
 }

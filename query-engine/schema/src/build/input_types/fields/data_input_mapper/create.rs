@@ -1,6 +1,5 @@
 use super::*;
 use constants::*;
-use query_structure::CompositeFieldRef;
 
 pub(crate) struct CreateDataInputFieldMapper {
     unchecked: bool,
@@ -98,77 +97,4 @@ impl DataInputFieldMapper for CreateDataInputFieldMapper {
             input_field.optional()
         }
     }
-
-    fn map_composite<'a>(&self, ctx: &'a QuerySchema, cf: CompositeFieldRef) -> InputField<'a> {
-        // Shorthand object (just the plain create object for the composite).
-        let shorthand_type = InputType::Object(composite_create_object_type(ctx, cf.clone()));
-
-        // Operation envelope object.
-        let envelope_type = InputType::Object(composite_create_envelope_object_type(ctx, cf.clone()));
-
-        // If the composite field in _not_ on a model, then it's nested and we're skipping the create envelope for now.
-        // (This allows us to simplify the parsing code for now.)
-        let mut input_types = if cf.container().as_model().is_some() {
-            vec![envelope_type, shorthand_type.clone()]
-        } else {
-            vec![shorthand_type.clone()]
-        };
-
-        if cf.is_list() {
-            input_types.push(InputType::list(shorthand_type));
-        }
-
-        input_field(cf.name().to_owned(), input_types, None)
-            .nullable_if(!cf.is_required() && !cf.is_list())
-            .optional_if(!cf.is_required())
-    }
-}
-
-/// Build an operation envelope object type for composite creates.
-/// An operation envelope is an object that encapsulates the possible operations, like:
-/// ```text
-/// cf_field: { // this is the envelope object
-///   set: { ... create type ... }
-///   ... more ops ...
-/// }
-/// ```
-fn composite_create_envelope_object_type(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(IdentifierType::CompositeCreateEnvelopeInput(cf.typ(), cf.arity()));
-    let cf_is_list = cf.is_list();
-    let cf_is_required = cf.is_required();
-
-    let mut input_object = init_input_object_type(ident);
-    input_object.set_container(cf.typ());
-    input_object.require_exactly_one_field();
-    input_object.set_tag(ObjectTag::CompositeEnvelope);
-    input_object.set_fields(move || {
-        let create_input = InputType::Object(composite_create_object_type(ctx, cf.clone()));
-        let mut input_types = vec![create_input.clone()];
-
-        if cf_is_list {
-            input_types.push(InputType::list(create_input));
-        }
-
-        let set_field = input_field("set", input_types, None)
-            .nullable_if(!cf_is_required && !cf_is_list)
-            .optional();
-
-        vec![set_field]
-    });
-    input_object
-}
-
-pub(crate) fn composite_create_object_type(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> InputObjectType<'_> {
-    // It's called "Create" input because it's used across multiple create-type operations, not only "set".
-    let ident = Identifier::new_prisma(IdentifierType::CompositeCreateInput(cf.typ()));
-
-    let mut input_object = init_input_object_type(ident);
-    input_object.set_container(cf.container());
-    input_object.set_fields(move || {
-        let mapper = CreateDataInputFieldMapper::new_checked();
-        let typ = cf.typ();
-        let mut fields = typ.fields();
-        mapper.map_all(ctx, &mut fields)
-    });
-    input_object
 }

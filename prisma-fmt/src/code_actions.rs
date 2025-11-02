@@ -78,12 +78,11 @@ pub(crate) fn available_actions(
     for source in initiating_ast.sources() {
         relation_mode::edit_referential_integrity(&mut actions, &context, source)
     }
-
+    
     // models AND views
     for model in validated_schema
         .db
         .walk_models_in_file(initiating_file_id)
-        .chain(validated_schema.db.walk_views_in_file(initiating_file_id))
     {
         for field in context.db.walk_fields(model.id) {
             field::add_missing_opposite_relation(&mut actions, &context, field);

@@ -43,7 +43,7 @@ impl<'a> Fields<'a> {
                 !sf.is_ignored()
                     && !matches!(
                         sf.scalar_field_type(),
-                        ScalarFieldType::CompositeType(_) | ScalarFieldType::Unsupported(_)
+                        ScalarFieldType::Unsupported(_)
                     )
             })
             .map(|rf| self.model.dm.clone().zip(ScalarFieldId::InModel(rf.id)))
@@ -58,20 +58,9 @@ impl<'a> Fields<'a> {
             .map(|rf| self.model.dm.clone().zip(rf.id))
     }
 
-    pub fn composite(&self) -> Vec<CompositeFieldRef> {
-        self.model
-            .dm
-            .walk(self.model.id)
-            .scalar_fields()
-            .filter(|sf| sf.scalar_field_type().as_composite_type().is_some() && !sf.is_ignored())
-            .map(|sf| self.model.dm.clone().zip(CompositeFieldId::InModel(sf.id)))
-            .collect()
-    }
-
     pub fn non_relational(&self) -> Vec<Field> {
         self.scalar()
             .map(Field::from)
-            .chain(self.composite().into_iter().map(Field::from))
             .collect()
     }
 

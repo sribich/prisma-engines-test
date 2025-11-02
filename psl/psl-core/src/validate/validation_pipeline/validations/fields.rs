@@ -18,11 +18,7 @@ use parser_database::{
 pub(super) fn validate_client_name(field: FieldWalker<'_>, names: &Names<'_>, ctx: &mut Context<'_>) {
     let model = field.model();
 
-    let container_type = if field.model().ast_model().is_view() {
-        "view"
-    } else {
-        "model"
-    };
+    let container_type = "model";
 
     for taken in names.name_taken(model.id, field.name()).into_iter() {
         match taken {
@@ -258,11 +254,7 @@ pub(super) fn validate_default_value(field: ScalarFieldWalker<'_>, ctx: &mut Con
 }
 
 pub(super) fn validate_scalar_field_connector_specific(field: ScalarFieldWalker<'_>, ctx: &mut Context<'_>) {
-    let container = if field.model().ast_model().is_view() {
-        "view"
-    } else {
-        "model"
-    };
+    let container = "model";
 
     match field.scalar_field_type() {
         ScalarFieldType::BuiltInScalar(ScalarType::Json) => {
@@ -316,11 +308,7 @@ pub(super) fn validate_scalar_field_connector_specific(field: ScalarFieldWalker<
 
     if field.ast_field().arity.is_list() && !ctx.has_capability(ConnectorCapability::ScalarLists) {
         ctx.push_error(DatamodelError::new_scalar_list_fields_are_not_supported(
-            if field.model().ast_model().is_view() {
-                "view"
-            } else {
-                "model"
-            },
+            "model",
             field.model().name(),
             field.name(),
             field.ast_field().span(),

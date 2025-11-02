@@ -7,7 +7,7 @@ use psl::{
         walkers::{self, Walker},
     },
     schema_ast::ast::{
-        self, CompositeTypePosition, EnumPosition, EnumValuePosition, Field, FieldPosition, ModelPosition,
+        self, EnumPosition, EnumValuePosition, Field, FieldPosition, ModelPosition,
         SchemaPosition, WithDocumentation, WithName,
     },
 };
@@ -64,7 +64,7 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
         // --- Block Names ---
         SchemaPosition::Model(model_id, ModelPosition::Name(name)) => {
             let model = ctx.db.walk((ctx.initiating_file_id, model_id)).ast_model();
-            let variant = if model.is_view() { "view" } else { "model" };
+            let variant = "model";
 
             Some(format_hover_content(
                 model.documentation().unwrap_or(""),
@@ -77,10 +77,6 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
             let enm = ctx.db.walk((ctx.initiating_file_id, enum_id)).ast_enum();
             Some(hover_enum(enm, name))
         }
-        SchemaPosition::CompositeType(ct_id, CompositeTypePosition::Name(name)) => {
-            let ct = ctx.db.walk((ctx.initiating_file_id, ct_id)).ast_composite_type();
-            Some(hover_composite(ct, name))
-        }
 
         // --- Block Field Names ---
         SchemaPosition::Model(model_id, ModelPosition::Field(field_id, FieldPosition::Name(name))) => {
@@ -89,16 +85,6 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
                 .walk((ctx.initiating_file_id, model_id))
                 .field(field_id)
                 .ast_field();
-
-            Some(format_hover_content(
-                field.documentation().unwrap_or_default(),
-                "field",
-                name,
-                None,
-            ))
-        }
-        SchemaPosition::CompositeType(ct_id, CompositeTypePosition::Field(field_id, FieldPosition::Name(name))) => {
-            let field = ctx.db.walk((ctx.initiating_file_id, ct_id)).field(field_id).ast_field();
 
             Some(format_hover_content(
                 field.documentation().unwrap_or_default(),
@@ -128,10 +114,6 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
 
             initiating_field.refine().and_then(|field| match field {
                 walkers::RefinedFieldWalker::Scalar(scalar) => match scalar.scalar_field_type() {
-                    ScalarFieldType::CompositeType(_) => {
-                        let ct = scalar.field_type_as_composite_type().unwrap().ast_composite_type();
-                        Some(hover_composite(ct, ct.name()))
-                    }
                     ScalarFieldType::Enum(_) => {
                         let enm = scalar.field_type_as_enum().unwrap().ast_enum();
                         Some(hover_enum(enm, enm.name()))
@@ -141,11 +123,7 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
                 walkers::RefinedFieldWalker::Relation(rf) => {
                     let opposite_model = rf.related_model();
                     let relation_info = rf.opposite_relation_field().map(|rf| (rf, rf.ast_field()));
-                    let related_model_type = if opposite_model.ast_model().is_view() {
-                        "view"
-                    } else {
-                        "model"
-                    };
+                    let related_model_type = "model";
 
                     Some(format_hover_content(
                         opposite_model.ast_model().documentation().unwrap_or_default(),
@@ -156,21 +134,6 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
                 }
             })
         }
-
-        SchemaPosition::CompositeType(ct_id, CompositeTypePosition::Field(field_id, FieldPosition::Type(_))) => {
-            let field = &ctx.db.walk((ctx.initiating_file_id, ct_id)).field(field_id);
-            match field.r#type() {
-                psl::parser_database::ScalarFieldType::CompositeType(_) => {
-                    let ct = field.field_type_as_composite_type().unwrap().ast_composite_type();
-                    Some(hover_composite(ct, ct.name()))
-                }
-                psl::parser_database::ScalarFieldType::Enum(_) => {
-                    let enm = field.field_type_as_enum().unwrap().ast_enum();
-                    Some(hover_enum(enm, enm.name()))
-                }
-                _ => None,
-            }
-        }
         _ => None,
     };
 
@@ -179,10 +142,6 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
 
 fn hover_enum(enm: &ast::Enum, name: &str) -> HoverContents {
     format_hover_content(enm.documentation().unwrap_or_default(), "enum", name, None)
-}
-
-fn hover_composite(ct: &ast::CompositeType, name: &str) -> HoverContents {
-    format_hover_content(ct.documentation().unwrap_or_default(), "type", name, None)
 }
 
 fn format_hover_content(

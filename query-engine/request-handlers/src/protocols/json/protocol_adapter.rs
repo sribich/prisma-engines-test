@@ -73,19 +73,6 @@ impl<'a> JsonProtocolAdapter<'a> {
                         Self::default_scalar_selection(schema_object, &mut selection);
                     }
                 }
-                // $composites: true
-                crate::SelectionSetValue::Shorthand(true) if SelectionSet::is_all_composites(&selection_name) => {
-                    if let Some(schema_object) = field.field_type().as_object_type()
-                        && let Some(container) = container
-                    {
-                        Self::default_composite_selection(
-                            &mut selection,
-                            container,
-                            schema_object,
-                            &mut Vec::<String>::new(),
-                        )?;
-                    }
-                }
                 // <field_name>: true
                 crate::SelectionSetValue::Shorthand(true) => {
                     selection.push_nested_selection(self.create_shorthand_selection(
@@ -309,81 +296,12 @@ impl<'a> JsonProtocolAdapter<'a> {
         }
     }
 
-    fn default_composite_selection(
-        selection: &mut Selection,
-        container: &ParentContainer,
-        schema_object: &ObjectType,
-        walked_types_stack: &mut Vec<String>,
-    ) -> crate::Result<()> {
-        match container {
-            ParentContainer::Model(model) => {
-                for cf in model.fields().composite() {
-                    let schema_field = schema_object.find_field(cf.name());
-
-                    if let Some(schema_field) = schema_field {
-                        let mut nested_selection = Selection::with_name(cf.name());
-
-                        Self::default_composite_selection(
-                            &mut nested_selection,
-                            &ParentContainer::from(cf.typ()),
-                            schema_field.field_type.as_object_type().unwrap(),
-                            walked_types_stack,
-                        )?;
-
-                        selection.push_nested_selection(nested_selection);
-                    }
-                }
-            }
-            ParentContainer::CompositeType(ct) => {
-                let composite_type_name = ct.name().to_owned();
-                if walked_types_stack.contains(&composite_type_name) {
-                    return Err(HandlerError::query_conversion(
-                        "$composites: true does not support recursive composite types.",
-                    ));
-                }
-                walked_types_stack.push(composite_type_name);
-                for f in ct.fields() {
-                    let field_name = f.name().to_owned();
-
-                    let schema_field = schema_object.find_field(&field_name);
-
-                    if let Some(schema_field) = schema_field {
-                        match f {
-                            Field::Scalar(s) => {
-                                selection.push_nested_selection(Selection::with_name(s.name().to_owned()))
-                            }
-                            Field::Composite(cf) => {
-                                let mut nested_selection = Selection::with_name(cf.name().to_owned());
-
-                                Self::default_composite_selection(
-                                    &mut nested_selection,
-                                    &ParentContainer::from(cf.typ()),
-                                    schema_field.field_type.as_object_type().unwrap(),
-                                    walked_types_stack,
-                                )?;
-
-                                selection.push_nested_selection(nested_selection);
-                            }
-                            Field::Relation(_) => unreachable!(),
-                        }
-                    }
-                }
-                let _ = walked_types_stack.pop();
-            }
-        }
-
-        Ok(())
-    }
-
     fn default_scalar_and_composite_selection(
         selection: &mut Selection,
         schema_object: &ObjectType,
         container: Option<&ParentContainer>,
     ) -> crate::Result<()> {
         Self::default_scalar_selection(schema_object, selection);
-        if let Some(container) = container {
-            Self::default_composite_selection(selection, container, schema_object, &mut Vec::<String>::new())?;
-        }
 
         Ok(())
     }
@@ -750,8 +668,7 @@ mod tests {
             "action": "deleteMany",
             "query": {
                 "selection": {
-                    "$scalars": true,
-                    "$composites": true
+                    "$scalars": true
                 }
             }
         }"#,

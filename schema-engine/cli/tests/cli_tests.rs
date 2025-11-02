@@ -416,7 +416,6 @@ fn introspect_sqlite_empty_database() {
             "params": {
                 "schema": { "files": [{ "path": "schema.prisma", "content": schema }] },
                 "force": true,
-                "compositeTypeDepth": 5,
                 "baseDirectoryPath": "./base_directory_path/"
             }
         }))
@@ -464,7 +463,6 @@ fn introspect_sqlite_invalid_empty_database() {
             "params": {
                 "schema": { "files": [{ "path": "schema.prisma", "content": schema }] },
                 "force": true,
-                "compositeTypeDepth": -1,
                 "baseDirectoryPath": "./base_directory_path/"
             }
         }))
@@ -621,7 +619,6 @@ fn introspect_single_postgres_force(api: TestApi) {
             "params": {
                 "schema": { "files": [{ "path": "./prisma/schema.prisma", "content": &schema }] },
                 "force": true,
-                "compositeTypeDepth": 5,
                 "baseDirectoryPath": "./base_directory_path/"
             }
         }))
@@ -733,7 +730,6 @@ fn introspect_multi_postgres_force(api: TestApi) {
             "params": {
                 "schema": { "files": files },
                 "force": true,
-                "compositeTypeDepth": 5,
                 "baseDirectoryPath": "./base_directory_path/"
             }
         }))
@@ -786,7 +782,6 @@ fn introspect_e2e() {
             "params": {
                 "schema": schema,
                 "force": true,
-                "compositeTypeDepth": 5,
                 "baseDirectoryPath": "./base_directory_path/",
             }
         }))

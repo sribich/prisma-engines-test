@@ -1,4 +1,3 @@
-pub mod composite;
 pub mod model;
 
 use super::*;

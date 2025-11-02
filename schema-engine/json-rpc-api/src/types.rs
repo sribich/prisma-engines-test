@@ -485,8 +485,6 @@ pub struct IntrospectParams {
     pub base_directory_path: String,
     /// Force flag.
     pub force: bool,
-    /// Composite type depth.
-    pub composite_type_depth: isize,
     /// Optional namespaces.
     pub namespaces: Option<Vec<String>>,
 }

@@ -1,7 +1,7 @@
 use super::*;
 use crate::query_document::{ParsedInputMap, ParsedInputValue};
 use query_structure::{
-    CompositeFieldRef, DatasourceFieldName, Field, Model, PrismaValue, RelationFieldRef, ScalarFieldRef,
+    DatasourceFieldName, Field, Model, PrismaValue, RelationFieldRef, ScalarFieldRef,
     TypeIdentifier, WriteArgs, WriteOperation,
 };
 use schema::constants::{args, json_null, operations};
@@ -41,12 +41,6 @@ impl<'a> WriteArgsParser<'a> {
                         ParsedInputValue::Single(PrismaValue::Null) => (),
                         _ => args.nested.push((rf.clone(), v.try_into()?)),
                     },
-
-                    Field::Composite(cf) => {
-                        let write_op = parse_composite_writes(&cf, v, &mut vec![])?;
-
-                        args.args.insert(&cf, write_op)
-                    }
                 };
 
                 Ok(args)
@@ -103,135 +97,6 @@ fn parse_scalar_list(v: ParsedInputValue<'_>) -> QueryGraphBuilderResult<WriteOp
         ParsedInputValue::Map(map) => extract_scalar_list_ops(map),
         _ => unreachable!(),
     }
-}
-
-fn parse_composite_writes(
-    cf: &CompositeFieldRef,
-    v: ParsedInputValue<'_>,
-    path: &mut Vec<DatasourceFieldName>,
-) -> QueryGraphBuilderResult<WriteOperation> {
-    match v {
-        // Null-set operation.
-        ParsedInputValue::Single(PrismaValue::Null) => Ok(WriteOperation::composite_set(PrismaValue::Null)),
-
-        // Set list shorthand operation (can only be objects).
-        ParsedInputValue::List(_) => {
-            let list: PrismaValue = v.try_into()?;
-
-            Ok(WriteOperation::composite_set(list))
-        }
-
-        // One of:
-        // - Operation envelope with further actions nested.
-        // - Single object set shorthand.
-        ParsedInputValue::Map(map) => {
-            if map.is_composite_envelope() {
-                parse_composite_envelope(cf, map, path)
-            } else {
-                let pv: PrismaValue = ParsedInputValue::Map(map).try_into()?;
-
-                Ok(WriteOperation::composite_set(pv))
-            }
-        }
-        _ => unreachable!(),
-    }
-}
-
-fn parse_composite_envelope(
-    cf: &CompositeFieldRef,
-    envelope: ParsedInputMap<'_>,
-    path: &mut Vec<DatasourceFieldName>,
-) -> QueryGraphBuilderResult<WriteOperation> {
-    let (op, value) = envelope.into_iter().next().unwrap();
-
-    let write_op = match op.as_ref() {
-        // Everything in a set operation can only be plain values, no more nested operations.
-        operations::SET => WriteOperation::composite_set(value.try_into()?),
-        operations::PUSH => WriteOperation::composite_push(value.try_into()?),
-        operations::UNSET => parse_composite_unset(value.try_into()?),
-        operations::UPDATE => parse_composite_updates(cf, value.try_into()?, path)?,
-        operations::UPSERT => parse_composite_upsert(cf, value.try_into()?, path)?,
-        operations::UPDATE_MANY => parse_composite_update_many(cf, value.try_into()?, path)?,
-        operations::DELETE_MANY => parse_composite_delete_many(cf, value.try_into()?)?,
-        _ => unimplemented!(),
-    };
-
-    Ok(write_op)
-}
-
-fn parse_composite_update_many(
-    cf: &CompositeFieldRef,
-    mut value: ParsedInputMap<'_>,
-    path: &mut [DatasourceFieldName],
-) -> QueryGraphBuilderResult<WriteOperation> {
-    let where_map: ParsedInputMap<'_> = value.swap_remove(args::WHERE).unwrap().try_into()?;
-    let filter = extract_filter(where_map, cf.typ())?;
-
-    let update_map: ParsedInputMap<'_> = value.swap_remove(args::DATA).unwrap().try_into()?;
-    let update = parse_composite_updates(cf, update_map, path)?
-        .try_into_composite()
-        .unwrap();
-
-    Ok(WriteOperation::composite_update_many(filter, update))
-}
-
-fn parse_composite_delete_many(
-    cf: &CompositeFieldRef,
-    mut value: ParsedInputMap<'_>,
-) -> QueryGraphBuilderResult<WriteOperation> {
-    let where_map: ParsedInputMap<'_> = value.swap_remove(args::WHERE).unwrap().try_into()?;
-    let filter = extract_filter(where_map, cf.typ())?;
-
-    Ok(WriteOperation::composite_delete_many(filter))
-}
-
-fn parse_composite_upsert(
-    cf: &CompositeFieldRef,
-    mut value: ParsedInputMap<'_>,
-    path: &mut Vec<DatasourceFieldName>,
-) -> QueryGraphBuilderResult<WriteOperation> {
-    let set = value.swap_remove(operations::SET).unwrap();
-    let set = parse_composite_writes(cf, set, path)?.try_into_composite().unwrap();
-    let update: ParsedInputMap<'_> = value.swap_remove(operations::UPDATE).unwrap().try_into()?;
-    let update = parse_composite_updates(cf, update, path)?.try_into_composite().unwrap();
-
-    Ok(WriteOperation::composite_upsert(set, update))
-}
-
-fn parse_composite_unset(pv: PrismaValue) -> WriteOperation {
-    let should_unset = pv.as_boolean().unwrap();
-
-    WriteOperation::composite_unset(*should_unset)
-}
-
-fn parse_composite_updates(
-    cf: &CompositeFieldRef,
-    map: ParsedInputMap<'_>,
-    path: &mut [DatasourceFieldName],
-) -> QueryGraphBuilderResult<WriteOperation> {
-    let mut writes = vec![];
-
-    for (k, v) in map {
-        let typ = cf.typ();
-        let field = typ.find_field(&k).unwrap();
-
-        let field_name: DatasourceFieldName = match &field {
-            Field::Scalar(sf) => sf.into(),
-            Field::Composite(cf) => cf.into(),
-            _ => unreachable!(),
-        };
-
-        let write_op = match field {
-            Field::Scalar(sf) if sf.is_list() => parse_scalar_list(v),
-            Field::Scalar(sf) => parse_scalar(&sf, v),
-            Field::Composite(cf) => parse_composite_writes(&cf, v, &mut path.to_owned()),
-            _ => unreachable!(),
-        }?;
-
-        writes.push((field_name, write_op));
-    }
-
-    Ok(WriteOperation::composite_update(writes))
 }
 
 fn extract_scalar_list_ops(map: ParsedInputMap<'_>) -> QueryGraphBuilderResult<WriteOperation> {

@@ -6,11 +6,7 @@ use parser_database::{ast::WithSpan, walkers::ImplicitManyToManyRelationWalker};
 pub(crate) fn validate_singular_id(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>) {
     for relation_field in [relation.field_a(), relation.field_b()].iter() {
         if !relation_field.related_model().has_single_id_field() {
-            let container = if relation_field.related_model().ast_model().is_view() {
-                "view"
-            } else {
-                "model"
-            };
+            let container = "model";
 
             let message = format!(
                 "The relation field `{}` on {container} `{}` references `{}` which does not have an `@id` field. Models without `@id` cannot be part of a many to many relation. Use an explicit intermediate Model to represent this relationship.",
@@ -60,13 +56,7 @@ pub(crate) fn validate_no_referential_actions(relation: ImplicitManyToManyRelati
 
 /// We do not support implicit m:n relations on MongoDB and views.
 pub(crate) fn supports_implicit_relations(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>) {
-    if relation.one_side_is_view() {
-        push_error_for_both_sides(
-            relation,
-            ctx,
-            "Implicit many-to-many relations are not supported for views.",
-        )
-    } else if !ctx.has_capability(ConnectorCapability::ImplicitManyToManyRelation) {
+    if !ctx.has_capability(ConnectorCapability::ImplicitManyToManyRelation) {
         push_error_for_both_sides(
             relation,
             ctx,

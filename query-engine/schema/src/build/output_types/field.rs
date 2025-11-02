@@ -1,6 +1,6 @@
 use super::*;
 use input_types::fields::arguments;
-use query_structure::{CompositeFieldRef, ScalarFieldRef};
+use query_structure::{ScalarFieldRef};
 
 pub(crate) fn map_output_field(ctx: &'_ QuerySchema, model_field: ModelField) -> OutputField<'_> {
     let cloned_model_field = model_field.clone();
@@ -18,7 +18,6 @@ pub(crate) fn map_field_output_type(ctx: &'_ QuerySchema, model_field: ModelFiel
     match model_field {
         ModelField::Scalar(sf) => map_scalar_output_type_for_field(ctx, sf),
         ModelField::Relation(rf) => map_relation_output_type(ctx, rf),
-        ModelField::Composite(cf) => map_composite_field_output_type(ctx, cf),
     }
 }
 
@@ -57,17 +56,6 @@ pub(crate) fn map_relation_output_type(ctx: &'_ QuerySchema, rf: RelationFieldRe
         OutputType::list(related_model_obj)
     } else {
         OutputType::non_list(related_model_obj)
-    }
-}
-
-fn map_composite_field_output_type(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> OutputType<'_> {
-    let obj = objects::composite::composite_object_type(ctx, cf.typ());
-    let typ = InnerOutputType::Object(obj);
-
-    if cf.is_list() {
-        OutputType::list(typ)
-    } else {
-        OutputType::non_list(typ)
     }
 }
 

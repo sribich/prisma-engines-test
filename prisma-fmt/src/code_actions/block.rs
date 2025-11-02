@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand, Diagnostic, Range, TextEdit, Url, WorkspaceEdit};
 use psl::{
     diagnostics::Span,
-    parser_database::walkers::{CompositeTypeWalker, ModelWalker},
+    parser_database::walkers::ModelWalker,
     schema_ast::ast::{NewlineType, WithSpan},
 };
 

@@ -278,14 +278,12 @@ impl QueryArguments {
             o.field.unique()
                 && o.path.iter().all(|hop| match hop {
                     OrderByHop::Relation(rf) => rf.relation().is_one_to_one(),
-                    OrderByHop::Composite(_) => false, // Composites do not have uniques, as such they can't fulfill uniqueness requirement even if they're 1:1.
                 })
         });
 
         let has_optional_hop = on_relation.iter().any(|o| {
             o.path.iter().any(|hop| match hop {
                 OrderByHop::Relation(rf) => rf.arity().is_optional(),
-                OrderByHop::Composite(cf) => !cf.is_required(),
             })
         });
 

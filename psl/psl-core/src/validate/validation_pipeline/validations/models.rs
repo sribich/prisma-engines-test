@@ -32,7 +32,7 @@ pub(super) fn has_a_strict_unique_criteria(model: ModelWalker<'_>, ctx: &mut Con
         })
         .peekable();
 
-    let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+    let container_type = "model";
 
     let msg = format!(
         "Each {container_type} must have at least one unique criteria that has only required fields. Either mark a single field with `@id`, `@unique` or add a multi field criterion with `@@id([])` or `@@unique([])` to the {container_type}."
@@ -210,7 +210,7 @@ pub(crate) fn primary_key_connector_specific(model: ModelWalker<'_>, ctx: &mut C
         return;
     };
 
-    let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+    let container_type = "model";
 
     if primary_key.mapped_name().is_some() && !ctx.has_capability(ConnectorCapability::NamedPrimaryKeys) {
         ctx.push_error(DatamodelError::new_model_validation_error(
@@ -262,7 +262,7 @@ pub(super) fn id_client_name_does_not_clash_with_field(model: ModelWalker<'_>, c
 
     let id_client_name = id.fields().map(|f| f.name()).collect::<Vec<_>>().join("_");
     if model.scalar_fields().any(|f| f.name() == id_client_name) {
-        let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+        let container_type = "model";
 
         ctx.push_error(DatamodelError::new_model_validation_error(
             &format!("The field `{id_client_name}` clashes with the `@@id` attribute's name. Please resolve the conflict by providing a custom id name: `@@id([...], name: \"custom_name\")`"),
@@ -336,7 +336,7 @@ pub(super) fn schema_attribute_missing(model: ModelWalker<'_>, ctx: &mut Context
         return;
     }
 
-    let container = if model.ast_model().is_view() { "view" } else { "model" };
+    let container = "model";
 
     ctx.push_error(DatamodelError::new_model_validation_error(
         &format!("This {container} is missing an `@@schema` attribute."),
@@ -351,7 +351,7 @@ pub(super) fn database_name_clashes(ctx: &mut Context<'_>) {
     let mut database_names: HashMap<(Option<&str>, &str), parser_database::ModelId> =
         HashMap::with_capacity(ctx.db.models_count());
 
-    for model in ctx.db.walk_models().chain(ctx.db.walk_views()) {
+    for model in ctx.db.walk_models() {
         let key = (model.schema().map(|(name, _)| name), model.database_name());
         match database_names.insert(key, model.id) {
             // Two branches because we want to put the error on the @@map attribute, and it can be

@@ -147,26 +147,6 @@ fn process_order_object(
                         Ok(Some(OrderBy::scalar(sf, path, sort_order, nulls_order)))
                     }
                 }
-
-                Field::Composite(cf) if cf.is_list() => {
-                    let object: ParsedInputMap<'_> = field_value.try_into()?;
-
-                    path.push(cf.into());
-
-                    let (inner_field_name, inner_field_value) = object.into_iter().next().unwrap();
-                    let sort_aggregation = extract_sort_aggregation(inner_field_name.as_ref())
-                        .expect("To-many composite orderBy must be an aggregation ordering.");
-
-                    let (sort_order, _) = extract_order_by_args(inner_field_value)?;
-                    Ok(Some(OrderBy::to_many_aggregation(path, sort_order, sort_aggregation)))
-                }
-
-                Field::Composite(cf) => {
-                    let object: ParsedInputMap<'_> = field_value.try_into()?;
-                    path.push((&cf).into());
-
-                    process_order_object(&cf.typ().into(), object, path, None)
-                }
             }
         }
     }

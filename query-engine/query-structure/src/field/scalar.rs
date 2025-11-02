@@ -2,7 +2,7 @@ use crate::{DefaultKind, NativeTypeInstance, ValueGenerator, ast, parent_contain
 use chrono::{DateTime, FixedOffset};
 use psl::{
     generators::{DEFAULT_CUID_VERSION, DEFAULT_UUID_VERSION},
-    parser_database::{self as db, ScalarFieldType, ScalarType, walkers},
+    parser_database::{ScalarFieldType, ScalarType, walkers},
     schema_ast::ast::FieldArity,
 };
 use std::fmt::{Debug, Display};
@@ -13,14 +13,12 @@ pub type ScalarFieldRef = ScalarField;
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ScalarFieldId {
     InModel(psl::parser_database::ScalarFieldId),
-    InCompositeType((db::CompositeTypeId, ast::FieldId)),
 }
 
 impl ScalarField {
     pub fn is_id(&self) -> bool {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).is_single_pk(),
-            ScalarFieldId::InCompositeType(_) => false,
         }
     }
 
@@ -35,14 +33,12 @@ impl ScalarField {
     pub fn unique(&self) -> bool {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).is_unique(),
-            ScalarFieldId::InCompositeType(_) => false, // TODO: is this right?
         }
     }
 
     pub fn db_name(&self) -> &str {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).database_name(),
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).database_name(),
         }
     }
 
@@ -53,7 +49,6 @@ impl ScalarField {
     pub fn is_read_only(&self) -> bool {
         let sfid = match self.id {
             ScalarFieldId::InModel(id) => id,
-            ScalarFieldId::InCompositeType(_) => return false,
         };
         let sf = self.dm.walk(sfid);
         let mut relation_fields = sf.model().relation_fields();
@@ -67,34 +62,27 @@ impl ScalarField {
     pub fn container(&self) -> ParentContainer {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.find_model_by_id(self.dm.walk(id).model().id).into(),
-            ScalarFieldId::InCompositeType((id, _)) => self.dm.find_composite_type_by_id(id).into(),
         }
     }
 
     pub fn borrowed_name<'a>(&self, schema: &'a psl::ValidatedSchema) -> &'a str {
         match self.id {
             ScalarFieldId::InModel(id) => schema.db.walk(id).name(),
-            ScalarFieldId::InCompositeType(id) => schema.db.walk(id).name(),
         }
     }
 
     pub fn name(&self) -> &str {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).name(),
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).name(),
         }
     }
 
     pub fn type_identifier(&self) -> TypeIdentifier {
         let scalar_field_type = match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).scalar_field_type(),
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).r#type(),
         };
 
         match scalar_field_type {
-            ScalarFieldType::CompositeType(_) => {
-                unreachable!("This shouldn't be reached; composite types are not supported in compound unique indices.",)
-            }
             ScalarFieldType::Enum(x) => TypeIdentifier::Enum(x),
             ScalarFieldType::Extension(udt) => TypeIdentifier::Extension(udt),
             ScalarFieldType::BuiltInScalar(scalar) => scalar.into(),
@@ -105,7 +93,6 @@ impl ScalarField {
     pub fn arity(&self) -> FieldArity {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).ast_field().arity,
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).arity(),
         }
     }
 
@@ -124,7 +111,6 @@ impl ScalarField {
     pub fn internal_enum(&self) -> Option<crate::InternalEnum> {
         let enum_id = match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).scalar_field_type().as_enum(),
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).r#type().as_enum(),
         }?;
         Some(self.dm.clone().zip(enum_id))
     }
@@ -137,19 +123,12 @@ impl ScalarField {
                     .default_value()
                     .map(|dv| dml_default_kind(&dv.ast_attribute().arguments.arguments[0].value, walker.scalar_type()))
             }
-            ScalarFieldId::InCompositeType(id) => {
-                let walker = self.dm.walk(id);
-                walker
-                    .default_value()
-                    .map(|dv| dml_default_kind(dv, walker.scalar_type()))
-            }
         }
     }
 
     pub fn is_updated_at(&self) -> bool {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).is_updated_at(),
-            ScalarFieldId::InCompositeType(_) => false,
         }
     }
 
@@ -164,7 +143,6 @@ impl ScalarField {
                     )
                     && matches!(walker.scalar_type(), Some(psl::parser_database::ScalarType::Int))
             }
-            ScalarFieldId::InCompositeType(_) => false,
         }
     }
 
@@ -173,7 +151,6 @@ impl ScalarField {
 
         let raw_nt = match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).raw_native_type(),
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).raw_native_type(),
         };
 
         let psl_nt = raw_nt
@@ -181,7 +158,6 @@ impl ScalarField {
 
         let scalar_type = match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).scalar_field_type(),
-            ScalarFieldId::InCompositeType(id) => self.dm.walk(id).r#type(),
         };
 
         let nt = psl_nt.or_else(|| connector.default_native_type_for_scalar_type(&scalar_type, &self.dm.schema))?;
@@ -217,7 +193,6 @@ impl ScalarField {
     pub fn is_autoincrement(&self) -> bool {
         match self.id {
             ScalarFieldId::InModel(id) => self.dm.walk(id).is_autoincrement(),
-            ScalarFieldId::InCompositeType(_) => false,
         }
     }
 }
@@ -232,7 +207,6 @@ impl From<(InternalDataModelRef, walkers::IndexFieldWalker<'_>)> for ScalarField
     fn from((dm, f): (InternalDataModelRef, walkers::IndexFieldWalker<'_>)) -> Self {
         match f {
             walkers::IndexFieldWalker::Scalar(sf) => dm.zip(ScalarFieldId::InModel(sf.id)),
-            walkers::IndexFieldWalker::Composite(cf) => dm.zip(ScalarFieldId::InCompositeType(cf.id)),
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::{
-    CompositeFieldRef, DomainError, Field, FieldTypeInformation, Filter, InternalDataModel, Model, ModelProjection,
+    DomainError, Field, FieldTypeInformation, Filter, InternalDataModel, Model, ModelProjection,
     QueryArguments, RelationField, RelationFieldRef, ScalarField, ScalarFieldRef, SelectionResult, Type,
     TypeIdentifier, parent_container::ParentContainer, prisma_value_ext::PrismaValueExtensions,
 };
@@ -28,11 +28,6 @@ impl FieldSelection {
     pub fn is_superset_of(&self, other: &Self) -> bool {
         other.selections.iter().all(|selection| match selection {
             SelectedField::Scalar(sf) => self.contains(sf.name()),
-            SelectedField::Composite(other_cs) => self
-                .get(other_cs.field.name())
-                .and_then(|selection| selection.as_composite())
-                .map(|cs| cs.is_superset_of(other_cs))
-                .unwrap_or(false),
             // TODO: Relation selections are ignored for now to prevent breaking the existing query-based strategy to resolve relations.
             SelectedField::Relation(_) => true,
             SelectedField::Virtual(vs) => self.contains(&vs.db_alias()),
@@ -125,7 +120,6 @@ impl FieldSelection {
         self.selections()
             .map(|selection| match selection {
                 SelectedField::Scalar(sf) => sf.clone().into(),
-                SelectedField::Composite(cf) => cf.field.clone().into(),
                 SelectedField::Relation(rs) => rs.field.clone().into(),
                 SelectedField::Virtual(vs) => vs.field(),
             })
@@ -254,7 +248,6 @@ impl AsRef<[SelectedField]> for FieldSelection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SelectedField {
     Scalar(ScalarFieldRef),
-    Composite(CompositeSelection),
     Relation(RelationSelection),
     Virtual(VirtualSelection),
 }
@@ -393,7 +386,6 @@ impl SelectedField {
     pub fn prisma_name(&self) -> Cow<'_, str> {
         match self {
             SelectedField::Scalar(sf) => sf.name().into(),
-            SelectedField::Composite(cf) => cf.field.name().into(),
             SelectedField::Relation(rs) => rs.field.name().into(),
             SelectedField::Virtual(vs) => vs.db_alias().into(),
         }
@@ -405,7 +397,6 @@ impl SelectedField {
     pub fn db_name(&self) -> Cow<'_, str> {
         match self {
             SelectedField::Scalar(sf) => sf.db_name().into(),
-            SelectedField::Composite(cs) => cs.field.db_name().into(),
             SelectedField::Relation(rs) => rs.field.name().into(),
             SelectedField::Virtual(vs) => vs.db_alias().into(),
         }
@@ -433,7 +424,6 @@ impl SelectedField {
             SelectedField::Scalar(sf) => Some(sf.type_identifier_with_arity()),
             SelectedField::Relation(rf) if rf.field.is_list() => Some((TypeIdentifier::Json, FieldArity::Required)),
             SelectedField::Relation(rf) => Some((TypeIdentifier::Json, rf.field.arity())),
-            SelectedField::Composite(_) => None,
             SelectedField::Virtual(vs) => Some(vs.type_identifier_with_arity()),
         }
     }
@@ -472,13 +462,7 @@ impl SelectedField {
         }
     }
 
-    pub fn as_composite(&self) -> Option<&CompositeSelection> {
-        match self {
-            SelectedField::Composite(cs) => Some(cs),
-            _ => None,
-        }
-    }
-
+    // TODO(sr): What are virtual fields? Do we need them?
     pub fn as_virtual(&self) -> Option<&VirtualSelection> {
         match self {
             SelectedField::Virtual(vs) => Some(vs),
@@ -489,7 +473,6 @@ impl SelectedField {
     pub fn container(&self) -> ParentContainer {
         match self {
             SelectedField::Scalar(sf) => sf.container(),
-            SelectedField::Composite(cs) => cs.field.container(),
             SelectedField::Relation(rs) => ParentContainer::from(rs.field.model()),
             SelectedField::Virtual(vs) => ParentContainer::from(vs.model()),
         }
@@ -499,7 +482,6 @@ impl SelectedField {
     pub(crate) fn coerce_value(&self, value: PrismaValue) -> crate::Result<PrismaValue> {
         match self {
             SelectedField::Scalar(sf) => value.coerce(&sf.base_type()),
-            SelectedField::Composite(cs) => cs.coerce_value(value),
             SelectedField::Relation(_) => todo!(),
             SelectedField::Virtual(vs) => vs.coerce_value(value),
         }
@@ -513,65 +495,8 @@ impl SelectedField {
     fn datamodel(&self) -> &InternalDataModel {
         match self {
             SelectedField::Scalar(sf) => &sf.dm,
-            SelectedField::Composite(cs) => &cs.field.dm,
             SelectedField::Relation(rs) => &rs.field.dm,
             SelectedField::Virtual(vs) => &vs.relation_field().dm,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CompositeSelection {
-    pub field: CompositeFieldRef,
-    pub selections: Vec<SelectedField>,
-}
-
-impl CompositeSelection {
-    pub fn is_superset_of(&self, other: &Self) -> bool {
-        self.field.typ() == other.field.typ()
-            && other.selections.iter().all(|selection| match selection {
-                SelectedField::Scalar(sf) => self.contains(sf.name()),
-                SelectedField::Composite(other_cs) => self
-                    .get(other_cs.field.name())
-                    .and_then(|selection| selection.as_composite())
-                    .map(|cs| cs.is_superset_of(other_cs))
-                    .unwrap_or(false),
-                SelectedField::Relation(_) => true, // A composite selection cannot hold relations.
-                SelectedField::Virtual(vs) => self.contains(&vs.db_alias()),
-            })
-    }
-
-    pub fn contains(&self, name: &str) -> bool {
-        self.get(name).is_some()
-    }
-
-    pub fn get(&self, name: &str) -> Option<&SelectedField> {
-        self.selections.iter().find(|selection| selection.prisma_name() == name)
-    }
-
-    /// Ensures that the given `PrismaValue` fits this composite selection. That includes:
-    /// - Discarding extra fields on objects.
-    /// - All scalar leafs are coerced to their type ident.
-    fn coerce_value(&self, pv: PrismaValue) -> crate::Result<PrismaValue> {
-        match pv {
-            PrismaValue::Object(pairs) => Ok(PrismaValue::Object(
-                pairs
-                    .into_iter()
-                    .map(|(key, value)| match self.get(&key) {
-                        Some(selection) => Ok((key, selection.coerce_value(value)?)),
-                        None => Err(DomainError::FieldNotFound {
-                            name: key.clone(),
-                            container_name: self.field.name().to_owned(),
-                            container_type: "composite type",
-                        }),
-                    })
-                    .collect::<crate::Result<Vec<_>>>()?,
-            )),
-
-            val => Err(DomainError::ConversionFailure(
-                val.to_string(),
-                "Prisma object value".to_owned(),
-            )),
         }
     }
 }
@@ -607,12 +532,6 @@ impl Display for SelectedField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SelectedField::Scalar(sf) => write!(f, "{sf}"),
-            SelectedField::Composite(cs) => write!(
-                f,
-                "{} {{ {} }}",
-                cs.field,
-                cs.selections.iter().map(|selection| format!("{selection}")).join(", ")
-            ),
             SelectedField::Relation(rs) => write!(
                 f,
                 "{} {{ {} }}",

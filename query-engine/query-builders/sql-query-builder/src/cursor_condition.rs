@@ -564,7 +564,6 @@ fn foreign_keys_from_order_path(path: &[OrderByHop], joins: &[AliasedJoin]) -> O
                     })
                     .collect_vec()
             }
-            OrderByHop::Composite(_) => unreachable!("SQL connectors don't have composite support."),
         }
     })
 }

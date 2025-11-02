@@ -235,6 +235,8 @@ fn match_existing_views(
     prisma_schema: &psl::ValidatedSchema,
     map: &mut IntrospectionMap<'_>,
 ) {
+    // TODO(sr): Fix this. We prob want to keep db view info
+    /*
     for view in prisma_schema.db.walk_views() {
         match sql_schema.find_view(view.database_name(), view.schema_name()) {
             Some(sql_id) => {
@@ -246,6 +248,7 @@ fn match_existing_views(
             }
         }
     }
+     */
 }
 
 /// Finding scalar fields from the existing PSL definition, matching

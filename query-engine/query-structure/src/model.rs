@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use itertools::{Either, Itertools};
+use itertools::{Itertools};
 use psl::parser_database::{ModelId, walkers};
 
 pub type Model = crate::Zipper<ModelId>;
@@ -22,12 +22,11 @@ impl Model {
 
     fn primary_identifier_scalars(&self) -> impl Iterator<Item = psl::parser_database::ScalarFieldId> + use<'_> {
         match self.walker().required_unique_criterias().next() {
-            Some(unique) => Either::Left(unique.fields().map(|f| {
+            Some(unique) => unique.fields().map(|f| {
                 f.as_scalar_field()
                     .expect("primary identifier must consist of scalar fields")
                     .id
-            })),
-            None if self.walker().ast_model().is_view() => Either::Right(self.walker().scalar_fields().map(|sf| sf.id)),
+            }),
             None => panic!("model must have at least one unique criterion"),
         }
     }
@@ -61,7 +60,7 @@ impl Model {
             .scalar_fields()
             .any(|sf| sf.ast_field().arity.is_required() && sf.is_unsupported() && sf.default_value().is_none());
 
-        !has_unsupported_field && !self.is_view()
+        !has_unsupported_field
     }
 
     /// Checks if the model has a true unique identifier defined in the schema.
@@ -85,10 +84,6 @@ impl Model {
             .indexes()
             .filter(|idx| idx.is_unique())
             .filter(|index| !index.fields().any(|f| f.is_unsupported()))
-    }
-
-    pub fn is_view(&self) -> bool {
-        self.walker().ast_model().is_view()
     }
 }
 

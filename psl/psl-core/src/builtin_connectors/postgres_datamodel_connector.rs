@@ -374,7 +374,7 @@ impl Connector for PostgresDatamodelConnector {
                 let native_type = PostgresType::Unknown(name.to_owned(), modifiers.to_vec());
                 return Some(NativeTypeInstance::new::<PostgresType>(native_type));
             }
-            ScalarFieldType::CompositeType(_) | ScalarFieldType::Enum(_) | ScalarFieldType::Unsupported(_) => {
+            ScalarFieldType::Enum(_) | ScalarFieldType::Unsupported(_) => {
                 return None;
             }
         };
@@ -543,7 +543,6 @@ impl Connector for PostgresDatamodelConnector {
 
                 let index_field = db
                     .walk_models()
-                    .chain(db.walk_views())
                     .find(|model| model.id.1 == model_id)
                     .and_then(|model| {
                         model.indexes().find(|index| {

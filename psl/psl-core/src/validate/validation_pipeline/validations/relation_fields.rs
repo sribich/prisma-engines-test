@@ -108,7 +108,7 @@ pub(super) fn ambiguity(field: RelationFieldWalker<'_>, names: &Names<'_>) -> Re
                 }
             };
 
-            let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+            let container_type = "model";
 
             Err(DatamodelError::new_model_validation_error(
                 &message,

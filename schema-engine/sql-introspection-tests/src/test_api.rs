@@ -5,7 +5,6 @@ use itertools::Itertools;
 use psl::parser_database::ExtensionTypes;
 use psl::parser_database::NoExtensionTypes;
 pub use quaint::prelude::Queryable;
-use schema_connector::CompositeTypeDepth;
 use schema_connector::ConnectorError;
 use schema_connector::ConnectorResult;
 use schema_connector::IntrospectionContext;
@@ -214,7 +213,7 @@ impl TestApi {
         render_config: bool,
         extension_types: &dyn ExtensionTypes,
     ) -> ConnectorResult<IntrospectionResult> {
-        let mut ctx = IntrospectionContext::new(previous_schema, CompositeTypeDepth::Infinite, None, PathBuf::new());
+        let mut ctx = IntrospectionContext::new(previous_schema, None, PathBuf::new());
         ctx.render_config = render_config;
 
         self.api
@@ -229,7 +228,7 @@ impl TestApi {
         render_config: bool,
     ) -> ConnectorResult<IntrospectionResult> {
         let mut ctx =
-            IntrospectionContext::new_config_only(previous_schema, CompositeTypeDepth::Infinite, None, PathBuf::new())
+            IntrospectionContext::new_config_only(previous_schema, None, PathBuf::new())
                 .map_err(ConnectorError::new_schema_parser_error)?;
         ctx.render_config = render_config;
 

@@ -33,7 +33,7 @@ pub use diff::DiffTarget;
 pub use error::{ConnectorError, ConnectorResult};
 pub use filter::SchemaFilter;
 pub use introspect_sql::*;
-pub use introspection_context::{CompositeTypeDepth, IntrospectionContext};
+pub use introspection_context::{IntrospectionContext};
 pub use introspection_result::{IntrospectionResult, ViewDefinition};
 pub use migration::Migration;
 pub use migration_persistence::{MigrationPersistence, MigrationRecord, PersistenceNotInitializedError, Timestamp};

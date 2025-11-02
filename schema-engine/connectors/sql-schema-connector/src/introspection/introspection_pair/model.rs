@@ -160,24 +160,7 @@ impl<'a> ModelPair<'a> {
                 .m2m_relations_for_table(self.table_id())
                 .map(move |(direction, next)| RelationFieldPair::m2m(self.context, next, direction));
 
-            match self.previous {
-                Some(prev) => {
-                    // View relations are currently a bit special.
-                    // We do not have foreign keys that point to or start
-                    // from a view. The client needs the relations to do
-                    // joins, so now we just copy them from the PSL
-                    // in re-introspection.
-                    let view_relations = prev
-                        .relation_fields()
-                        .filter(|rf| rf.one_side_is_view())
-                        .filter(move |rf| !self.context.table_missing_for_model(&rf.related_model().id))
-                        .filter(move |rf| !self.context.view_missing_for_model(&rf.related_model().id))
-                        .map(move |previous| RelationFieldPair::emulated(self.context, previous));
-
-                    Box::new(inline.chain(m2m).chain(view_relations))
-                }
-                None => Box::new(inline.chain(m2m)),
-            }
+            Box::new(inline.chain(m2m))
         } else {
             match self.previous {
                 Some(prev) => {

@@ -576,34 +576,6 @@ fn named_default_constraints_are_not_allowed_on_identity() {
 }
 
 #[test]
-fn default_on_composite_type_field_errors() {
-    let schema = indoc! { r#"
-        type Address {
-            street String
-        }
-
-        model User {
-            id Int @id
-            address Address? @default("{ \"street\": \"broadway\"}")
-        }
-    "#};
-
-    let error = parse_unwrap_err(schema);
-
-    // Error could be better since PG don't support composites yet at all.
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating field `address` in composite type `Address`: Defaults on fields of type composite are not supported. Please remove the `@default` attribute.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
-        [1;94m   | [0m
-        [1;94m 6 | [0m    id Int @id
-        [1;94m 7 | [0m    address Address? [1;91m@default("{ \"street\": \"broadway\"}")[0m
-        [1;94m   | [0m
-    "#]];
-
-    expected.assert_eq(&error)
-}
-
-#[test]
 fn must_error_if_using_auto_with_postgres() {
     let schema = r#"
         datasource db {
