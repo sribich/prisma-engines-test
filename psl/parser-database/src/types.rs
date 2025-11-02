@@ -7,17 +7,14 @@ use crate::{
 use either::Either;
 use enumflags2::bitflags;
 use rustc_hash::FxHashMap as HashMap;
-use schema_ast::ast::{self, EnumValueId, WithName};
-use std::{collections::BTreeMap, fmt};
+use schema_ast::ast::{self, EnumValueId};
+use std::fmt;
 
 pub(super) fn resolve_types(ctx: &mut Context<'_>) {
     for ((file_id, top_id), top) in ctx.iter_tops() {
         match (top_id, top) {
             (ast::TopId::Model(model_id), ast::Top::Model(model)) => visit_model((file_id, model_id), model, ctx),
             (ast::TopId::Enum(_), ast::Top::Enum(enm)) => visit_enum(enm, ctx),
-            (ast::TopId::CompositeType(ct_id), ast::Top::CompositeType(ct)) => {
-                visit_composite_type((file_id, ct_id), ct, ctx)
-            }
             (_, ast::Top::Source(_)) | (_, ast::Top::Generator(_)) => (),
             _ => unreachable!(),
         }
@@ -32,7 +29,6 @@ pub enum RefinedFieldVariant {
 
 #[derive(Debug, Default)]
 pub(super) struct Types {
-    pub(super) composite_type_fields: BTreeMap<(crate::CompositeTypeId, ast::FieldId), CompositeTypeField>,
     scalar_fields: Vec<ScalarField>,
     /// This contains only the relation fields actually present in the schema
     /// source text.
@@ -187,8 +183,6 @@ impl UnsupportedType {
 /// The type of a scalar field, parsed and categorized.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ScalarFieldType {
-    /// A composite type
-    CompositeType(crate::CompositeTypeId),
     /// An enum
     Enum(crate::EnumId),
     /// A type defined in an extension
@@ -204,14 +198,6 @@ impl ScalarFieldType {
     pub fn as_builtin_scalar(self) -> Option<ScalarType> {
         match self {
             ScalarFieldType::BuiltInScalar(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    /// Try to interpret this field type as a Composite Type.
-    pub fn as_composite_type(self) -> Option<crate::CompositeTypeId> {
-        match self {
-            ScalarFieldType::CompositeType(id) => Some(id),
             _ => None,
         }
     }
@@ -293,9 +279,6 @@ impl fmt::Display for DisplayScalarFieldType<'_> {
         match self.field_type {
             ScalarFieldType::BuiltInScalar(t) => write!(f, "{t}"),
             ScalarFieldType::Enum(id) => {
-                write!(f, "{}", self.db.walk(*id).name())
-            }
-            ScalarFieldType::CompositeType(id) => {
                 write!(f, "{}", self.db.walk(*id).name())
             }
             ScalarFieldType::Extension(ext_id) => {
@@ -590,6 +573,8 @@ pub(crate) struct ShardKeyAttribute {
 ///   //       ^this thing here, path separated with `.`
 /// }
 /// ```
+/// 
+/// TODO(sr): This should not be this way, we can just have it be a struct Name(ScalarFieldId). Can prob just straight up remove this and use SCalarFieldId directly.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IndexFieldPath {
     /// The field in the model that starts the path to the final field included
@@ -608,31 +593,11 @@ pub struct IndexFieldPath {
     /// }
     /// ```
     root: ScalarFieldId,
-    /// Path from the root, one composite type at a time. The final item is the
-    /// field that gets included in the index.
-    ///
-    /// ```ignore
-    /// type A {
-    ///   field String
-    /// }
-    ///
-    /// model A {
-    ///   id Int @id
-    ///   a  A
-    ///   @@index([a.field])
-    /// //           ^this one is the path. in this case a vector of one element
-    /// }
-    /// ```
-    path: Vec<(crate::CompositeTypeId, ast::FieldId)>,
 }
 
 impl IndexFieldPath {
     pub(crate) fn new(root: ScalarFieldId) -> Self {
-        Self { root, path: Vec::new() }
-    }
-
-    pub(crate) fn push_field(&mut self, ctid: crate::CompositeTypeId, field_id: ast::FieldId) {
-        self.path.push((ctid, field_id));
+        Self { root }
     }
 
     /// The starting point of the index path. If the indexed field is not in a
@@ -655,35 +620,12 @@ impl IndexFieldPath {
         self.root
     }
 
-    /// The path after [`root`](Self::root()). Empty if the field is not pointing to a
-    /// composite type.
-    ///
-    /// ```ignore
-    /// type A {
-    ///   field String
-    /// //^the path is a vector of one element, pointing to this field.
-    /// }
-    ///
-    /// model A {
-    ///   id Int @id
-    ///   a  A
-    ///
-    ///   @@index([a.field])
-    /// }
-    /// ```
-    pub fn path(&self) -> &[(crate::CompositeTypeId, ast::FieldId)] {
-        &self.path
-    }
-
     /// The field that gets included in the index. Can either be in the model,
     /// or in a composite type embedded in the model. Returns the same value as
     /// the [`root`](Self::root()) method if the field is in a model rather than in a
     /// composite type.
-    pub fn field_in_index(&self) -> Either<ScalarFieldId, (crate::CompositeTypeId, ast::FieldId)> {
-        self.path
-            .last()
-            .map(|(ct, field)| Either::Right((*ct, *field)))
-            .unwrap_or(Either::Left(self.root))
+    pub fn field_in_index(&self) -> ScalarFieldId {
+        self.root
     }
 }
 
@@ -764,30 +706,6 @@ fn visit_model<'db>(model_id: crate::ModelId, ast_model: &'db ast::Model, ctx: &
     }
 }
 
-fn visit_composite_type<'db>(ct_id: crate::CompositeTypeId, ct: &'db ast::CompositeType, ctx: &mut Context<'db>) {
-    for (field_id, ast_field) in ct.iter_fields() {
-        match field_type(ast_field, ctx) {
-            Ok(FieldType::Scalar(scalar_type)) => {
-                let field = CompositeTypeField {
-                    r#type: scalar_type,
-                    mapped_name: None,
-                    default: None,
-                    native_type: None,
-                };
-                ctx.types.composite_type_fields.insert((ct_id, field_id), field);
-            }
-            Ok(FieldType::Model(referenced_model_id)) => {
-                let referenced_model_name = ctx.asts[referenced_model_id].name();
-                ctx.push_error(DatamodelError::new_composite_type_validation_error(&format!("{referenced_model_name} refers to a model, making this a relation field. Relation fields inside composite types are not supported."), ct.name(), ast_field.field_type.span()))
-            }
-            Err(supported) => ctx.push_error(DatamodelError::new_type_not_found_error(
-                supported,
-                ast_field.field_type.span(),
-            )),
-        }
-    }
-}
-
 fn visit_enum<'db>(enm: &'db ast::Enum, ctx: &mut Context<'db>) {
     if enm.values.is_empty() {
         let msg = "An enum must have at least one value.";
@@ -820,9 +738,6 @@ fn field_type<'db>(field: &'db ast::Field, ctx: &mut Context<'db>) -> Result<Fie
         Some((file_id, ast::TopId::Model(model_id), ast::Top::Model(_))) => Ok(FieldType::Model((file_id, model_id))),
         Some((file_id, ast::TopId::Enum(enum_id), ast::Top::Enum(_))) => {
             Ok(FieldType::Scalar(ScalarFieldType::Enum((file_id, enum_id))))
-        }
-        Some((file_id, ast::TopId::CompositeType(ctid), ast::Top::CompositeType(_))) => {
-            Ok(FieldType::Scalar(ScalarFieldType::CompositeType((file_id, ctid))))
         }
         Some((_, _, ast::Top::Generator(_))) | Some((_, _, ast::Top::Source(_))) => unreachable!(),
         None => {

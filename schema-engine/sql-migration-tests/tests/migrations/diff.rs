@@ -11,7 +11,7 @@ use sql_migration_tests::{
 };
 use std::sync::Arc;
 
-#[test_connector(tags(Sqlite, Mysql, Postgres, CockroachDb, Mssql))]
+#[test_connector(tags(Sqlite, Mysql, Postgres))]
 fn from_unique_index_to_without(mut api: TestApi) {
     let tempdir = tempfile::tempdir().unwrap();
     let host = Arc::new(TestConnectorHost::default());
@@ -95,16 +95,10 @@ fn from_unique_index_to_without(mut api: TestApi) {
                 "-- DropIndex\nDROP INDEX \"Post_authorId_key\";\n",
             ]
         "#]]
-    } else if api.is_postgres() || api.is_cockroach() {
+    } else if api.is_postgres() {
         expect![[r#"
             [
                 "-- DropIndex\nDROP INDEX \"Post_authorId_key\";\n",
-            ]
-        "#]]
-    } else if api.is_mssql() {
-        expect![[r#"
-            [
-                "BEGIN TRY\n\nBEGIN TRAN;\n\n-- DropIndex\nDROP INDEX [Post_authorId_key] ON [dbo].[Post];\n\nCOMMIT TRAN;\n\nEND TRY\nBEGIN CATCH\n\nIF @@TRANCOUNT > 0\nBEGIN\n    ROLLBACK TRAN;\nEND;\nTHROW\n\nEND CATCH\n",
             ]
         "#]]
     } else {
@@ -210,7 +204,7 @@ fn from_unique_index_to_pk(mut api: TestApi) {
                 ],
             ]
         "#]]
-    } else if api.is_postgres() && !api.is_cockroach() {
+    } else if api.is_postgres() {
         expect![[r#"
             [
                 [
@@ -229,69 +223,6 @@ fn from_unique_index_to_pk(mut api: TestApi) {
                     "",
                     "-- DropIndex",
                     "DROP INDEX \"B_x_y_key\";",
-                    "",
-                ],
-            ]
-        "#]]
-    } else if api.is_cockroach() {
-        expect![[r#"
-            [
-                [
-                    "-- DropIndex",
-                    "DROP INDEX \"C_secondary_key\";",
-                    "",
-                    "-- AlterTable",
-                    "ALTER TABLE \"A\" DROP COLUMN \"name\";",
-                    "ALTER TABLE \"A\" ADD CONSTRAINT \"A_pkey\" PRIMARY KEY (\"id\");",
-                    "",
-                    "-- DropIndex",
-                    "DROP INDEX \"A_id_key\";",
-                    "",
-                    "-- AlterTable",
-                    "ALTER TABLE \"B\" ADD CONSTRAINT \"B_pkey\" PRIMARY KEY (\"x\", \"y\");",
-                    "",
-                    "-- DropIndex",
-                    "DROP INDEX \"B_x_y_key\";",
-                    "",
-                ],
-            ]
-        "#]]
-    } else if api.is_mssql() {
-        expect![[r#"
-            [
-                [
-                    "BEGIN TRY",
-                    "",
-                    "BEGIN TRAN;",
-                    "",
-                    "-- DropIndex",
-                    "DROP INDEX [C_secondary_key] ON [dbo].[C];",
-                    "",
-                    "-- AlterTable",
-                    "ALTER TABLE [dbo].[A] DROP COLUMN [name];",
-                    "ALTER TABLE [dbo].[A] ADD CONSTRAINT A_pkey PRIMARY KEY CLUSTERED ([id]);",
-                    "",
-                    "-- DropIndex",
-                    "DROP INDEX [A_id_key] ON [dbo].[A];",
-                    "",
-                    "-- AlterTable",
-                    "ALTER TABLE [dbo].[B] ADD CONSTRAINT B_pkey PRIMARY KEY CLUSTERED ([x],[y]);",
-                    "",
-                    "-- DropIndex",
-                    "DROP INDEX [B_x_y_key] ON [dbo].[B];",
-                    "",
-                    "COMMIT TRAN;",
-                    "",
-                    "END TRY",
-                    "BEGIN CATCH",
-                    "",
-                    "IF @@TRANCOUNT > 0",
-                    "BEGIN",
-                    "    ROLLBACK TRAN;",
-                    "END;",
-                    "THROW",
-                    "",
-                    "END CATCH",
                     "",
                 ],
             ]
@@ -433,7 +364,7 @@ fn diffing_postgres_schemas_when_initialized_on_sqlite(mut api: TestApi) {
     expected_printed_messages.assert_debug_eq(&host.printed_messages.lock().unwrap());
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn from_empty_to_migrations_directory(mut api: TestApi) {
     let base_dir = tempfile::TempDir::new().unwrap();
     let first_migration_directory_path = base_dir.path().join("01firstmigration");
@@ -793,7 +724,7 @@ fn with_invalid_schema_filter_sqlite(mut api: TestApi) {
     assert_eq!(err.error_code(), Some("P3024"));
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn with_invalid_schema_filter_postgres(mut api: TestApi) {
     let tempdir = tempfile::tempdir().unwrap();
     let connection_string = api.connection_string();
@@ -877,69 +808,6 @@ fn from_url_to_url(mut api: TestApi) {
 }
 
 #[test]
-fn diffing_mongo_schemas_to_script_returns_a_nice_error() {
-    let tempdir = tempfile::tempdir().unwrap();
-
-    let from = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String
-        }
-    "#;
-
-    let from_file = write_file_to_tmp(from, &tempdir, "from");
-
-    let to = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String[]
-
-            @@index([names])
-        }
-
-        model TestModel2 {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-        }
-    "#;
-
-    let to_file = write_file_to_tmp(to, &tempdir, "to");
-
-    let params = DiffParams {
-        exit_code: None,
-        from: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: from_file.to_string_lossy().into_owned(),
-                content: from.to_string(),
-            }],
-        }),
-        shadow_database_url: None,
-        to: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: to_file.to_string_lossy().into_owned(),
-                content: to.to_string(),
-            }],
-        }),
-        script: true,
-        filters: SchemaFilter::default(),
-    };
-
-    let expected = expect![[r#"
-        Rendering to a script is not supported on MongoDB.
-    "#]];
-    expected.assert_eq(&diff_error(params));
-}
-
-#[test]
 fn diff_sqlite_migration_directories() {
     let base_dir = tempfile::tempdir().unwrap();
     let base_dir_2 = tempfile::tempdir().unwrap();
@@ -969,73 +837,8 @@ fn diff_sqlite_migration_directories() {
 }
 
 #[test]
-fn diffing_mongo_schemas_works() {
-    let tempdir = tempfile::tempdir().unwrap();
-
-    let from = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String
-        }
-    "#;
-
-    let from_file = write_file_to_tmp(from, &tempdir, "from");
-
-    let to = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongo+srv://test"
-        }
-
-        model TestModel {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            names String[]
-
-            @@index([names])
-        }
-
-        model TestModel2 {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-        }
-    "#;
-
-    let to_file = write_file_to_tmp(to, &tempdir, "to");
-
-    let params = DiffParams {
-        exit_code: None,
-        from: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: from_file.to_string_lossy().into_owned(),
-                content: from.to_string(),
-            }],
-        }),
-        shadow_database_url: None,
-        to: DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![SchemaContainer {
-                path: to_file.to_string_lossy().into_owned(),
-                content: to.to_string(),
-            }],
-        }),
-        script: false,
-        filters: SchemaFilter::default(),
-    };
-
-    let expected_printed_messages = expect![[r#"
-        [+] Collection `TestModel2`
-        [+] Index `TestModel_names_idx` on ({"names":1})
-    "#]];
-
-    expected_printed_messages.assert_eq(&diff_output(params));
-}
-
-#[test]
 fn diffing_two_schema_datamodels_with_missing_datasource_env_vars() {
-    for provider in ["sqlite", "postgresql", "postgres", "mysql", "sqlserver"] {
+    for provider in ["sqlite", "postgresql", "postgres", "mysql"] {
         let schema_a = format!(
             r#"
             datasource db {{

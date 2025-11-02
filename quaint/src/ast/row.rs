@@ -38,22 +38,6 @@ impl<'a> Row<'a> {
         self.values.len()
     }
 
-    #[cfg(feature = "mssql")]
-    pub(crate) fn is_only_columns(&self) -> bool {
-        self.values.iter().all(|v| v.is_column())
-    }
-
-    #[cfg(feature = "mssql")]
-    pub(crate) fn into_columns(self) -> Vec<crate::ast::Column<'a>> {
-        let mut columns = Vec::with_capacity(self.len());
-
-        for expr in self.values.into_iter() {
-            columns.push(expr.into_column().unwrap());
-        }
-
-        columns
-    }
-
     pub fn to_parameterized_row(self) -> Expression<'a> {
         let item = self
             .values

@@ -1,4 +1,4 @@
-use super::{FieldResolutionError, FieldResolvingSetup};
+use super::{FieldResolutionError};
 use crate::{
     DatamodelError, ScalarFieldId, StringId,
     ast::{self, WithName, WithSpan},
@@ -17,9 +17,7 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
         Err(err) => return ctx.push_error(err),
     };
 
-    let resolving = FieldResolvingSetup::OnlyTopLevel;
-
-    let resolved_fields = match resolve_field_array_with_args(fields, attr.span, model_id, resolving, ctx) {
+    let resolved_fields = match resolve_field_array_with_args(fields, attr.span, model_id, ctx) {
         Ok(fields) => fields,
         Err(FieldResolutionError::AlreadyDealtWith) => return,
         Err(FieldResolutionError::ProblematicFields {
@@ -30,11 +28,6 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
                 let field_names = unresolvable_fields
                     .into_iter()
                     .map(|((file_id, top_id), field_name)| match top_id {
-                        ast::TopId::CompositeType(ctid) => {
-                            let ct_name = ctx.asts[(file_id, ctid)].name();
-
-                            Cow::from(format!("{field_name} in type {ct_name}"))
-                        }
                         ast::TopId::Model(_) => Cow::from(field_name),
                         _ => unreachable!(),
                     });
@@ -77,25 +70,16 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
     // ID attribute fields must reference only required fields.
     let fields_that_are_not_required: Vec<&str> = resolved_fields
         .iter()
-        .filter_map(|field| match field.path.field_in_index() {
-            either::Either::Left(id) => {
-                let ScalarField { model_id, field_id, .. } = ctx.types[id];
-                let field = &ctx.asts[model_id][field_id];
+        .filter_map(|field| {
+            let id = field.path.field_in_index();
 
-                if field.arity.is_required() {
-                    None
-                } else {
-                    Some(field.name())
-                }
-            }
-            either::Either::Right((ctid, field_id)) => {
-                let field = &ctx.asts[ctid][field_id];
+            let ScalarField { model_id, field_id, .. } = ctx.types[id];
+            let field = &ctx.asts[model_id][field_id];
 
-                if field.arity.is_required() {
-                    None
-                } else {
-                    Some(field.name())
-                }
+            if field.arity.is_required() {
+                None
+            } else {
+                Some(field.name())
             }
         })
         .collect();

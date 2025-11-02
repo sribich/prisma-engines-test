@@ -73,19 +73,6 @@ impl<'a> JsonProtocolAdapter<'a> {
                         Self::default_scalar_selection(schema_object, &mut selection);
                     }
                 }
-                // $composites: true
-                crate::SelectionSetValue::Shorthand(true) if SelectionSet::is_all_composites(&selection_name) => {
-                    if let Some(schema_object) = field.field_type().as_object_type()
-                        && let Some(container) = container
-                    {
-                        Self::default_composite_selection(
-                            &mut selection,
-                            container,
-                            schema_object,
-                            &mut Vec::<String>::new(),
-                        )?;
-                    }
-                }
                 // <field_name>: true
                 crate::SelectionSetValue::Shorthand(true) => {
                     selection.push_nested_selection(self.create_shorthand_selection(
@@ -309,81 +296,12 @@ impl<'a> JsonProtocolAdapter<'a> {
         }
     }
 
-    fn default_composite_selection(
-        selection: &mut Selection,
-        container: &ParentContainer,
-        schema_object: &ObjectType,
-        walked_types_stack: &mut Vec<String>,
-    ) -> crate::Result<()> {
-        match container {
-            ParentContainer::Model(model) => {
-                for cf in model.fields().composite() {
-                    let schema_field = schema_object.find_field(cf.name());
-
-                    if let Some(schema_field) = schema_field {
-                        let mut nested_selection = Selection::with_name(cf.name());
-
-                        Self::default_composite_selection(
-                            &mut nested_selection,
-                            &ParentContainer::from(cf.typ()),
-                            schema_field.field_type.as_object_type().unwrap(),
-                            walked_types_stack,
-                        )?;
-
-                        selection.push_nested_selection(nested_selection);
-                    }
-                }
-            }
-            ParentContainer::CompositeType(ct) => {
-                let composite_type_name = ct.name().to_owned();
-                if walked_types_stack.contains(&composite_type_name) {
-                    return Err(HandlerError::query_conversion(
-                        "$composites: true does not support recursive composite types.",
-                    ));
-                }
-                walked_types_stack.push(composite_type_name);
-                for f in ct.fields() {
-                    let field_name = f.name().to_owned();
-
-                    let schema_field = schema_object.find_field(&field_name);
-
-                    if let Some(schema_field) = schema_field {
-                        match f {
-                            Field::Scalar(s) => {
-                                selection.push_nested_selection(Selection::with_name(s.name().to_owned()))
-                            }
-                            Field::Composite(cf) => {
-                                let mut nested_selection = Selection::with_name(cf.name().to_owned());
-
-                                Self::default_composite_selection(
-                                    &mut nested_selection,
-                                    &ParentContainer::from(cf.typ()),
-                                    schema_field.field_type.as_object_type().unwrap(),
-                                    walked_types_stack,
-                                )?;
-
-                                selection.push_nested_selection(nested_selection);
-                            }
-                            Field::Relation(_) => unreachable!(),
-                        }
-                    }
-                }
-                let _ = walked_types_stack.pop();
-            }
-        }
-
-        Ok(())
-    }
-
     fn default_scalar_and_composite_selection(
         selection: &mut Selection,
         schema_object: &ObjectType,
         container: Option<&ParentContainer>,
     ) -> crate::Result<()> {
         Self::default_scalar_selection(schema_object, selection);
-        if let Some(container) = container {
-            Self::default_composite_selection(selection, container, schema_object, &mut Vec::<String>::new())?;
-        }
 
         Ok(())
     }
@@ -434,32 +352,25 @@ mod tests {
           }
 
           datasource db {
-            provider = "mongodb"
-            url      = "mongodb://"
+            provider = "postgres"
+            url      = "postgres://"
           }
 
           model User {
-            id String @id @map("_id")
+            id String @id
             name String?
             email String @unique
             role Role
             roles Role[]
             tags  String[]
             posts Post[]
-            address Address
           }
 
           model Post {
-            id String @id @map("_id")
+            id String @id
             title String
             userId String
             user User @relation(fields: [userId], references: [id])
-          }
-
-          type Address {
-            number Int
-            street String
-            zipCode Int
           }
 
           enum Role {
@@ -511,46 +422,6 @@ mod tests {
                     },
                     Selection {
                         name: "tags",
-                    },
-                ],
-            },
-        )
-        "###);
-    }
-
-    #[test]
-    fn default_composite_selection() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-            "modelName": "User",
-            "action": "createOne",
-            "query": {
-                "selection": { "$composites": true }
-            }
-        }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
-
-        assert_debug_snapshot!(operation, @r###"
-        Write(
-            Selection {
-                name: "createOneUser",
-                nested_selections: [
-                    Selection {
-                        name: "address",
-                        nested_selections: [
-                            Selection {
-                                name: "number",
-                            },
-                            Selection {
-                                name: "street",
-                            },
-                            Selection {
-                                name: "zipCode",
-                            },
-                        ],
                     },
                 ],
             },
@@ -637,20 +508,6 @@ mod tests {
                             },
                             Selection {
                                 name: "tags",
-                            },
-                            Selection {
-                                name: "address",
-                                nested_selections: [
-                                    Selection {
-                                        name: "number",
-                                    },
-                                    Selection {
-                                        name: "street",
-                                    },
-                                    Selection {
-                                        name: "zipCode",
-                                    },
-                                ],
                             },
                         ],
                     },
@@ -811,8 +668,7 @@ mod tests {
             "action": "deleteMany",
             "query": {
                 "selection": {
-                    "$scalars": true,
-                    "$composites": true
+                    "$scalars": true
                 }
             }
         }"#,
@@ -973,111 +829,6 @@ mod tests {
                             },
                             Exclusion {
                                 name: "id",
-                            },
-                        ],
-                    ),
-                },
-            ),
-        )
-        "###);
-    }
-
-    #[test]
-    fn composite_wildcard_and_composite_selection() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-            "modelName": "User",
-            "action": "updateOne",
-            "query": {
-                "selection": {
-                    "$composites": true,
-                    "address": {
-                        "selection": {
-                            "$scalars": true
-                        }
-                    }
-                }
-            }
-        }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Ok(
-            Write(
-                Selection {
-                    name: "updateOneUser",
-                    nested_selections: [
-                        Selection {
-                            name: "address",
-                            nested_selections: [
-                                Selection {
-                                    name: "number",
-                                },
-                                Selection {
-                                    name: "street",
-                                },
-                                Selection {
-                                    name: "zipCode",
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ),
-        )
-        "###);
-    }
-
-    #[test]
-    fn composite_wildcard_and_scalar_selection() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-            "modelName": "User",
-            "action": "updateOne",
-            "query": {
-                "selection": {
-                    "$composites": true,
-                    "id": true,
-                    "email": false
-                }
-            }
-        }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Ok(
-            Write(
-                Selection {
-                    name: "updateOneUser",
-                    nested_selections: [
-                        Selection {
-                            name: "address",
-                            nested_selections: [
-                                Selection {
-                                    name: "number",
-                                },
-                                Selection {
-                                    name: "street",
-                                },
-                                Selection {
-                                    name: "zipCode",
-                                },
-                            ],
-                        },
-                        Selection {
-                            name: "id",
-                        },
-                    ],
-                    nested_exclusions: Some(
-                        [
-                            Exclusion {
-                                name: "email",
                             },
                         ],
                     ),
@@ -1346,447 +1097,6 @@ mod tests {
         Err(
             Configuration(
                 "Operation 'queryRaw' for model 'User' does not match any query.",
-            ),
-        )
-        "###);
-    }
-
-    #[test]
-    fn query_raw() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-            "action": "runCommandRaw",
-            "query": {
-                "arguments": {
-                    "data": {
-                        "x": "y"
-                    }
-                },
-                "selection": {
-                    "$scalars": true
-                }
-            }
-        }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Ok(
-            Write(
-                Selection {
-                    name: "runCommandRaw",
-                    arguments: [
-                        (
-                            "data",
-                            Object(
-                                {
-                                    "x": Scalar(
-                                        String(
-                                            "y",
-                                        ),
-                                    ),
-                                },
-                            ),
-                        ),
-                    ],
-                },
-            ),
-        )
-        "###);
-    }
-
-    fn composite_schema() -> schema::QuerySchema {
-        let schema_str = r#"
-          generator client {
-            provider        = "prisma-client"
-          }
-
-          datasource db {
-            provider = "mongodb"
-            url      = "mongodb://"
-          }
-
-          model Comment {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-
-            country String?
-            content CommentContent
-          }
-
-          type CommentContent {
-            text    String
-            upvotes CommentContentUpvotes[]
-          }
-
-          type CommentContentUpvotes {
-            vote   Boolean
-            userId String
-          }
-        "#;
-        let mut schema = psl::validate_without_extensions(schema_str.into());
-
-        schema.diagnostics.to_result().unwrap();
-
-        schema::build(Arc::new(schema), true)
-    }
-
-    #[test]
-    fn nested_composite_selection() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"
-            {
-              "modelName": "Comment",
-              "action": "createOne",
-              "query": {
-                "selection": {
-                  "$scalars": true,
-                  "$composites": true
-                }
-              }
-            }"#,
-        )
-        .unwrap();
-
-        let selection = JsonProtocolAdapter::new(&composite_schema())
-            .convert_single(query)
-            .unwrap()
-            .into_selection();
-
-        assert_debug_snapshot!(selection.nested_selections(), @r###"
-        [
-            Selection {
-                name: "id",
-            },
-            Selection {
-                name: "country",
-            },
-            Selection {
-                name: "content",
-                nested_selections: [
-                    Selection {
-                        name: "text",
-                    },
-                    Selection {
-                        name: "upvotes",
-                        nested_selections: [
-                            Selection {
-                                name: "vote",
-                            },
-                            Selection {
-                                name: "userId",
-                            },
-                        ],
-                    },
-                ],
-            },
-        ]
-        "###);
-    }
-
-    #[test]
-    fn nested_composite_wildcard_and_composite_selection() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-                "modelName": "Comment",
-                "action": "createOne",
-                "query": {
-                  "selection": {
-                    "content": {
-                        "selection": {
-                            "$composites": true,
-                            "upvotes": {
-                                "selection": { "vote": true }
-                            }
-                        }
-                    }
-                  }
-                }
-              }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&composite_schema()).convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Ok(
-            Write(
-                Selection {
-                    name: "createOneComment",
-                    nested_selections: [
-                        Selection {
-                            name: "content",
-                            nested_selections: [
-                                Selection {
-                                    name: "text",
-                                },
-                                Selection {
-                                    name: "upvotes",
-                                    nested_selections: [
-                                        Selection {
-                                            name: "vote",
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ),
-        )
-        "###);
-    }
-
-    fn recursive_composite_schema() -> schema::QuerySchema {
-        let schema_str = r#"
-          generator client {
-            provider        = "prisma-client"
-          }
-
-          datasource db {
-            provider = "mongodb"
-            url      = "mongodb://"
-          }
-
-          model List {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-            head ListNode?
-          }
-
-          type ListNode  {
-            value Int
-            next ListNode?
-          }
-        "#;
-        let mut schema = psl::validate_without_extensions(schema_str.into());
-
-        schema.diagnostics.to_result().unwrap();
-
-        schema::build(Arc::new(schema), true)
-    }
-
-    #[test]
-    fn recursive_composites() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-                "modelName": "List",
-                "action": "createOne",
-                "query": {
-                  "selection": {
-                    "$composites": true
-                  }
-                }
-              }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&recursive_composite_schema()).convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Err(
-            Configuration(
-                "$composites: true does not support recursive composite types.",
-            ),
-        )
-        "###);
-    }
-
-    fn sibling_composite_schema() -> schema::QuerySchema {
-        let schema_str = r#"
-          generator client {
-            provider        = "prisma-client"
-          }
-
-          datasource db {
-            provider = "mongodb"
-            url      = "mongodb://"
-          }
-
-          model User {
-            id String @id @default(auto()) @map("_id") @db.ObjectId
-
-            billingAddress Address
-            shippingAddress Address
-          }
-
-          type Address {
-            number Int
-            street String
-            zipCode Int
-          }
-        "#;
-        let mut schema = psl::validate_without_extensions(schema_str.into());
-
-        schema.diagnostics.to_result().unwrap();
-
-        schema::build(Arc::new(schema), true)
-    }
-
-    #[test]
-    fn sibling_composites() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-                "modelName": "User",
-                "action": "createOne",
-                "query": {
-                  "selection": {
-                    "$composites": true
-                  }
-                }
-              }"#,
-        )
-        .unwrap();
-
-        let operation = JsonProtocolAdapter::new(&sibling_composite_schema()).convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Ok(
-            Write(
-                Selection {
-                    name: "createOneUser",
-                    nested_selections: [
-                        Selection {
-                            name: "billingAddress",
-                            nested_selections: [
-                                Selection {
-                                    name: "number",
-                                },
-                                Selection {
-                                    name: "street",
-                                },
-                                Selection {
-                                    name: "zipCode",
-                                },
-                            ],
-                        },
-                        Selection {
-                            name: "shippingAddress",
-                            nested_selections: [
-                                Selection {
-                                    name: "number",
-                                },
-                                Selection {
-                                    name: "street",
-                                },
-                                Selection {
-                                    name: "zipCode",
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ),
-        )
-        "###);
-    }
-
-    fn nested_sibling_composite_schema() -> schema::QuerySchema {
-        let schema_str = r#"
-          generator client {
-            provider        = "prisma-client"
-          }
-
-          datasource db {
-            provider = "mongodb"
-            url      = "mongodb://"
-          }
-
-          model User {
-            id         String    @id @default(auto()) @map("_id") @db.ObjectId
-            billingAddress Address
-            shippingAddress Address
-          }
-
-          type Address {
-            streetAddress StreetAddress
-            zipCode String
-            city String
-          }
-
-          type StreetAddress {
-            streetName String
-            houseNumber String
-          }
-        "#;
-        let mut schema = psl::validate_without_extensions(schema_str.into());
-
-        schema.diagnostics.to_result().unwrap();
-
-        schema::build(Arc::new(schema), true)
-    }
-
-    #[test]
-    pub fn nested_sibling_composites() {
-        let query: JsonSingleQuery = serde_json::from_str(
-            r#"{
-                "modelName": "User",
-                "action": "createOne",
-                "query": {
-                  "selection": {
-                    "$composites": true
-                  }
-                }
-              }"#,
-        )
-        .unwrap();
-
-        let schema = nested_sibling_composite_schema();
-        let mut adapter = JsonProtocolAdapter::new(&schema);
-        let operation = adapter.convert_single(query);
-
-        assert_debug_snapshot!(operation, @r###"
-        Ok(
-            Write(
-                Selection {
-                    name: "createOneUser",
-                    nested_selections: [
-                        Selection {
-                            name: "billingAddress",
-                            nested_selections: [
-                                Selection {
-                                    name: "streetAddress",
-                                    nested_selections: [
-                                        Selection {
-                                            name: "streetName",
-                                        },
-                                        Selection {
-                                            name: "houseNumber",
-                                        },
-                                    ],
-                                },
-                                Selection {
-                                    name: "zipCode",
-                                },
-                                Selection {
-                                    name: "city",
-                                },
-                            ],
-                        },
-                        Selection {
-                            name: "shippingAddress",
-                            nested_selections: [
-                                Selection {
-                                    name: "streetAddress",
-                                    nested_selections: [
-                                        Selection {
-                                            name: "streetName",
-                                        },
-                                        Selection {
-                                            name: "houseNumber",
-                                        },
-                                    ],
-                                },
-                                Selection {
-                                    name: "zipCode",
-                                },
-                                Selection {
-                                    name: "city",
-                                },
-                            ],
-                        },
-                    ],
-                },
             ),
         )
         "###);

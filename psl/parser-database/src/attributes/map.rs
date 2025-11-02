@@ -68,52 +68,6 @@ pub(super) fn scalar_field(
     }
 }
 
-pub(super) fn composite_type_field(
-    ct: &ast::CompositeType,
-    ast_field: &ast::Field,
-    ctid: crate::CompositeTypeId,
-    field_id: ast::FieldId,
-    ctx: &mut Context<'_>,
-) {
-    let mapped_name_id = match visit_map_attribute(ctx) {
-        Some(name) => name,
-        None => return,
-    };
-
-    {
-        let field = ctx.types.composite_type_fields.get_mut(&(ctid, field_id)).unwrap();
-        field.mapped_name = Some(mapped_name_id);
-    }
-
-    if ctx
-        .mapped_composite_type_names
-        .insert((ctid, mapped_name_id), field_id)
-        .is_some()
-    {
-        ctx.push_error(DatamodelError::new_composite_type_duplicate_field_error(
-            ct.name(),
-            &ctx[mapped_name_id],
-            ast_field.span(),
-        ));
-    }
-
-    if let Some(f) = ctx.names.composite_type_fields.get(&(ctid, mapped_name_id)) {
-        let other_field = &ctx.types.composite_type_fields[&(ctid, *f)];
-
-        // We check mapped name collisions above. In this part, if the other
-        // field has a mapped name, they cannot collide.
-        if other_field.mapped_name.is_some() {
-            return;
-        }
-
-        ctx.push_error(DatamodelError::new_composite_type_duplicate_field_error(
-            ct.name(),
-            ast_field.name(),
-            ast_field.span(),
-        ));
-    }
-}
-
 pub(super) fn visit_map_attribute(ctx: &mut Context<'_>) -> Option<StringId> {
     match ctx
         .visit_default_arg("name")

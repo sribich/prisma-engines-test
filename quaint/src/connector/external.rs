@@ -4,14 +4,12 @@ use async_trait::async_trait;
 
 use super::{SqlFamily, TransactionCapable};
 
-#[cfg_attr(target_arch = "wasm32", derive(serde::Deserialize))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum AdapterD1 {
     Env,
     HTTP,
 }
 
-#[cfg_attr(target_arch = "wasm32", derive(serde::Deserialize))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 /// The name of the adapter.
 /// We only want to keep track of first-class adapters maintained by Prisma, and among those,
@@ -23,7 +21,6 @@ pub enum AdapterName {
     LibSQL,
     BetterSQLite3,
     Planetscale,
-    Mssql,
     Unknown,
 }
 
@@ -39,7 +36,6 @@ impl FromStr for AdapterName {
                 "libsql" => Ok(Self::LibSQL),
                 "better-sqlite3" => Ok(Self::BetterSQLite3),
                 "planetscale" => Ok(Self::Planetscale),
-                "mssql" => Ok(Self::Mssql),
                 _ => Ok(Self::Unknown),
             }
         } else {
@@ -48,7 +44,6 @@ impl FromStr for AdapterName {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", derive(serde::Deserialize))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum AdapterProvider {
     #[cfg(feature = "mysql")]
@@ -57,9 +52,6 @@ pub enum AdapterProvider {
     Postgres,
     #[cfg(feature = "sqlite")]
     Sqlite,
-    #[cfg(feature = "mssql")]
-    #[cfg_attr(target_arch = "wasm32", serde(rename = "sqlserver"))]
-    SqlServer,
 }
 
 impl AdapterProvider {
@@ -71,8 +63,6 @@ impl AdapterProvider {
             Self::Postgres => "postgresql",
             #[cfg(feature = "sqlite")]
             Self::Sqlite => "sqlite",
-            #[cfg(feature = "mssql")]
-            Self::SqlServer => "mssql",
         }
     }
 }
@@ -88,8 +78,6 @@ impl FromStr for AdapterProvider {
             "mysql" => Ok(Self::Mysql),
             #[cfg(feature = "sqlite")]
             "sqlite" => Ok(Self::Sqlite),
-            #[cfg(feature = "mssql")]
-            "sqlserver" => Ok(Self::SqlServer),
             _ => Err(format!("Unsupported adapter flavour: {s:?}")),
         }
     }
@@ -104,8 +92,6 @@ impl From<&AdapterProvider> for SqlFamily {
             AdapterProvider::Postgres => SqlFamily::Postgres,
             #[cfg(feature = "sqlite")]
             AdapterProvider::Sqlite => SqlFamily::Sqlite,
-            #[cfg(feature = "mssql")]
-            AdapterProvider::SqlServer => SqlFamily::Mssql,
         }
     }
 }

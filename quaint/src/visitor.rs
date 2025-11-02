@@ -6,8 +6,6 @@
 //! [ast](../ast/index.html) module.
 //!
 //! For prelude, all important imports are in `quaint::visitor::*`;
-#[cfg(feature = "mssql")]
-mod mssql;
 #[cfg(feature = "mysql")]
 mod mysql;
 #[cfg(feature = "postgresql")]
@@ -18,8 +16,6 @@ mod sqlite;
 // Generic query writer, used for all SQL flavors
 mod query_writer;
 
-#[cfg(feature = "mssql")]
-pub use self::mssql::Mssql;
 #[cfg(feature = "mysql")]
 pub use self::mysql::Mysql;
 #[cfg(feature = "postgresql")]
@@ -56,12 +52,10 @@ pub trait Visitor<'a> {
     /// let (sqlite, _) = Sqlite::build(query.clone())?;
     /// let (psql, _) = Postgres::build(query.clone())?;
     /// let (mysql, _) = Mysql::build(query.clone())?;
-    /// let (mssql, _) = Mssql::build(query.clone())?;
     ///
     /// assert_eq!("SELECT `cats`.* FROM `cats`", sqlite);
     /// assert_eq!("SELECT \"cats\".* FROM \"cats\"", psql);
     /// assert_eq!("SELECT `cats`.* FROM `cats`", mysql);
-    /// assert_eq!("SELECT [cats].* FROM [cats]", mssql);
     /// # Ok(())
     /// # }
     /// ```

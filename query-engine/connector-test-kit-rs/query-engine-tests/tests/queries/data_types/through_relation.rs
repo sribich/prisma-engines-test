@@ -177,7 +177,7 @@ mod scalar_relations {
         schema.to_owned()
     }
 
-    #[connector_test(schema(schema_decimal), capabilities(DecimalType), exclude(Sqlite("cfd1")))]
+    #[connector_test(schema(schema_decimal), capabilities(DecimalType))]
     // On D1, this fails with:
     //
     // ```diff
@@ -241,11 +241,9 @@ mod scalar_relations {
     }
 
     // TODO: fix https://github.com/prisma/team-orm/issues/684 and unexclude DAs
-    // On "pg.js.wasm", this fails with a `QueryParserError` due to bigint issues.
     #[connector_test(
         schema(schema_scalar_lists),
-        capabilities(ScalarLists),
-        exclude(Postgres("pg.js.wasm", "neon.js.wasm"), CockroachDb("pg.js.wasm"))
+        capabilities(ScalarLists)
     )]
     async fn scalar_lists(runner: Runner) -> TestResult<()> {
         create_child(
@@ -300,7 +298,7 @@ mod scalar_relations {
         schema.to_owned()
     }
 
-    #[connector_test(schema(schema_oid), only(Postgres, CockroachDb))]
+    #[connector_test(schema(schema_oid), only(Postgres))]
     async fn oid_type(runner: Runner) -> TestResult<()> {
         create_child(&runner, r#"{ childId: 1, oid: 0 }"#).await?;
         create_child(&runner, r#"{ childId: 2, oid: 1 }"#).await?;

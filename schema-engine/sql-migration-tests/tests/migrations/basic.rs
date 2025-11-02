@@ -3,8 +3,7 @@ mod vitess;
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::{ColumnTypeFamily, DefaultKind};
 
-// This is more complicated on CockroachDB
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn adding_an_id_field_of_type_int_with_autoincrement_works(api: TestApi) {
     let dm2 = r#"
         model Test {
@@ -419,7 +418,7 @@ fn renaming_a_datasource_works(api: TestApi) {
         .assert_no_steps();
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn created_at_does_not_get_arbitrarily_migrated(api: TestApi) {
     use quaint::ast::Insert;
 

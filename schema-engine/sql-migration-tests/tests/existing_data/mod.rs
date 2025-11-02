@@ -166,9 +166,6 @@ fn altering_a_column_with_non_null_values_should_warn(api: TestApi) {
     api.schema_push_w_datasource(dm2).send().assert_warnings(&[
         if api.is_postgres() {
              "The `age` column on the `Test` table would be dropped and recreated. This will lead to data loss.".into()
-        } else if api.is_mssql() {
-             "You are about to alter the column `age` on the `Test` table, which contains 2 non-null values. The data in that column will be cast from `NVarChar(1000)` to `Int`.".into()
-
         } else if api.is_mysql() {
             if api.lower_cases_table_names() {
 
@@ -188,7 +185,7 @@ fn altering_a_column_with_non_null_values_should_warn(api: TestApi) {
     assert_eq!(api.dump_table("Test").len(), 2);
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn column_defaults_can_safely_be_changed(api: TestApi) {
     let combinations = &[
         ("Meow", Some(PrismaValue::String("Cats".to_string())), None),
@@ -822,8 +819,7 @@ fn set_default_current_timestamp_on_existing_column_works(api: TestApi) {
 
 // Excluding Vitess because schema changes being asynchronous messes with our assertions
 // (dump_table).
-// exclude: there is a cockroach-specific test. It's unexecutable there.
-#[test_connector(exclude(CockroachDb, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn primary_key_migrations_do_not_cause_data_loss(api: TestApi) {
     let dm1 = r#"
         model Dog {

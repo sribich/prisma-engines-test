@@ -179,30 +179,3 @@ fn key_order_enforcement_support() {
 
     assert_valid(dml);
 }
-
-#[test]
-fn postgres_does_not_support_composite_types() {
-    let schema = r#"
-        datasource db {
-            provider = "postgres"
-            url = "postgres://"
-        }
-
-        type Address {
-            street String
-        }
-    "#;
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating: Composite types are not supported on Postgres.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
-        [1;94m   | [0m
-        [1;94m 6 | [0m
-        [1;94m 7 | [0m        [1;91mtype Address {[0m
-        [1;94m 8 | [0m            street String
-        [1;94m 9 | [0m        }
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(schema, &expected);
-}

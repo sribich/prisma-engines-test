@@ -32,10 +32,6 @@ pub(crate) fn schema_to_dmmf(schema: &psl::ValidatedSchema) -> Datamodel {
         datamodel.indexes.extend(model_indexes_to_dmmf(model));
     }
 
-    for ct in schema.db.walk_composite_types() {
-        datamodel.types.push(composite_type_to_dmmf(ct))
-    }
-
     datamodel
 }
 
@@ -59,63 +55,6 @@ fn enum_value_to_dmmf(en: walkers::EnumValueWalker<'_>) -> EnumValue {
         name: en.name().to_owned(),
         db_name: en.mapped_name().map(ToOwned::to_owned),
         documentation: en.documentation().map(ToOwned::to_owned),
-    }
-}
-
-fn composite_type_to_dmmf(ct: walkers::CompositeTypeWalker<'_>) -> Model {
-    Model {
-        name: ct.name().to_owned(),
-        db_name: None,
-        schema: None,
-        fields: ct
-            .fields()
-            .filter(|field| !matches!(field.r#type(), ScalarFieldType::Unsupported(_)))
-            .map(composite_type_field_to_dmmf)
-            .collect(),
-        is_generated: None,
-        documentation: ct.ast_composite_type().documentation().map(ToOwned::to_owned),
-        primary_key: None,
-        unique_fields: Vec::new(),
-        unique_indexes: Vec::new(),
-    }
-}
-
-fn composite_type_field_to_dmmf(field: walkers::CompositeTypeFieldWalker<'_>) -> Field {
-    Field {
-        name: field.name().to_owned(),
-        kind: match field.r#type() {
-            ScalarFieldType::CompositeType(_) => "object",
-            ScalarFieldType::Enum(_) => "enum",
-            ScalarFieldType::BuiltInScalar(_) => "scalar",
-            ScalarFieldType::Extension(_) | ScalarFieldType::Unsupported(_) => unreachable!(),
-        },
-        db_name: field.mapped_name().map(ToOwned::to_owned),
-        is_required: field.arity() == FieldArity::Required || field.arity() == FieldArity::List,
-        is_list: field.arity() == FieldArity::List,
-        is_id: false,
-        is_read_only: false,
-        has_default_value: field.default_value().is_some(),
-        native_type: field
-            .raw_native_type()
-            .map(|(_, name, args, ..)| (name.to_string(), args.to_vec())),
-        default: field
-            .default_value()
-            .map(|dv| default_value_to_serde(&dml_default_kind(dv, field.scalar_type()))),
-        is_unique: false,
-        relation_name: None,
-        relation_from_fields: None,
-        relation_to_fields: None,
-        relation_on_delete: None,
-        relation_on_update: None,
-        field_type: match field.r#type() {
-            ScalarFieldType::CompositeType(ct) => field.walk(ct).name().to_owned(),
-            ScalarFieldType::Enum(enm) => field.walk(enm).name().to_owned(),
-            ScalarFieldType::BuiltInScalar(st) => st.as_str().to_owned(),
-            ScalarFieldType::Extension(_) | ScalarFieldType::Unsupported(_) => unreachable!(),
-        },
-        is_generated: None,
-        is_updated_at: None,
-        documentation: field.documentation().map(ToOwned::to_owned),
     }
 }
 
@@ -179,7 +118,6 @@ fn scalar_field_to_dmmf(field: walkers::ScalarFieldWalker<'_>) -> Field {
         name: field.name().to_owned(),
         db_name: field.mapped_name().map(ToOwned::to_owned),
         kind: match field.scalar_field_type() {
-            ScalarFieldType::CompositeType(_) => "object",
             ScalarFieldType::Enum(_) => "enum",
             ScalarFieldType::BuiltInScalar(_) => "scalar",
             ScalarFieldType::Extension(_) | ScalarFieldType::Unsupported(_) => unreachable!(),
@@ -196,7 +134,6 @@ fn scalar_field_to_dmmf(field: walkers::ScalarFieldWalker<'_>) -> Field {
         }),
         has_default_value: field.default_value().is_some(),
         field_type: match field.scalar_field_type() {
-            ScalarFieldType::CompositeType(ct) => field_walker.walk(ct).name().to_owned(),
             ScalarFieldType::Enum(enm) => field_walker.walk(enm).name().to_owned(),
             ScalarFieldType::BuiltInScalar(st) => st.as_str().to_owned(),
             ScalarFieldType::Extension(_) | ScalarFieldType::Unsupported(_) => unreachable!(),

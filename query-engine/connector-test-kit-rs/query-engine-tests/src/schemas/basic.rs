@@ -170,19 +170,3 @@ pub fn autoinc_id() -> String {
 
     schema.to_owned()
 }
-
-pub fn autoinc_id_cockroachdb() -> String {
-    let schema = indoc! {
-        r#"
-        model TestModel {
-            #id(id, BigInt, @id, @default(autoincrement()))
-        }
-
-        model TestModelSeq {
-            #id(id, Int, @id, @default(sequence()))
-        }
-        "#
-    };
-
-    schema.to_owned()
-}

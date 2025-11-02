@@ -9,7 +9,7 @@ mkShell {
     pkg-config
     clangStdenv
     llvmPackages.libclang
-    kerberos
+    # kerberos
   ] ++ lib.optionals stdenv.isDarwin [
     libiconv
     darwin.apple_sdk.frameworks.Security

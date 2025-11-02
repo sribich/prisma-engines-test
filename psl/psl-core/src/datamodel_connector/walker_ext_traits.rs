@@ -132,14 +132,6 @@ impl ScalarFieldWalkerExt for ScalarFieldWalker<'_> {
     }
 }
 
-impl ScalarFieldWalkerExt for CompositeTypeFieldWalker<'_> {
-    fn native_type_instance(&self, connector: &dyn Connector) -> Option<NativeTypeInstance> {
-        self.raw_native_type().and_then(|(_, name, args, _)| {
-            connector.parse_native_type(name, args, self.ast_field().span(), &mut Default::default())
-        })
-    }
-}
-
 impl ScalarFieldWalkerExt for IndexFieldWalker<'_> {
     fn native_type_instance(&self, connector: &dyn Connector) -> Option<NativeTypeInstance> {
         self.raw_native_type().and_then(|(_, name, args, _)| {

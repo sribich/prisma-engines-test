@@ -1,4 +1,4 @@
-use crate::{CompositeFieldRef, RelationFieldRef, ScalarFieldRef};
+use crate::{RelationFieldRef, ScalarFieldRef};
 use std::fmt::Display;
 
 #[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
@@ -114,18 +114,16 @@ impl OrderBy {
     }
 }
 
-/// Describes a hop over to a relation or composite for an orderBy statement.
+/// Describes a hop over to a relation for an orderBy statement.
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum OrderByHop {
     Relation(RelationFieldRef),
-    Composite(CompositeFieldRef),
 }
 
 impl std::fmt::Debug for OrderByHop {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Relation(rf) => f.debug_tuple("Relation").field(&format!("{rf}")).finish(),
-            Self::Composite(cf) => f.debug_tuple("Composite").field(&format!("{cf}")).finish(),
         }
     }
 }
@@ -134,7 +132,6 @@ impl OrderByHop {
     pub fn as_relation_hop(&self) -> Option<&RelationFieldRef> {
         match self {
             OrderByHop::Relation(rf) => Some(rf),
-            OrderByHop::Composite(_) => None,
         }
     }
 }
@@ -145,21 +142,9 @@ impl From<&RelationFieldRef> for OrderByHop {
     }
 }
 
-impl From<&CompositeFieldRef> for OrderByHop {
-    fn from(cf: &CompositeFieldRef) -> Self {
-        cf.clone().into()
-    }
-}
-
 impl From<RelationFieldRef> for OrderByHop {
     fn from(rf: RelationFieldRef) -> Self {
         Self::Relation(rf)
-    }
-}
-
-impl From<CompositeFieldRef> for OrderByHop {
-    fn from(cf: CompositeFieldRef) -> Self {
-        Self::Composite(cf)
     }
 }
 

@@ -16,11 +16,6 @@
 //! All parameters should be given in the query string format:
 //! `?key1=val1&key2=val2`. All parameters are optional.
 //!
-//! As a special case, Microsoft SQL Server connections use the JDBC URI
-//! format:
-//!
-//! `jdbc:sqlserver://host\instance:port;key1=val1;key2=val2;`
-//!
 //! ## Common parameters
 //!
 //! - `connection_limit` defines the maximum number of connections opened to the
@@ -296,12 +291,11 @@ impl Builder {
         self.health_check_interval = Some(health_check_interval);
     }
 
-    /// Sets whether the URL points to a Postgres, Cockroach or Unknown database.
+    /// Sets whether the URL points to a Postgres or Unknown database.
     /// This is used to avoid a network roundtrip at connection to set the search path.
     ///
     /// The different behaviours are:
     /// - Postgres: Always avoid a network roundtrip by setting the search path through client connection parameters.
-    /// - Cockroach: Avoid a network roundtrip if the schema name is deemed "safe" (i.e. no escape quoting required). Otherwise, set the search path through a database query.
     /// - Unknown: Always add a network roundtrip by setting the search path through a database query.
     ///
     /// - Defaults to `PostgresFlavour::Unknown`.
@@ -435,35 +429,6 @@ impl Quaint {
                     tls_manager,
                     is_tracing_enabled,
                 };
-                let mut builder = Builder::new(s, manager)?;
-
-                if let Some(limit) = connection_limit {
-                    builder.connection_limit(limit);
-                }
-
-                if let Some(timeout) = pool_timeout {
-                    builder.pool_timeout(timeout);
-                }
-
-                if let Some(max_lifetime) = max_connection_lifetime {
-                    builder.max_lifetime(max_lifetime);
-                }
-
-                if let Some(max_idle_lifetime) = max_idle_connection_lifetime {
-                    builder.max_idle_lifetime(max_idle_lifetime);
-                }
-
-                Ok(builder)
-            }
-            #[cfg(feature = "mssql")]
-            s if s.starts_with("jdbc:sqlserver") || s.starts_with("sqlserver") => {
-                let url = crate::connector::MssqlUrl::new(s)?;
-                let connection_limit = url.connection_limit();
-                let pool_timeout = url.pool_timeout();
-                let max_connection_lifetime = url.max_connection_lifetime();
-                let max_idle_connection_lifetime = url.max_idle_connection_lifetime();
-
-                let manager = QuaintManager::Mssql { url };
                 let mut builder = Builder::new(s, manager)?;
 
                 if let Some(limit) = connection_limit {

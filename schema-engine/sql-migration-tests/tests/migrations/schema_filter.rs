@@ -102,7 +102,7 @@ fn schema_filter_migration_modifying_external_table(mut api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn schema_filter_migration_adding_external_enum(api: TestApi) {
     let schema = api.datamodel_with_provider(
         r#"
@@ -126,7 +126,7 @@ fn schema_filter_migration_adding_external_enum(api: TestApi) {
     api.assert_schema().assert_has_no_enum("ExternalEnum");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn schema_filter_migration_removing_external_enum(mut api: TestApi) {
     let schema_1 = api.datamodel_with_provider(
         r#"
@@ -156,7 +156,7 @@ fn schema_filter_migration_removing_external_enum(mut api: TestApi) {
     });
 }
 
-#[test_connector(exclude(CockroachDb, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn schema_filter_migration_adding_external_tables_incl_relations(api: TestApi) {
     let schema = api.datamodel_with_provider(
         r#"
@@ -194,7 +194,6 @@ fn schema_filter_migration_adding_external_tables_incl_relations(api: TestApi) {
     let is_postgres = api.is_postgres();
     let is_mysql = api.is_mysql();
     let is_sqlite = api.is_sqlite();
-    let is_mssql = api.is_mssql();
 
     let filter = api.namespaced_schema_filter(&["ExternalTableA", "ExternalTableB"]);
     api.create_migration_with_filter("custom", &schema, &dir, filter, "")
@@ -240,36 +239,6 @@ fn schema_filter_migration_adding_external_tables_incl_relations(api: TestApi) {
                         CONSTRAINT "Cat_externalTableId_fkey" FOREIGN KEY ("externalTableId") REFERENCES "ExternalTableA" ("id") ON DELETE SET NULL ON UPDATE CASCADE
                     );
                 "#]]
-            } else if is_mssql {
-                expect![[r#"
-                    BEGIN TRY
-
-                    BEGIN TRAN;
-
-                    -- CreateTable
-                    CREATE TABLE [dbo].[Cat] (
-                        [id] INT NOT NULL,
-                        [name] NVARCHAR(1000) NOT NULL,
-                        [externalTableId] INT,
-                        CONSTRAINT [Cat_pkey] PRIMARY KEY CLUSTERED ([id])
-                    );
-
-                    -- AddForeignKey
-                    ALTER TABLE [dbo].[Cat] ADD CONSTRAINT [Cat_externalTableId_fkey] FOREIGN KEY ([externalTableId]) REFERENCES [dbo].[ExternalTableA]([id]) ON DELETE SET NULL ON UPDATE CASCADE;
-
-                    COMMIT TRAN;
-
-                    END TRY
-                    BEGIN CATCH
-
-                    IF @@TRANCOUNT > 0
-                    BEGIN
-                        ROLLBACK TRAN;
-                    END;
-                    THROW
-
-                    END CATCH
-                "#]]
             } else {
                 unreachable!()
             };
@@ -277,7 +246,7 @@ fn schema_filter_migration_adding_external_tables_incl_relations(api: TestApi) {
         });
 }
 
-#[test_connector(exclude(CockroachDb, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn schema_filter_migration_removing_external_tables_incl_relations(mut api: TestApi) {
     let schema_1 = api.datamodel_with_provider(
         r#"
@@ -311,7 +280,6 @@ fn schema_filter_migration_removing_external_tables_incl_relations(mut api: Test
     let is_postgres = api.is_postgres();
     let is_mysql = api.is_mysql();
     let is_sqlite = api.is_sqlite();
-    let is_mssql = api.is_mssql();
 
     // No filter applied here to actually create the external tables first
     api.create_migration("create", &schema_1, &dir).send_sync();
@@ -383,37 +351,6 @@ fn schema_filter_migration_removing_external_tables_incl_relations(mut api: Test
                     PRAGMA foreign_keys=ON;
                     PRAGMA defer_foreign_keys=OFF;
                 "#]]
-            } else if is_mssql {
-                expect![[r#"
-                    /*
-                      Warnings:
-
-                      - You are about to drop the column `externalTableId` on the `cat` table. All the data in the column will be lost.
-
-                    */
-                    BEGIN TRY
-
-                    BEGIN TRAN;
-
-                    -- DropForeignKey
-                    ALTER TABLE [dbo].[cat] DROP CONSTRAINT [cat_externalTableId_fkey];
-
-                    -- AlterTable
-                    ALTER TABLE [dbo].[cat] DROP COLUMN [externalTableId];
-
-                    COMMIT TRAN;
-
-                    END TRY
-                    BEGIN CATCH
-
-                    IF @@TRANCOUNT > 0
-                    BEGIN
-                        ROLLBACK TRAN;
-                    END;
-                    THROW
-
-                    END CATCH
-                "#]]
             } else {
                 unreachable!()
             };
@@ -421,7 +358,7 @@ fn schema_filter_migration_removing_external_tables_incl_relations(mut api: Test
         });
 }
 
-#[test_connector(exclude(CockroachDb, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn schema_filter_migration_modifying_external_tables_incl_relations(mut api: TestApi) {
     let schema_1 = api.datamodel_with_provider(
         r#"
@@ -445,7 +382,6 @@ fn schema_filter_migration_modifying_external_tables_incl_relations(mut api: Tes
     let is_postgres = api.is_postgres();
     let is_mysql = api.is_mysql();
     let is_sqlite = api.is_sqlite();
-    let is_mssql = api.is_mssql();
 
     // No filter applied here to actually create the external tables first
     api.create_migration("create", &schema_1, &dir).send_sync();
@@ -515,31 +451,6 @@ fn schema_filter_migration_modifying_external_tables_incl_relations(mut api: Tes
                     PRAGMA foreign_keys=ON;
                     PRAGMA defer_foreign_keys=OFF;
                 "#]]
-            } else if is_mssql {
-                expect![[r#"
-                    BEGIN TRY
-
-                    BEGIN TRAN;
-
-                    -- AlterTable
-                    ALTER TABLE [dbo].[cat] ADD [externalTableId] INT;
-
-                    -- AddForeignKey
-                    ALTER TABLE [dbo].[cat] ADD CONSTRAINT [cat_externalTableId_fkey] FOREIGN KEY ([externalTableId]) REFERENCES [dbo].[ExternalTableA]([id]) ON DELETE SET NULL ON UPDATE CASCADE;
-
-                    COMMIT TRAN;
-
-                    END TRY
-                    BEGIN CATCH
-
-                    IF @@TRANCOUNT > 0
-                    BEGIN
-                        ROLLBACK TRAN;
-                    END;
-                    THROW
-
-                    END CATCH
-                "#]]
             } else {
                 unreachable!()
             };
@@ -547,15 +458,11 @@ fn schema_filter_migration_modifying_external_tables_incl_relations(mut api: Tes
         });
 }
 
-#[test_connector(exclude(CockroachDb, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn schema_filter_leveraging_init_script(api: TestApi) {
     // Creating the external table through the init script so it exists in the shadow db.
     // Therefore it can be referenced with a foreign key constraint from the Cat model without being created by a Prisma migration itself.
-    let init_script = if api.is_mssql() {
-        r#"CREATE TABLE [external] (id INT);"#
-    } else {
-        r#"CREATE TABLE external (id INT);"#
-    };
+    let init_script = r#"CREATE TABLE external (id INT);"#;
 
     let schema = api.datamodel_with_provider(
         r#"
@@ -578,7 +485,6 @@ fn schema_filter_leveraging_init_script(api: TestApi) {
     let is_postgres = api.is_postgres();
     let is_mysql = api.is_mysql();
     let is_sqlite = api.is_sqlite();
-    let is_mssql = api.is_mssql();
 
     let filter = api.namespaced_schema_filter(&["external"]);
     api.create_migration_with_filter("custom", &schema, &dir, filter, init_script)
@@ -624,36 +530,6 @@ fn schema_filter_leveraging_init_script(api: TestApi) {
                         CONSTRAINT "Cat_externalTableId_fkey" FOREIGN KEY ("externalTableId") REFERENCES "external" ("id") ON DELETE SET NULL ON UPDATE CASCADE
                     );
                 "#]]
-            } else if is_mssql {
-                expect![[r#"
-                    BEGIN TRY
-
-                    BEGIN TRAN;
-
-                    -- CreateTable
-                    CREATE TABLE [dbo].[Cat] (
-                        [id] INT NOT NULL,
-                        [name] NVARCHAR(1000) NOT NULL,
-                        [externalTableId] INT,
-                        CONSTRAINT [Cat_pkey] PRIMARY KEY CLUSTERED ([id])
-                    );
-
-                    -- AddForeignKey
-                    ALTER TABLE [dbo].[Cat] ADD CONSTRAINT [Cat_externalTableId_fkey] FOREIGN KEY ([externalTableId]) REFERENCES [dbo].[external]([id]) ON DELETE SET NULL ON UPDATE CASCADE;
-
-                    COMMIT TRAN;
-
-                    END TRY
-                    BEGIN CATCH
-
-                    IF @@TRANCOUNT > 0
-                    BEGIN
-                        ROLLBACK TRAN;
-                    END;
-                    THROW
-
-                    END CATCH
-                "#]]
             } else {
                 unreachable!()
             };
@@ -661,7 +537,7 @@ fn schema_filter_leveraging_init_script(api: TestApi) {
         });
 }
 
-#[test_connector(tags(Postgres, Mssql), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn schema_filter_migration_multi_schema_requires_namespaced_table_names(api: TestApi) {
     let schema = api.datamodel_with_provider_and_features(
         r#"
@@ -686,7 +562,6 @@ fn schema_filter_migration_multi_schema_requires_namespaced_table_names(api: Tes
     let dir = api.create_migrations_directory();
 
     let is_postgres = api.is_postgres();
-    let is_mssql = api.is_mssql();
 
     let filter = SchemaFilter {
         external_tables: vec!["two.ExternalTable".to_string()],
@@ -710,35 +585,6 @@ fn schema_filter_migration_multi_schema_requires_namespaced_table_names(api: Tes
                     CONSTRAINT "Cat_pkey" PRIMARY KEY ("id")
                 );
             "#]]
-            } else if is_mssql {
-                expect![[r#"
-                    BEGIN TRY
-
-                    BEGIN TRAN;
-
-                    -- CreateSchema
-                    IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'one') EXEC sp_executesql N'CREATE SCHEMA [one];';
-
-                    -- CreateTable
-                    CREATE TABLE [one].[Cat] (
-                        [id] INT NOT NULL,
-                        [name] NVARCHAR(1000) NOT NULL,
-                        CONSTRAINT [Cat_pkey] PRIMARY KEY CLUSTERED ([id])
-                    );
-
-                    COMMIT TRAN;
-
-                    END TRY
-                    BEGIN CATCH
-
-                    IF @@TRANCOUNT > 0
-                    BEGIN
-                        ROLLBACK TRAN;
-                    END;
-                    THROW
-
-                    END CATCH
-                "#]]
             } else {
                 unreachable!()
             };
@@ -746,7 +592,7 @@ fn schema_filter_migration_multi_schema_requires_namespaced_table_names(api: Tes
         });
 }
 
-#[test_connector(tags(Postgres, Mssql), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn schema_filter_without_namespaced_table_names_on_pg_and_sql_server(api: TestApi) {
     let schema = api.datamodel_with_provider_and_features(
         r#"
@@ -785,7 +631,7 @@ fn schema_filter_without_namespaced_table_names_on_pg_and_sql_server(api: TestAp
     );
 }
 
-#[test_connector(exclude(Postgres, Mssql, CockroachDb))]
+#[test_connector(exclude(Postgres))]
 fn schema_filter_with_namespaced_table_names_on_other_dialects(api: TestApi) {
     let schema = api.datamodel_with_provider(
         r#"

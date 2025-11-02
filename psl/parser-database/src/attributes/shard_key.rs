@@ -28,10 +28,6 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
                 let field_names = unresolvable_fields
                     .into_iter()
                     .map(|((file_id, top_id), field_name)| match top_id {
-                        ast::TopId::CompositeType(ctid) => {
-                            let ct_name = ctx.asts[(file_id, ctid)].name();
-                            Cow::from(format!("{field_name} in type {ct_name}"))
-                        }
                         ast::TopId::Model(_) => Cow::from(field_name),
                         _ => unreachable!(),
                     });

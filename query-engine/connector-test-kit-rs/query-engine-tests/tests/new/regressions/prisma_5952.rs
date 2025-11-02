@@ -1,7 +1,6 @@
 use query_engine_tests::*;
 
-// exclude: mongodb does not support Decimal
-#[test_suite(schema(schema), exclude(MongoDb))]
+#[test_suite(schema(schema))]
 mod regression {
     fn schema() -> String {
         let schema = indoc! {

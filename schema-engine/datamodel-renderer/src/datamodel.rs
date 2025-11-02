@@ -3,7 +3,6 @@
 //! Includes the `model`, `enum` and `type` definitions.
 
 mod attributes;
-mod composite_type;
 mod default;
 mod enumerator;
 mod field;
@@ -12,7 +11,6 @@ mod index;
 mod model;
 mod view;
 
-pub use composite_type::CompositeType;
 pub use default::DefaultValue;
 pub use enumerator::{Enum, EnumVariant};
 pub use field::Field;
@@ -34,7 +32,6 @@ pub struct Datamodel<'a> {
     models: HashMap<Cow<'a, str>, Vec<Model<'a>>>,
     views: HashMap<Cow<'a, str>, Vec<View<'a>>>,
     enums: HashMap<Cow<'a, str>, Vec<Enum<'a>>>,
-    composite_types: HashMap<Cow<'a, str>, Vec<CompositeType<'a>>>,
     configuration: Option<Configuration<'a>>,
     empty_files: HashSet<Cow<'a, str>>,
 }
@@ -83,23 +80,9 @@ impl<'a> Datamodel<'a> {
         self.views.entry(file.into()).or_default().push(view);
     }
 
-    /// Add a composite type block to the data model.
-    ///
-    /// ```ignore
-    /// type Address {  // <
-    ///   street String // < this
-    /// }               // <
-    /// ```
-    pub fn push_composite_type(&mut self, file: impl Into<Cow<'a, str>>, composite_type: CompositeType<'a>) {
-        self.composite_types
-            .entry(file.into())
-            .or_default()
-            .push(composite_type);
-    }
-
     /// True if the render output would be an empty string.
     pub fn is_empty(&self) -> bool {
-        self.models.is_empty() && self.enums.is_empty() && self.composite_types.is_empty() && self.views.is_empty()
+        self.models.is_empty() && self.enums.is_empty() && self.views.is_empty()
     }
 
     /// Renders the datamodel into a list of file names and their content.
@@ -121,14 +104,6 @@ impl<'a> Datamodel<'a> {
                 for datasource in datasources {
                     datasource_str.push_str(&format!("{datasource}\n"));
                 }
-            }
-        }
-
-        for (file, composite_types) in self.composite_types {
-            let composite_type_str = rendered.entry(file).or_default();
-
-            for composite_type in composite_types {
-                composite_type_str.push_str(&format!("{composite_type}\n"));
             }
         }
 
@@ -196,12 +171,6 @@ mod tests {
         let file_name = "schema.prisma";
         let mut data_model = Datamodel::new();
 
-        let mut composite = CompositeType::new("Address");
-        let field = Field::new("street", "String");
-        composite.push_field(field);
-
-        data_model.push_composite_type(file_name.to_string(), composite);
-
         let mut model = Model::new("User");
 
         let mut field = Field::new("id", "Int");
@@ -237,10 +206,6 @@ mod tests {
 
         let expected = expect![[r#"
             // file: schema.prisma
-            type Address {
-              street String
-            }
-
             model User {
               id Int @id @default(autoincrement())
             }
@@ -268,12 +233,6 @@ mod tests {
     #[test]
     fn data_model_multi_file() {
         let mut data_model = Datamodel::new();
-
-        let mut composite = CompositeType::new("Address");
-        let field = Field::new("street", "String");
-        composite.push_field(field);
-
-        data_model.push_composite_type("a.prisma".to_string(), composite);
 
         let mut model = Model::new("User");
 
@@ -310,10 +269,6 @@ mod tests {
 
         let expected = expect![[r#"
             // file: a.prisma
-            type Address {
-              street String
-            }
-
             model User {
               id Int @id @default(autoincrement())
             }

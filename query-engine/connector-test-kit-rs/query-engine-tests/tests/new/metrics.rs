@@ -3,12 +3,7 @@ use query_engine_tests::test_suite;
 #[test_suite(
     schema(generic),
     exclude(
-        Vitess("planetscale.js.wasm"),
-        Postgres("neon.js.wasm", "pg.js.wasm"),
-        Sqlite("libsql.js.wasm", "cfd1", "react-native", "better-sqlite3.js.wasm"),
-        Sqlserver("mssql.js.wasm"),
-        Mysql("mariadb.js.wasm", "mariadb-mysql.js.wasm"),
-        CockroachDb("pg.js.wasm"),
+        Sqlite("react-native"),
     )
 )]
 mod metrics {
@@ -35,9 +30,6 @@ mod metrics {
 
         match runner.connector_version() {
             Sqlite(_) => assert_eq!(total_queries, 2),
-            SqlServer(_) => assert_eq!(total_queries, 12),
-            MongoDb(_) => assert_eq!(total_queries, 5),
-            CockroachDb(_) => assert_eq!(total_queries, 2),
             MySql(_) => assert_eq!(total_queries, 9),
             Vitess(_) => assert_eq!(total_queries, 9),
             Postgres(_) => assert_eq!(total_queries, 2),

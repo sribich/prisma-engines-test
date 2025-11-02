@@ -1,5 +1,3 @@
-mod cockroach_describer_tests;
-
 use crate::test_api::*;
 use pretty_assertions::assert_eq;
 use prisma_value::PrismaValue;
@@ -60,7 +58,7 @@ fn postgres_many_namespaces(api: TestApi) {
         .assert_namespace("three");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn views_can_be_described(api: TestApi) {
     let full_sql = r#"
         CREATE TABLE a (a_id int);
@@ -78,7 +76,7 @@ fn views_can_be_described(api: TestApi) {
     assert_eq!(expected_sql, view.definition.unwrap());
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn all_postgres_column_types_must_work(api: TestApi) {
     let sql = r#"
         CREATE TABLE "User" (
@@ -1200,7 +1198,7 @@ fn postgres_enums_must_work(api: TestApi) {
     }
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn postgres_sequences_must_work(api: TestApi) {
     api.raw_cmd(&format!("CREATE SEQUENCE \"{}\".\"test\"", api.schema_name()));
 
@@ -1243,7 +1241,7 @@ fn postgres_sequences_must_work(api: TestApi) {
     expected_ext.assert_debug_eq(&ext);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn postgres_multi_field_indexes_must_be_inferred_in_the_right_order(api: TestApi) {
     let schema = r#"
         CREATE TABLE "indexes_test" (
@@ -1296,7 +1294,7 @@ fn postgres_multi_field_indexes_must_be_inferred_in_the_right_order(api: TestApi
     expectation.assert_debug_eq(&found);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn escaped_quotes_in_string_defaults_must_be_unescaped(api: TestApi) {
     let create_table = r#"
         CREATE TABLE "string_defaults_test" (
@@ -1480,7 +1478,7 @@ fn escaped_quotes_in_string_defaults_must_be_unescaped(api: TestApi) {
     api.expect_schema(expectation);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn seemingly_escaped_backslashes_in_string_literals_must_not_be_unescaped(api: TestApi) {
     // https://www.postgresql.org/docs/current/sql-syntax-lexical.html
     let create_table = r#"
@@ -1640,7 +1638,7 @@ fn index_sort_order_composite_type_asc_desc_is_handled(api: TestApi) {
     assert_eq!(Some(SQLSortOrder::Desc), columns[1].sort_order());
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn array_column_defaults(api: TestApi) {
     let schema = r#"
         CREATE TYPE "color" AS ENUM ('RED', 'GREEN', 'BLUE');
@@ -1785,7 +1783,7 @@ fn array_column_defaults_with_array_constructor_syntax(api: TestApi) {
     );
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn int_expressions_in_defaults(api: TestApi) {
     let schema = r#"
         CREATE TABLE "defaults" (
@@ -1801,7 +1799,7 @@ fn int_expressions_in_defaults(api: TestApi) {
     assert!(value.is_db_generated());
 }
 
-#[test_connector(tags(Postgres14), exclude(CockroachDb))]
+#[test_connector(tags(Postgres14))]
 fn extensions_are_described_correctly(api: TestApi) {
     let schema = r#"CREATE EXTENSION IF NOT EXISTS citext;"#;
 
@@ -1841,7 +1839,7 @@ fn extensions_are_described_correctly(api: TestApi) {
 
 // multi schema
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn multiple_schemas_with_same_table_names_are_described(api: TestApi) {
     let schema = r#"
            CREATE Schema "schema_0";
@@ -2066,7 +2064,7 @@ fn multiple_schemas_with_same_table_names_are_described(api: TestApi) {
     expected_schema.assert_debug_eq(&schema);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn multiple_schemas_with_same_foreign_key_are_described(api: TestApi) {
     let schema = r#"
            CREATE Schema "schema_0";

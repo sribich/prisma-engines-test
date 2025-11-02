@@ -5,7 +5,6 @@ use itertools::Itertools;
 use psl::parser_database::ExtensionTypes;
 use psl::parser_database::NoExtensionTypes;
 pub use quaint::prelude::Queryable;
-use schema_connector::CompositeTypeDepth;
 use schema_connector::ConnectorError;
 use schema_connector::ConnectorResult;
 use schema_connector::IntrospectionContext;
@@ -79,7 +78,7 @@ impl TestApi {
             let me = SqlSchemaConnector::new_mysql(params).unwrap();
 
             (Quaint::new(&cs).await.unwrap(), cs, me)
-        } else if tags.contains(Tags::Postgres) && !tags.contains(Tags::CockroachDb) {
+        } else if tags.contains(Tags::Postgres) {
             let (_, q, cs) = args.create_postgres_database().await;
             let params = ConnectorParams {
                 connection_string: cs.to_owned(),
@@ -87,36 +86,6 @@ impl TestApi {
                 shadow_database_connection_string: None,
             };
             let me = SqlSchemaConnector::new_postgres(params).unwrap();
-
-            (q, cs, me)
-        } else if tags.contains(Tags::CockroachDb) {
-            let (_, q, cs) = args.create_postgres_database().await;
-
-            q.raw_cmd(
-                r#"
-                SET default_int_size = 4;
-                "#,
-            )
-            .await
-            .unwrap();
-
-            let params = ConnectorParams {
-                connection_string: cs.to_owned(),
-                preview_features,
-                shadow_database_connection_string: None,
-            };
-            let me = SqlSchemaConnector::new_cockroach(params).unwrap();
-
-            (q, cs, me)
-        } else if tags.contains(Tags::Mssql) {
-            let (q, cs) = args.create_mssql_database().await;
-
-            let params = ConnectorParams {
-                connection_string: cs.to_owned(),
-                preview_features,
-                shadow_database_connection_string: None,
-            };
-            let me = SqlSchemaConnector::new_mssql(params).unwrap();
 
             (q, cs, me)
         } else if tags.contains(Tags::Sqlite) {
@@ -212,10 +181,6 @@ impl TestApi {
         Ok(introspection_result.datamodel)
     }
 
-    pub fn is_cockroach(&self) -> bool {
-        self.tags().contains(Tags::CockroachDb)
-    }
-
     pub fn is_mysql8(&self) -> bool {
         self.tags().contains(Tags::Mysql8)
     }
@@ -248,7 +213,7 @@ impl TestApi {
         render_config: bool,
         extension_types: &dyn ExtensionTypes,
     ) -> ConnectorResult<IntrospectionResult> {
-        let mut ctx = IntrospectionContext::new(previous_schema, CompositeTypeDepth::Infinite, None, PathBuf::new());
+        let mut ctx = IntrospectionContext::new(previous_schema, None, PathBuf::new());
         ctx.render_config = render_config;
 
         self.api
@@ -263,7 +228,7 @@ impl TestApi {
         render_config: bool,
     ) -> ConnectorResult<IntrospectionResult> {
         let mut ctx =
-            IntrospectionContext::new_config_only(previous_schema, CompositeTypeDepth::Infinite, None, PathBuf::new())
+            IntrospectionContext::new_config_only(previous_schema, None, PathBuf::new())
                 .map_err(ConnectorError::new_schema_parser_error)?;
         ctx.render_config = render_config;
 
@@ -345,7 +310,6 @@ impl TestApi {
                 SqlFamily::Mysql => barrel::SqlVariant::Mysql,
                 SqlFamily::Postgres => barrel::SqlVariant::Pg,
                 SqlFamily::Sqlite => barrel::SqlVariant::Sqlite,
-                SqlFamily::Mssql => barrel::SqlVariant::Mssql,
             },
             tags: self.tags(),
         }

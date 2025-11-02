@@ -51,7 +51,8 @@ async fn teardown_project(
 ) -> TestResult<()> {
     if let Some(schema_id) = schema_id {
         let params = serde_json::json!({ "schemaId": schema_id });
-        executor_process_request::<serde_json::Value>("teardown", params).await?;
+        // TODO(sr): Remove this -- used with driver adapters
+        // executor_process_request::<serde_json::Value>("teardown", params).await?;
     }
 
     Ok(qe_setup::teardown(&datamodel.url, &datamodel.schema, db_schemas).await?)

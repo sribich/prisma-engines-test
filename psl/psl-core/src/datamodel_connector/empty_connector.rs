@@ -76,14 +76,6 @@ impl Connector for EmptyDatamodelConnector {
     fn flavour(&self) -> Flavour {
         unreachable!()
     }
-
-    fn is_sql(&self) -> bool {
-        false
-    }
-
-    fn is_mongo(&self) -> bool {
-        false
-    }
 }
 
 #[cfg(test)]

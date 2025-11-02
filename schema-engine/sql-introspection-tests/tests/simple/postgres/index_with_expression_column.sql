@@ -1,5 +1,4 @@
 -- tags=postgres
--- exclude=cockroachdb
 
 CREATE TABLE communication_channels (
     id bigint NOT NULL,

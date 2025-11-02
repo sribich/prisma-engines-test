@@ -3,7 +3,7 @@ use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn full_text_functions_filtered_out(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text not null)",);
@@ -27,7 +27,7 @@ async fn full_text_functions_filtered_out(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn gin_raw_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data tsvector not null)",);
@@ -51,7 +51,7 @@ async fn gin_raw_ops(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn array_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int[] not null)",);
@@ -75,7 +75,7 @@ async fn array_ops(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn array_ops_with_native_type(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int[] not null)",);
@@ -99,7 +99,7 @@ async fn array_ops_with_native_type(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn jsonb_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
 
@@ -125,7 +125,7 @@ async fn jsonb_ops(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn jsonb_path_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
 

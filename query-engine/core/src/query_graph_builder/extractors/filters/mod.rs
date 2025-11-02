@@ -1,4 +1,3 @@
-mod composite;
 mod filter_fold;
 mod filter_grouping;
 mod relation;
@@ -156,7 +155,6 @@ where
                         let filters = match container.find_field(&key).expect("Invalid field passed validation.") {
                             Field::Relation(rf) => extract_relation_filters(&rf, value),
                             Field::Scalar(sf) => extract_scalar_filters(&sf, value),
-                            Field::Composite(cf) => extract_composite_filters(&cf, value),
                         }?;
 
                         // strip empty filters
@@ -331,20 +329,4 @@ fn parse_query_mode(input: ParsedInputValue<'_>) -> QueryGraphBuilderResult<Quer
         "insensitive" => QueryMode::Insensitive,
         _ => unreachable!(),
     })
-}
-
-/// Field is the field the filter is refering to and `value` is the passed filter. E.g. `where: { <field>: <value> }.
-/// `value` can be either a flat scalar (for shorthand filter notation) or an object (full filter syntax).
-fn extract_composite_filters(
-    field: &CompositeFieldRef,
-    value: ParsedInputValue<'_>,
-) -> QueryGraphBuilderResult<Vec<Filter>> {
-    match value {
-        ParsedInputValue::Single(val) => Ok(vec![field.equals(val)]), // Todo: Do we want to do coercions here? (list, object)
-        ParsedInputValue::List(_) => Ok(vec![field.equals(PrismaValue::List(value.try_into()?))]),
-        ParsedInputValue::Map(filter_map) => Ok(vec![composite::parse(filter_map, field, false)?]),
-        x => Err(QueryGraphBuilderError::InputError(format!(
-            "Invalid composite filter input: {x:?}"
-        ))),
-    }
 }

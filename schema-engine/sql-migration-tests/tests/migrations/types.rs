@@ -257,32 +257,6 @@ fn bytes_to_bytes_array_works(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Mssql))]
-fn a_table_recreation_with_noncastable_columns_should_trigger_warnings(api: TestApi) {
-    let dm1 = r#"
-        model Blog {
-            id Int @id @default(autoincrement())
-            title String
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm1).send().assert_green();
-
-    // Removing autoincrement requires us to recreate the table.
-    let dm2 = r#"
-        model Blog {
-            id Int @id
-            title Float
-        }
-    "#;
-
-    api.insert("Blog").value("title", "3.14").result_raw();
-
-    api.schema_push_w_datasource(dm2)
-        .send()
-        .assert_warnings(&["You are about to alter the column `title` on the `Blog` table, which contains 1 non-null values. The data in that column will be cast from `String` to `Float`.".into()]);
-}
-
 #[test_connector(tags(Postgres))]
 fn a_column_recreation_with_non_castable_type_change_should_trigger_warnings(api: TestApi) {
     let dm1 = r#"

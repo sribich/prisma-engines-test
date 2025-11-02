@@ -74,18 +74,6 @@ mod failure {
         Ok(())
     }
 
-    #[connector_test(schema(setup::mixed_composite_types), capabilities(CompositeTypes))]
-    async fn fields_of_different_container_fails(runner: Runner) -> TestResult<()> {
-        assert_error!(
-            runner,
-            r#"query { findManyTestModel(where: { id: { equals: { _ref: "string", _container: "Composite" } } }) { id }}"#,
-            2019,
-            "Expected a referenced scalar field of model TestModel, but found a field of composite type Composite."
-        );
-
-        Ok(())
-    }
-
     #[connector_test]
     async fn relation_field_name_fails(runner: Runner) -> TestResult<()> {
         assert_error!(
@@ -143,7 +131,7 @@ mod failure {
     // Exclude connectors that supports `ScalarLists`
     // Connectors that don't supports ScalarLists cannot reference fields on inclusion filters
     // since those filters expect scalar lists.
-    #[connector_test(schema(schema), exclude(MongoDb, Postgres, CockroachDb))]
+    #[connector_test(schema(schema), exclude(Postgres))]
     async fn field_ref_inclusion_filter_fails(runner: Runner) -> TestResult<()> {
         assert_error!(
             runner,
@@ -232,18 +220,6 @@ mod failure {
             r#"query { findManyTestModel(where: { NOT: { json: { string_starts_with: { _ref: "json", _container: "TestModel" } } } }) { id }}"#,
             2019,
             "Expected a referenced scalar field of type String but found TestModel.json of type Json."
-        );
-
-        Ok(())
-    }
-
-    #[connector_test(schema(setup::mixed_composite_types), capabilities(CompositeTypes))]
-    async fn referencing_composite_field_fails(runner: Runner) -> TestResult<()> {
-        assert_error!(
-            runner,
-            r#"query { findManyTestModel(where: { comp: { equals: { _ref: "comp", _container: "TestModel" } } }) { id }}"#,
-            2009,
-            "Unable to match input value to any allowed input type for the field"
         );
 
         Ok(())

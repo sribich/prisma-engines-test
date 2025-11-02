@@ -14,10 +14,6 @@ use url::Url;
 pub enum ConnectorKind<'a> {
     #[cfg(native)]
     Rust { url: String, datasource: &'a Datasource },
-    Js {
-        adapter: Arc<dyn ExternalConnector>,
-        _phantom: PhantomData<&'a ()>, // required for WASM target, where JS is the only variant and lifetime gets unused
-    },
 }
 
 /// Loads a query executor based on the parsed Prisma schema (datasource).
@@ -27,14 +23,6 @@ pub async fn load(
     #[allow(unused_variables)] tracing_enabled: bool,
 ) -> query_core::Result<Box<dyn QueryExecutor + Send + Sync + 'static>> {
     match connector_kind {
-        #[cfg(not(feature = "driver-adapters"))]
-        ConnectorKind::Js { .. } => {
-            panic!("Driver adapters are not enabled, but connector mode is set to JS");
-        }
-
-        #[cfg(feature = "driver-adapters")]
-        ConnectorKind::Js { adapter, _phantom } => driver_adapter(adapter, features).await,
-
         #[cfg(native)]
         ConnectorKind::Rust { url, datasource } => {
             if let Ok(value) = env::var("PRISMA_DISABLE_QUAINT_EXECUTORS") {
@@ -51,30 +39,12 @@ pub async fn load(
                 p if MYSQL.is_provider(p) => native::mysql(datasource, &url, features, tracing_enabled).await,
                 #[cfg(feature = "postgresql-native")]
                 p if POSTGRES.is_provider(p) => native::postgres(datasource, &url, features, tracing_enabled).await,
-                #[cfg(feature = "mssql-native")]
-                p if MSSQL.is_provider(p) => native::mssql(datasource, &url, features, tracing_enabled).await,
-                #[cfg(feature = "cockroachdb-native")]
-                p if COCKROACH.is_provider(p) => native::postgres(datasource, &url, features, tracing_enabled).await,
-                #[cfg(feature = "mongodb")]
-                p if MONGODB.is_provider(p) => native::mongodb(datasource, &url, features, tracing_enabled).await,
-
                 x => Err(query_core::CoreError::ConfigurationError(format!(
                     "Unsupported connector type: {x}"
                 ))),
             }
         }
     }
-}
-
-#[cfg(feature = "driver-adapters")]
-async fn driver_adapter(
-    driver_adapter: Arc<dyn ExternalConnector>,
-    features: PreviewFeatures,
-) -> Result<Box<dyn QueryExecutor + Send + Sync>, query_core::CoreError> {
-    use quaint::connector::ExternalConnector;
-
-    let js = Js::new(driver_adapter, features).await?;
-    Ok(executor_for(js, false))
 }
 
 #[cfg(native)]
@@ -130,37 +100,9 @@ mod native {
         trace!("Loaded MySQL query connector.");
         Ok(executor_for(mysql, false))
     }
-
-    #[cfg(feature = "mssql-native")]
-    pub(crate) async fn mssql(
-        source: &Datasource,
-        url: &str,
-        features: PreviewFeatures,
-        tracing_enabled: bool,
-    ) -> query_core::Result<Box<dyn QueryExecutor + Send + Sync>> {
-        trace!("Loading SQL Server query connector...");
-        let mssql = Mssql::from_source(source, url, features, tracing_enabled).await?;
-        trace!("Loaded SQL Server query connector.");
-        Ok(executor_for(mssql, false))
-    }
-
-    #[cfg(feature = "mongodb")]
-    pub(crate) async fn mongodb(
-        source: &Datasource,
-        url: &str,
-        _features: PreviewFeatures,
-        _tracing_enabled: bool,
-    ) -> query_core::Result<Box<dyn QueryExecutor + Send + Sync>> {
-        use mongodb_query_connector::MongoDb;
-
-        trace!("Loading MongoDB query connector...");
-        let mongo = MongoDb::new(source, url).await?;
-        trace!("Loaded MongoDB query connector.");
-        Ok(executor_for(mongo, false))
-    }
 }
 
-#[cfg(any(feature = "sql", feature = "mongodb"))]
+#[cfg(any(feature = "sql"))]
 fn executor_for<T>(connector: T, force_transactions: bool) -> Box<dyn QueryExecutor + Send + Sync>
 where
     T: Connector + Send + Sync + 'static,

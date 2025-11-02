@@ -7,9 +7,9 @@ use crate::{
 use either::Either;
 use enumflags2::BitFlags;
 use psl::{
-    builtin_connectors::{PostgresDatasourceProperties, cockroach_datamodel_connector::SequenceFunction},
+    builtin_connectors::{PostgresDatasourceProperties, SequenceFunction},
     datamodel_connector::walker_ext_traits::IndexWalkerExt,
-    parser_database::{ExtensionTypes, IndexAlgorithm, OperatorClass, walkers::EnumWalker},
+    parser_database::{walkers::EnumWalker, ExtensionTypes, IndexAlgorithm, OperatorClass},
 };
 use sql::postgres::DatabaseExtension;
 use sql_schema_describer::{self as sql, postgres::PostgresSchemaExt};
@@ -23,19 +23,11 @@ impl PostgresSchemaCalculatorFlavour {
     pub fn new(circumstances: BitFlags<Circumstances>) -> Self {
         Self { circumstances }
     }
-
-    fn is_cockroachdb(&self) -> bool {
-        self.circumstances.contains(Circumstances::IsCockroachDb)
-    }
 }
 
 impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
     fn datamodel_connector(&self) -> &dyn psl::datamodel_connector::Connector {
-        if self.is_cockroachdb() {
-            psl::builtin_connectors::COCKROACH
-        } else {
-            psl::builtin_connectors::POSTGRES
-        }
+        psl::builtin_connectors::POSTGRES
     }
 
     fn calculate_enums(&self, ctx: &mut Context<'_>) {
@@ -80,11 +72,7 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
     }
 
     fn column_default_value_for_autoincrement(&self) -> Option<sql::DefaultValue> {
-        if self.is_cockroachdb() {
-            Some(sql::DefaultValue::unique_rowid())
-        } else {
-            Some(sql::DefaultValue::sequence(""))
-        }
+        Some(sql::DefaultValue::sequence(""))
     }
 
     fn push_connector_data(&self, context: &mut crate::sql_schema_calculator::Context<'_>) {
@@ -214,11 +202,7 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
     }
 
     fn m2m_join_table_constraint(&self) -> JoinTableUniquenessConstraint {
-        if self.is_cockroachdb() {
-            JoinTableUniquenessConstraint::UniqueIndex
-        } else {
-            JoinTableUniquenessConstraint::PrimaryKey
-        }
+        JoinTableUniquenessConstraint::PrimaryKey
     }
 }
 
@@ -450,3 +434,4 @@ fn convert_opclass(opclass: OperatorClass, algo: Option<IndexAlgorithm>) -> sql:
         },
     }
 }
+

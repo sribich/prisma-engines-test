@@ -4,7 +4,7 @@ use indoc::indoc;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn aragon_test_postgres(api: &mut TestApi) -> TestResult {
     let raw_sql = indoc! {r#"
         CREATE TABLE tokens (
@@ -55,7 +55,7 @@ async fn aragon_test_postgres(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn noalyss_folder_test_postgres(api: &mut TestApi) -> TestResult {
     let raw_sql = indoc! {r"
         CREATE TABLE user_active_security (
@@ -139,7 +139,7 @@ async fn noalyss_folder_test_postgres(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn check_and_exclusion_constraints_stopgap(api: &mut TestApi) -> TestResult {
     let raw_sql = indoc! {r#"
         CREATE EXTENSION btree_gist;
@@ -229,7 +229,7 @@ async fn check_and_exclusion_constraints_stopgap(api: &mut TestApi) -> TestResul
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn exclusion_constraints_stopgap(api: &mut TestApi) -> TestResult {
     let raw_sql = indoc! {r#"
         CREATE EXTENSION btree_gist;
@@ -309,7 +309,7 @@ async fn exclusion_constraints_stopgap(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn exclusion_constraints_without_where_stopgap(api: &mut TestApi) -> TestResult {
     let raw_sql = indoc! {r#"
         CREATE EXTENSION btree_gist;
@@ -385,7 +385,7 @@ async fn exclusion_constraints_without_where_stopgap(api: &mut TestApi) -> TestR
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn exclusion_constraints_without_where_and_expressions_stopgap(api: &mut TestApi) -> TestResult {
     let raw_sql = indoc! {r#"
         CREATE EXTENSION btree_gist;
@@ -453,7 +453,7 @@ async fn exclusion_constraints_without_where_and_expressions_stopgap(api: &mut T
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn check_constraints_stopgap(api: &mut TestApi) -> TestResult {
     // https://www.notion.so/prismaio/Indexes-Constraints-Check-constraints-PostgreSQL-cde0bee25f6343d8bbd0f7e84932e808
     let raw_sql = indoc! {r#"

@@ -391,14 +391,11 @@ impl GenericApi for EngineState {
         tracing::info!("{:?}", params.schema);
         let source_files = params.schema.to_psl_input();
 
-        let composite_type_depth = From::from(params.composite_type_depth);
-
         let ctx = if params.force {
             let previous_schema = psl::validate_multi_file(&source_files, &*self.extensions);
 
             schema_connector::IntrospectionContext::new_config_only(
                 previous_schema,
-                composite_type_depth,
                 params.namespaces,
                 PathBuf::new().join(&params.base_directory_path),
             )
@@ -406,7 +403,6 @@ impl GenericApi for EngineState {
             psl::parse_schema_multi(&source_files, &*self.extensions).map(|previous_schema| {
                 schema_connector::IntrospectionContext::new(
                     previous_schema,
-                    composite_type_depth,
                     params.namespaces,
                     PathBuf::new().join(&params.base_directory_path),
                 )

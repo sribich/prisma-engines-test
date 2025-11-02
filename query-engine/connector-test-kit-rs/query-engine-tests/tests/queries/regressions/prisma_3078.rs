@@ -106,7 +106,7 @@ mod prisma_3078 {
     }
 
     // "A relation filter on a 1:1 self relation " should "work" (with field_a)
-    #[connector_test(schema(rel_filter_1_1_a), exclude(SqlServer))]
+    #[connector_test(schema(rel_filter_1_1_a))]
     async fn relation_filter_1_1_a(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation{createOneUser(data: { id: 1, name: "A", field_a:{ create:{ id: 10, name: "AA"}}}){
@@ -152,7 +152,7 @@ mod prisma_3078 {
     }
 
     // "A relation filter on a 1:1 self relation " should "work" (with field_z)
-    #[connector_test(schema(rel_filter_1_1_z), exclude(SqlServer))]
+    #[connector_test(schema(rel_filter_1_1_z))]
     async fn relation_filter_1_1_z(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation{createOneUser(data: { id: 1, name: "A", field_z:{ create:{ id: 10, name: "AA"}}}){

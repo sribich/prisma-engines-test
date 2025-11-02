@@ -5,7 +5,6 @@ use crate::datamodel_connector::Flavour;
 
 pub fn set_config_dir<'a>(flavour: Flavour, config_dir: &std::path::Path, url: &'a str) -> Cow<'a, str> {
     match flavour {
-        Flavour::Sqlserver => set_config_dir_mssql(config_dir, url),
         Flavour::Sqlite => set_config_dir_sqlite(config_dir, url),
         _ => set_config_dir_default(config_dir, url),
     }
@@ -39,11 +38,6 @@ fn set_config_dir_default<'a>(config_dir: &std::path::Path, url: &'a str) -> Cow
     // Only for PostgreSQL + MySQL
     if let Some(path) = params.get("sslidentity").map(|s| s.as_str()).and_then(set_root) {
         params.insert("sslidentity".into(), path);
-    }
-
-    // Only for MongoDB
-    if let Some(path) = params.get("tlsCAFile").map(|s| s.as_str()).and_then(set_root) {
-        params.insert("tlsCAFile".into(), path);
     }
 
     for (k, v) in params.into_iter() {

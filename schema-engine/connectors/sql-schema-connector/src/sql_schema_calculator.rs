@@ -372,9 +372,6 @@ fn push_column_for_scalar_field(field: ScalarFieldWalker<'_>, table_id: sql::Tab
     match field.scalar_field_type() {
         ScalarFieldType::Enum(enum_id) => push_column_for_model_enum_scalar_field(field, enum_id, table_id, ctx),
         ScalarFieldType::Extension(id) => push_column_for_extension_type(field, id, table_id, ctx),
-        ScalarFieldType::CompositeType(_) => {
-            push_column_for_builtin_scalar_type(field, ScalarType::Json, table_id, ctx)
-        }
         ScalarFieldType::BuiltInScalar(scalar_type) => {
             push_column_for_builtin_scalar_type(field, scalar_type, table_id, ctx)
         }

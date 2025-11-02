@@ -125,29 +125,6 @@ mod one2one_opt {
 
         Ok(())
     }
-
-    /// Deleting the parent leaves the data in a integrity-violating state.
-    #[connector_test(only(MongoDb))]
-    async fn delete_parent_violation(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneParent(data: { id: 1, child: { create: { id: 1 }}}) { id }}"#),
-          @r###"{"data":{"createOneParent":{"id":1}}}"###
-        );
-
-        assert_error!(
-            runner,
-            "mutation { deleteOneParent(where: { id: 1 }) { id }}",
-            2014,
-            "The change you are trying to make would violate the required relation 'ChildToParent' between the `Child` and `Parent` models."
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"query { findManyChild { parent_id }}"#),
-          @r###"{"data":{"findManyChild":[{"parent_id":1}]}}"###
-        );
-
-        Ok(())
-    }
 }
 
 #[test_suite(
@@ -319,29 +296,6 @@ mod one2many_opt {
         insta::assert_snapshot!(
             run_query!(&runner, "mutation { deleteManyParent(where: { id: 2 }) { count }}"),
             @r###"{"data":{"deleteManyParent":{"count":1}}}"###
-        );
-
-        Ok(())
-    }
-
-    /// Deleting the parent leaves the data in a integrity-violating state.
-    #[connector_test(only(MongoDb))]
-    async fn delete_parent_violation(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation { createOneParent(data: { id: 1, children: { create: { id: 1 }}}) { id }}"#),
-          @r###"{"data":{"createOneParent":{"id":1}}}"###
-        );
-
-        assert_error!(
-            runner,
-            "mutation { deleteOneParent(where: { id: 1 }) { id }}",
-            2014,
-            "The change you are trying to make would violate the required relation 'ChildToParent' between the `Child` and `Parent` models."
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"query { findManyChild { parent_id }}"#),
-          @r###"{"data":{"findManyChild":[{"parent_id":1}]}}"###
         );
 
         Ok(())

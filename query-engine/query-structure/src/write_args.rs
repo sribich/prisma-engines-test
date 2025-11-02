@@ -1,5 +1,5 @@
 use crate::{
-    CompositeFieldRef, Field, Filter, Model, ModelProjection, PrismaValue, ScalarFieldRef, SelectedField,
+    Field, Filter, Model, ModelProjection, PrismaValue, ScalarFieldRef, SelectedField,
     SelectionResult,
 };
 use indexmap::{IndexMap, map::Keys};
@@ -38,18 +38,11 @@ impl From<&ScalarFieldRef> for DatasourceFieldName {
     }
 }
 
-impl From<&CompositeFieldRef> for DatasourceFieldName {
-    fn from(cf: &CompositeFieldRef) -> Self {
-        DatasourceFieldName(cf.db_name().to_owned())
-    }
-}
-
 /// A WriteExpression allows to express more complex operations on how the data is written,
 /// like field or inter-field arithmetic.
 #[derive(Debug, PartialEq, Clone)]
 pub enum WriteOperation {
     Scalar(ScalarWriteOperation),
-    Composite(CompositeWriteOperation),
 }
 
 impl WriteOperation {
@@ -77,54 +70,12 @@ impl WriteOperation {
         Self::Scalar(ScalarWriteOperation::Divide(pv))
     }
 
-    pub fn composite_set(pv: PrismaValue) -> Self {
-        Self::Composite(CompositeWriteOperation::Set(pv))
-    }
-
-    pub fn composite_unset(should_unset: bool) -> Self {
-        Self::Composite(CompositeWriteOperation::Unset(should_unset))
-    }
-
-    pub fn composite_update(writes: Vec<(DatasourceFieldName, WriteOperation)>) -> Self {
-        Self::Composite(CompositeWriteOperation::Update(NestedWrite { writes }))
-    }
-
-    pub fn composite_push(pv: PrismaValue) -> Self {
-        Self::Composite(CompositeWriteOperation::Push(pv))
-    }
-
-    pub fn composite_upsert(set: CompositeWriteOperation, update: CompositeWriteOperation) -> Self {
-        Self::Composite(CompositeWriteOperation::Upsert {
-            set: Box::new(set),
-            update: Box::new(update),
-        })
-    }
-
-    pub fn composite_update_many(filter: Filter, update: CompositeWriteOperation) -> Self {
-        Self::Composite(CompositeWriteOperation::UpdateMany {
-            filter,
-            update: Box::new(update),
-        })
-    }
-
-    pub fn composite_delete_many(filter: Filter) -> Self {
-        Self::Composite(CompositeWriteOperation::DeleteMany { filter })
-    }
-
     pub fn as_scalar(&self) -> Option<&ScalarWriteOperation> {
         if let Self::Scalar(v) = self { Some(v) } else { None }
     }
 
-    pub fn as_composite(&self) -> Option<&CompositeWriteOperation> {
-        if let Self::Composite(v) = self { Some(v) } else { None }
-    }
-
     pub fn try_into_scalar(self) -> Option<ScalarWriteOperation> {
         if let Self::Scalar(v) = self { Some(v) } else { None }
-    }
-
-    pub fn try_into_composite(self) -> Option<CompositeWriteOperation> {
-        if let Self::Composite(v) = self { Some(v) } else { None }
     }
 }
 
@@ -150,30 +101,6 @@ pub enum ScalarWriteOperation {
 
     /// Divide field by value.
     Divide(PrismaValue),
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum CompositeWriteOperation {
-    Set(PrismaValue),
-    Push(PrismaValue),
-    Unset(bool),
-    Update(NestedWrite),
-    Upsert {
-        set: Box<CompositeWriteOperation>,
-        update: Box<CompositeWriteOperation>,
-    },
-    UpdateMany {
-        filter: Filter,
-        update: Box<CompositeWriteOperation>,
-    },
-    DeleteMany {
-        filter: Filter,
-    },
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct NestedWrite {
-    pub writes: Vec<(DatasourceFieldName, WriteOperation)>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -247,61 +174,9 @@ impl FieldPath {
     }
 }
 
-impl NestedWrite {
-    /// Unfolds nested writes into a flat list of `WriteOperation`s.
-    ///
-    /// Given the following `NestedWrite`:
-    /// ```text
-    /// Vec [(
-    ///       "field_a",
-    ///       WriteOperation::Composite(Update(Vec[("field_b", WriteOperation::Composite(Set("3")))]))
-    ///     )]
-    /// ```
-    /// `unfold` will roughly return:
-    /// ```text
-    /// Vec[(Set("3"), Field("field_b"), "field_a.field_b")]
-    /// ```
-    /// where:
-    ///  - `Set("3")` is the write operation to execute
-    ///  - `Field("field_b")` is the field on which to execute the write operation
-    /// - `"field_a.field_b"` is the path for MongoDB to access the nested field
-    pub fn unfold(self, field: &Field, field_path: FieldPath) -> Vec<(WriteOperation, Field, FieldPath)> {
-        self.unfold_internal(field.clone(), field_path)
-    }
-
-    fn unfold_internal(self, field: Field, field_path: FieldPath) -> Vec<(WriteOperation, Field, FieldPath)> {
-        let mut nested_writes: Vec<(WriteOperation, Field, FieldPath)> = vec![];
-
-        for (DatasourceFieldName(db_name), write) in self.writes {
-            let nested_ct = field.as_composite().unwrap().typ();
-            let nested_field = nested_ct.find_field_by_db_name(&db_name).unwrap();
-            let mut new_path = field_path.clone();
-
-            new_path.add_segment(&nested_field);
-
-            match write {
-                WriteOperation::Composite(CompositeWriteOperation::Update(nested_write)) => {
-                    nested_writes.extend(nested_write.unfold_internal(nested_field.clone(), new_path));
-                }
-                _ => {
-                    nested_writes.push((write, nested_field.clone(), new_path));
-                }
-            }
-        }
-
-        nested_writes
-    }
-}
-
 impl From<(&ScalarFieldRef, PrismaValue)> for WriteOperation {
     fn from((_, pv): (&ScalarFieldRef, PrismaValue)) -> Self {
         WriteOperation::scalar_set(pv)
-    }
-}
-
-impl From<(&CompositeFieldRef, PrismaValue)> for WriteOperation {
-    fn from((_, pv): (&CompositeFieldRef, PrismaValue)) -> Self {
-        WriteOperation::composite_set(pv)
     }
 }
 
@@ -309,7 +184,6 @@ impl From<(&SelectedField, PrismaValue)> for WriteOperation {
     fn from((selection, pv): (&SelectedField, PrismaValue)) -> Self {
         match selection {
             SelectedField::Scalar(sf) => (sf, pv).into(),
-            SelectedField::Composite(cs) => (&cs.field, pv).into(),
             SelectedField::Relation(_) => todo!(),
             SelectedField::Virtual(_) => todo!(),
         }
@@ -322,7 +196,6 @@ impl TryInto<PrismaValue> for WriteOperation {
     fn try_into(self) -> Result<PrismaValue, Self::Error> {
         match self {
             WriteOperation::Scalar(ScalarWriteOperation::Set(pv)) => Ok(pv),
-            WriteOperation::Composite(CompositeWriteOperation::Set(pv)) => Ok(pv),
             x => Err(UnexpectedWriteOperation(x)),
         }
     }

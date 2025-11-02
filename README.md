@@ -108,8 +108,6 @@ be executed:
 
 - as a binary, downloaded during installation, launched at runtime;
   communication happens via HTTP (`./query-engine/query-engine`)
-- as a native, platform-specific Node.js addon; also downloaded during
-  installation (`./query-engine/query-engine-node-api`)
 
 ### Usage
 
@@ -212,22 +210,14 @@ integration tests.
 
 To run unit tests for the whole workspace (except `quaint`, which requires
 additional steps), skipping the packages with heavy integration tests (you
-probably want to run them separately) as well as the `query-engine-node-api`
-package, use this command:
+probably want to run them separately), use this command:
 
 ```bash
 make test-unit
 ```
 
-> [!WARNING]
-> Running just `cargo test` for the whole workspace will not work because the
-> `query-engine-node-api` package can only be compiled as a library crate and
-> can't be linked into a test binary due to the dependency on external Node.js
-> symbols. Additionally, some crates require passing explicit cargo features to
-> enable database connectors.
->
 > If you really want to run *all* tests for the whole workspace, use
-> `cargo test --workspace --exclude=query-engine-node-api --all-features`.
+> `cargo test --workspace --all-features`.
 
 ### Set up & run query engine integration tests:
 
@@ -251,7 +241,6 @@ tests:
 - `make dev-mysql8`: MySQL 8
 - `make dev-postgres`: PostgreSQL 10
 - `make dev-sqlite`: SQLite
-- `make dev-mongodb_5`: MongoDB 5
 
 \*_On windows:_
 If not using WSL, `make` is not available and you should just see what your

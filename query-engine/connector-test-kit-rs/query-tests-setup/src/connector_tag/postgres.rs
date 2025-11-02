@@ -39,8 +39,6 @@ pub enum PostgresVersion {
     V15,
     V16,
     PgBouncer,
-    NeonJsWasm,
-    PgJsWasm,
 }
 
 impl TryFrom<&str> for PostgresVersion {
@@ -57,8 +55,6 @@ impl TryFrom<&str> for PostgresVersion {
             "15" => Self::V15,
             "16" => Self::V16,
             "pgbouncer" => Self::PgBouncer,
-            "pg.js.wasm" => Self::PgJsWasm,
-            "neon.js.wasm" => Self::NeonJsWasm,
             _ => return Err(TestError::parse_error(format!("Unknown Postgres version `{s}`"))),
         };
 
@@ -78,8 +74,6 @@ impl Display for PostgresVersion {
             PostgresVersion::V15 => f.write_str("15"),
             PostgresVersion::V16 => f.write_str("16"),
             PostgresVersion::PgBouncer => f.write_str("pgbouncer"),
-            PostgresVersion::PgJsWasm => f.write_str("pg.js.wasm"),
-            PostgresVersion::NeonJsWasm => f.write_str("pg.js.wasm"),
         }
     }
 }

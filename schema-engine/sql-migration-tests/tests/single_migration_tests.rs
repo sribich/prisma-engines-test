@@ -85,9 +85,6 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
     } else if tags.contains(Tags::Mysql) {
         let (_, connection_string) = tok(test_api_args.create_mysql_database());
         connection_string
-    } else if tags.contains(Tags::Mssql) {
-        let (_, connection_string) = tok(test_api_args.create_mssql_database());
-        connection_string
     } else if tags.contains(Tags::Sqlite) {
         test_setup::sqlite_test_url(test_api_args.test_function_name())
     } else {

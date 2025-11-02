@@ -6,7 +6,7 @@ mod spgist;
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::postgres::SqlIndexAlgorithm;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn hash_index(api: TestApi) {
     let dm = r#"
         model A {

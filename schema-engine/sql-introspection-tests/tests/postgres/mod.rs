@@ -10,7 +10,7 @@ use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn sequences_should_work(api: &mut TestApi) -> TestResult {
     let setup = r#"
         CREATE SEQUENCE "first_Sequence";
@@ -52,7 +52,7 @@ async fn sequences_should_work(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn dbgenerated_type_casts_should_work(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(move |migration| {
@@ -74,7 +74,7 @@ async fn dbgenerated_type_casts_should_work(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn pg_xml_indexes_are_skipped(api: &mut TestApi) -> TestResult {
     let create_table = format!(
         "CREATE TABLE \"{schema_name}\".xml_test (id SERIAL PRIMARY KEY, data XML)",
@@ -103,7 +103,7 @@ async fn pg_xml_indexes_are_skipped(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn scalar_list_defaults_work(api: &mut TestApi) -> TestResult {
     let schema = r#"
         CREATE TYPE "color" AS ENUM ('RED', 'GREEN', 'BLUE');
@@ -157,7 +157,7 @@ async fn scalar_list_defaults_work(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn index_sort_order_stopgap(api: &mut TestApi) -> TestResult {
     // https://www.notion.so/prismaio/Index-sort-order-Nulls-first-last-PostgreSQL-cf8265dff0f34dd195732735a4ce9648
 
@@ -248,7 +248,7 @@ async fn index_sort_order_stopgap(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn deferrable_stopgap(api: &mut TestApi) -> TestResult {
     // https://www.notion.so/prismaio/Indexes-Constraints-Deferred-unique-constraints-PostgreSQL-c302af689bb94a669d645a7aa91765ce
 
@@ -353,7 +353,7 @@ async fn deferrable_stopgap(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("views"))]
+#[test_connector(tags(Postgres), preview_features("views"))]
 async fn commenting_stopgap(api: &mut TestApi) -> TestResult {
     // https://www.notion.so/prismaio/Comments-ac89f872098e463183fd668a643f3ab8
 

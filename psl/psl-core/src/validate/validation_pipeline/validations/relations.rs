@@ -512,7 +512,6 @@ pub(super) fn referencing_scalar_field_types(relation: InlineRelationWalker<'_>,
 
     fn field_types_match(referencing: ScalarFieldType, referenced: ScalarFieldType) -> bool {
         match (referencing, referenced) {
-            (ScalarFieldType::CompositeType(a), ScalarFieldType::CompositeType(b)) if a == b => true,
             (ScalarFieldType::Enum(a), ScalarFieldType::Enum(b)) if a == b => true,
             (ScalarFieldType::BuiltInScalar(a), ScalarFieldType::BuiltInScalar(b)) if a == b => true,
             (ScalarFieldType::Unsupported(a), ScalarFieldType::Unsupported(b)) if a == b => true,

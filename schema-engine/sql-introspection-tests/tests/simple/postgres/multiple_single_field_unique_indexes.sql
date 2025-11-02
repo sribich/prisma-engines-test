@@ -1,5 +1,4 @@
 -- tags=postgres
--- exclude=cockroachdb
 
 CREATE TABLE mymodel (
     id UUID PRIMARY KEY,

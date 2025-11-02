@@ -6,7 +6,7 @@ use psl::{
     error_tolerant_parse_configuration,
     parser_database::{NoExtensionTypes, ParserDatabase},
     schema_ast::ast::{
-        AttributePosition, CompositeTypePosition, EnumPosition, Field, FieldId, FieldPosition, FieldType, ModelId,
+        AttributePosition, EnumPosition, Field, FieldId, FieldPosition, FieldType, ModelId,
         ModelPosition, SchemaPosition, SourcePosition, Top, WithAttributes, WithIdentifier, WithName, WithSpan,
     },
 };
@@ -73,21 +73,13 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
                 .chain(find_where_used_as_field_type(&ctx, name))
                 .collect()
         }
-        SchemaPosition::CompositeType(composite_id, CompositeTypePosition::Name(name)) => {
-            let ct = ctx.db.walk((ctx.initiating_file_id, composite_id));
-
-            std::iter::once(ct.ast_composite_type().identifier().span())
-                .chain(find_where_used_as_field_type(&ctx, name))
-                .collect()
-        }
         SchemaPosition::DataSource(_, SourcePosition::Name(name)) => find_where_used_as_ds_name(&ctx, name)
             .into_iter()
             .chain(find_where_used_for_native_type(&ctx, name))
             .collect(),
 
         // Fields
-        SchemaPosition::Model(_, ModelPosition::Field(_, FieldPosition::Type(r#type)))
-        | SchemaPosition::CompositeType(_, CompositeTypePosition::Field(_, FieldPosition::Type(r#type))) => {
+        SchemaPosition::Model(_, ModelPosition::Field(_, FieldPosition::Type(r#type))) => {
             find_where_used_as_top_name(&ctx, r#type)
                 .into_iter()
                 .chain(find_where_used_as_field_type(&ctx, r#type))
@@ -153,8 +145,7 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
         },
 
         // ? This might make more sense to add as a definition rather than a reference
-        SchemaPosition::Model(_, ModelPosition::Field(_, FieldPosition::Attribute(name, _, _)))
-        | SchemaPosition::CompositeType(_, CompositeTypePosition::Field(_, FieldPosition::Attribute(name, _, _))) => {
+        SchemaPosition::Model(_, ModelPosition::Field(_, FieldPosition::Attribute(name, _, _))) => {
             match ctx.datasource().map(|ds| &ds.name) {
                 Some(ds_name) if name.contains(ds_name) => find_where_used_as_ds_name(&ctx, ds_name)
                     .into_iter()
@@ -275,7 +266,6 @@ fn find_where_used_for_native_type<'ast>(
     }
 
     ctx.db.walk_tops().flat_map(move |top| match top.ast_top() {
-        Top::CompositeType(composite_type) => find_native_type_locations(name, composite_type.iter_fields()),
         Top::Model(model) => find_native_type_locations(name, model.iter_fields()),
 
         Top::Enum(_) | Top::Source(_) | Top::Generator(_) => Box::new(std::iter::empty()),
@@ -297,7 +287,6 @@ fn find_where_used_as_field_type<'ast>(
 
     ctx.db.walk_tops().flat_map(|top| match top.ast_top() {
         Top::Model(model) => get_relevent_identifiers(model.iter_fields(), name),
-        Top::CompositeType(composite_type) => get_relevent_identifiers(composite_type.iter_fields(), name),
         // * Cannot contain field types
         Top::Enum(_) | Top::Source(_) | Top::Generator(_) => vec![],
     })

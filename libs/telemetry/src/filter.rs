@@ -68,13 +68,11 @@ impl<'a> EnvFilterBuilder<'a> {
             .add_directive(format!("query_engine={level}").parse().unwrap())
             .add_directive(format!("query_core={level}").parse().unwrap())
             .add_directive(format!("query_connector={level}").parse().unwrap())
-            .add_directive(format!("sql_query_connector={level}").parse().unwrap())
-            .add_directive(format!("mongodb_query_connector={level}").parse().unwrap());
+            .add_directive(format!("sql_query_connector={level}").parse().unwrap());
 
         if self.log_queries {
             filter = filter
-                .add_directive("quaint[{is_query}]=trace".parse().unwrap())
-                .add_directive("mongodb_query_connector[{is_query}]=debug".parse().unwrap());
+                .add_directive("quaint[{is_query}]=trace".parse().unwrap());
         }
 
         filter

@@ -119,7 +119,6 @@ pub trait TransactionCapable: Queryable {
 
 #[cfg(any(
     feature = "sqlite-native",
-    feature = "mssql-native",
     feature = "postgresql-native",
     feature = "mysql-native"
 ))]
@@ -143,7 +142,6 @@ macro_rules! impl_default_TransactionCapable {
 
 #[cfg(any(
     feature = "sqlite-native",
-    feature = "mssql-native",
     feature = "postgresql-native",
     feature = "mysql-native"
 ))]

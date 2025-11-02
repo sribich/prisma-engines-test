@@ -129,43 +129,6 @@ fn absolute_sqlite_paths_are_not_modified() {
 }
 
 #[test]
-fn mongo_relative_tlscafile_can_be_modified() {
-    let schema = indoc!(
-        r#"
-        datasource boo {
-          provider = "mongodb"
-          url = "mongodb://localhost:420/?foo=bar&tlsCAFile=we%2Fare%2Fhere.key"
-        }"#
-    );
-
-    let config = parse_configuration(schema);
-    let url = config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
-
-    assert_eq!(
-        "mongodb://localhost:420/?foo=bar&tlsCAFile=%2Fpath%2Fto%2Fprisma%2Fwe%2Fare%2Fhere.key",
-        url.unwrap()
-    )
-}
-
-#[test]
-fn mongo_absolute_tlscafile_should_not_be_modified() {
-    let schema = indoc!(
-        r#"
-        datasource boo {
-          provider = "mongodb"
-          url = "mongodb://localhost:420/?foo=bar&tlsCAFile=%2Fwe%2Fare%2Fhere.key"
-        }"#
-    );
-
-    let config = parse_configuration(schema);
-    let url = config.datasources[0]
-        .load_url_with_config_dir(Path::new("/path/to/prisma"), from_env)
-        .unwrap();
-
-    assert_eq!("mongodb://localhost:420/?foo=bar&tlsCAFile=%2Fwe%2Fare%2Fhere.key", url)
-}
-
-#[test]
 fn postgres_relative_sslidentity_can_be_modified() {
     let schema = indoc!(
         r#"
@@ -322,63 +285,3 @@ fn mysql_absolute_sslcert_should_not_be_modified() {
     assert_eq!("mysql://localhost:420/?foo=bar&sslcert=%2Fwe%2Fare%2Fhere.crt", url)
 }
 
-#[test]
-fn sql_server_relative_ca_file_can_be_modified() {
-    let schema = indoc!(
-        r#"
-        datasource boo {
-          provider = "sqlserver"
-          url = "sqlserver://localhost:1433;trustServerCertificateCA=customCA.crt"
-        }"#
-    );
-
-    let config = parse_configuration(schema);
-    let url = config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
-
-    assert_eq!(
-        "sqlserver://localhost:1433;trustServerCertificateCA={/}path{/}to{/}prisma{/}customCA.crt",
-        url.unwrap()
-    )
-}
-
-#[test]
-fn sql_server_absolute_ca_file_should_not_be_modified() {
-    let schema = indoc!(
-        r#"
-        datasource boo {
-          provider = "sqlserver"
-          url = "sqlserver://localhost:1433;trustServerCertificateCA={/}foo{/}bar{/}customCA.crt"
-        }"#
-    );
-
-    let config = parse_configuration(schema);
-    let url = config.datasources[0]
-        .load_url_with_config_dir(Path::new("/path/to/prisma"), from_env)
-        .unwrap();
-
-    assert_eq!(
-        "sqlserver://localhost:1433;trustServerCertificateCA={/}foo{/}bar{/}customCA.crt",
-        url
-    )
-}
-
-#[test]
-fn sql_server_absolute_windows_ca_file_should_not_be_modified() {
-    let schema = indoc!(
-        r#"
-        datasource boo {
-          provider = "sqlserver"
-          url = "sqlserver://localhost:1433;trustServerCertificateCA=C:{\\\\}path{\\}customCA.crt"
-        }"#
-    );
-
-    let config = parse_configuration(schema);
-    let url = config.datasources[0]
-        .load_url_with_config_dir(Path::new("/path/to/prisma"), from_env)
-        .unwrap();
-
-    assert_eq!(
-        r"sqlserver://localhost:1433;trustServerCertificateCA=C:{\\}path{\}customCA.crt",
-        url
-    )
-}

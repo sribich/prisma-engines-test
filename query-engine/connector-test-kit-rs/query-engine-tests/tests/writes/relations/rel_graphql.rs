@@ -26,7 +26,7 @@ mod rel_graphql {
     }
 
     // "One2One relations" should "only allow one item per side"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn one2one_rel_allow_one_item_per_side(runner: Runner) -> TestResult<()> {
         create_row(&runner, "Cat", "garfield").await?;
         create_row(&runner, "Cat", "azrael").await?;

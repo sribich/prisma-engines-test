@@ -23,7 +23,6 @@ pub trait Transaction: Queryable {
 
 #[cfg(any(
     feature = "sqlite-native",
-    feature = "mssql-native",
     feature = "postgresql-native",
     feature = "mysql-native"
 ))]
@@ -37,7 +36,6 @@ pub(crate) struct TransactionOptions {
 
 #[cfg(any(
     feature = "sqlite-native",
-    feature = "mssql-native",
     feature = "postgresql-native",
     feature = "mysql-native"
 ))]
@@ -63,7 +61,6 @@ pub struct DefaultTransaction<'a> {
 #[cfg_attr(
     not(any(
         feature = "sqlite-native",
-        feature = "mssql-native",
         feature = "postgresql-native",
         feature = "mysql-native"
     )),
@@ -72,7 +69,6 @@ pub struct DefaultTransaction<'a> {
 impl<'a> DefaultTransaction<'a> {
     #[cfg(any(
         feature = "sqlite-native",
-        feature = "mssql-native",
         feature = "postgresql-native",
         feature = "mysql-native"
     ))]

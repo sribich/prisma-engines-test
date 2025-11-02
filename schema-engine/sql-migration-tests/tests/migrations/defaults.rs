@@ -15,14 +15,8 @@ fn datetime_defaults_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm).send().assert_green();
 
-    let expected_default = if api.is_cockroach() {
-        DefaultValue::db_generated("'2018-01-27 08:00:00'::TIMESTAMP")
-    } else if api.is_postgres() {
+    let expected_default = if api.is_postgres() {
         DefaultValue::db_generated("'2018-01-27 08:00:00'::timestamp without time zone")
-    } else if api.is_mssql() {
-        let mut df = DefaultValue::db_generated("2018-01-27 08:00:00 +00:00");
-        df.set_constraint_name("Cat_birthday_df");
-        df
     } else if api.is_mysql_mariadb() {
         DefaultValue::db_generated("'2018-01-27T08:00:00+00:00'")
     } else if api.is_mysql_8() || api.is_mysql_5_6() {
@@ -136,7 +130,7 @@ fn function_expressions_as_dbgenerated_work(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn default_dbgenerated_with_type_definitions_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -153,24 +147,7 @@ fn default_dbgenerated_with_type_definitions_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(tags(CockroachDb))]
-fn default_dbgenerated_with_type_definitions_should_work_cockroach(api: TestApi) {
-    let dm = r#"
-        model A {
-            id String @id @default(dbgenerated("(now()::text)"))
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("id", |col| {
-            col.assert_default(Some(DefaultValue::db_generated("now()::STRING")))
-        })
-    });
-}
-
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn default_dbgenerated_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -187,22 +164,7 @@ fn default_dbgenerated_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(tags(CockroachDb))]
-fn default_dbgenerated_should_work_cockroach(api: TestApi) {
-    let dm = r#"
-        model A {
-            id DateTime @id @default(dbgenerated("(now())"))
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("id", |col| col.assert_default(Some(DefaultValue::now())))
-    });
-}
-
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn uuid_default(api: TestApi) {
     let dm = r#"
         model A {
@@ -217,26 +179,6 @@ fn uuid_default(api: TestApi) {
         table.assert_column("uuid", |col| {
             col.assert_default(Some(DefaultValue::db_generated(
                 "'00000000-0000-0000-0016-000000000004'::uuid",
-            )))
-        })
-    });
-}
-
-#[test_connector(tags(CockroachDb))]
-fn uuid_default_cockroach(api: TestApi) {
-    let dm = r#"
-        model A {
-            id   String @id @db.Uuid
-            uuid String @db.Uuid @default("00000000-0000-0000-0016-000000000004")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("uuid", |col| {
-            col.assert_default(Some(DefaultValue::db_generated(
-                "'00000000-0000-0000-0016-000000000004'::UUID",
             )))
         })
     });
@@ -377,83 +319,6 @@ fn column_defaults_must_be_migrated(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Mssql))]
-fn default_constraint_names_should_work(api: TestApi) {
-    let dm = r#"
-        generator js {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Int @id @default(autoincrement())
-            data String @default("beeb buub", map: "meow")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("data", |col| {
-            let mut expected = DefaultValue::value("beeb buub");
-            expected.set_constraint_name("meow");
-
-            col.assert_default(Some(expected))
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn default_constraint_name_default_values_should_work(api: TestApi) {
-    let dm = r#"
-        generator js {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Int @id @default(autoincrement())
-            data String @default("beeb buub")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("A", |table| {
-        table.assert_column("data", |col| {
-            let mut expected = DefaultValue::value("beeb buub");
-            expected.set_constraint_name("A_data_df");
-
-            col.assert_default(Some(expected))
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn default_constraint_name_default_values_with_mapping_should_work(api: TestApi) {
-    let dm = r#"
-        generator js {
-            provider = "prisma-client"
-        }
-
-        model A {
-            id Int @id @default(autoincrement())
-            data String @default("beeb buub") @map("purr")
-
-            @@map("meow")
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("meow", |table| {
-        table.assert_column("purr", |col| {
-            let mut expected = DefaultValue::value("beeb buub");
-            expected.set_constraint_name("meow_purr_df");
-
-            col.assert_default(Some(expected))
-        })
-    });
-}
-
 #[test_connector]
 fn escaped_string_defaults_are_not_arbitrarily_migrated(api: TestApi) {
     use quaint::ast::Insert;
@@ -490,70 +355,31 @@ fn escaped_string_defaults_are_not_arbitrarily_migrated(api: TestApi) {
     let sql_schema = api.assert_schema().into_schema();
     let table_id = sql_schema.table_walker(&api.normalize_identifier("Fruit")).unwrap().id;
 
-    if api.is_mssql() {
-        let default = sql_schema
+    assert_eq!(
+        sql_schema
             .walk(table_id)
             .column("sideNames")
             .unwrap()
             .default()
-            .unwrap();
-        assert_eq!(DefaultValue::value("top\ndown").kind(), default.kind());
-        assert!(
-            default
-                .constraint_name()
-                .map(|cn| cn.starts_with("Fruit_sideNames_df"))
-                .unwrap()
-        );
-
-        let default = sql_schema.walk(table_id).column("contains").unwrap().default().unwrap();
-        assert_eq!(DefaultValue::value("'potassium'").kind(), default.kind());
-        assert!(
-            default
-                .constraint_name()
-                .map(|cn| cn.starts_with("Fruit_contains_df"))
-                .unwrap()
-        );
-
-        let default = sql_schema
+            .map(|d| d.inner()),
+        Some(&DefaultValue::value(PrismaValue::String("top\ndown".to_string())))
+    );
+    assert_eq!(
+        sql_schema
+            .walk(table_id)
+            .column("contains")
+            .unwrap()
+            .default()
+            .map(|d| d.inner()),
+        Some(&DefaultValue::value(PrismaValue::String("'potassium'".to_string())))
+    );
+    assert_eq!(
+        sql_schema
             .walk(table_id)
             .column("seasonality")
             .unwrap()
             .default()
-            .unwrap();
-        assert_eq!(DefaultValue::value(r#""summer""#).kind(), default.kind());
-        assert!(
-            default
-                .constraint_name()
-                .map(|cn| cn.starts_with("Fruit_seasonality_df"))
-                .unwrap()
-        );
-    } else {
-        assert_eq!(
-            sql_schema
-                .walk(table_id)
-                .column("sideNames")
-                .unwrap()
-                .default()
-                .map(|d| d.inner()),
-            Some(&DefaultValue::value(PrismaValue::String("top\ndown".to_string())))
-        );
-        assert_eq!(
-            sql_schema
-                .walk(table_id)
-                .column("contains")
-                .unwrap()
-                .default()
-                .map(|d| d.inner()),
-            Some(&DefaultValue::value(PrismaValue::String("'potassium'".to_string())))
-        );
-        assert_eq!(
-            sql_schema
-                .walk(table_id)
-                .column("seasonality")
-                .unwrap()
-                .default()
-                .map(|d| d.inner()),
-            Some(&DefaultValue::value(PrismaValue::String(r#""summer""#.to_string())))
-        );
-    }
+            .map(|d| d.inner()),
+        Some(&DefaultValue::value(PrismaValue::String(r#""summer""#.to_string())))
+    );
 }

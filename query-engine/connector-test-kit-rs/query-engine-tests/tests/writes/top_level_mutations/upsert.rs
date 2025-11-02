@@ -438,7 +438,7 @@ mod upsert {
     }
 
     // "An upsert mutation" should "correctly apply all number operations for Int"
-    #[connector_test(schema(schema_number), exclude(CockroachDb))]
+    #[connector_test(schema(schema_number))]
     async fn upsert_apply_number_ops_for_int(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1 }"#).await?;
         create_row(&runner, r#"{ id: 2, optInt: 3}"#).await?;
@@ -506,137 +506,9 @@ mod upsert {
         Ok(())
     }
 
-    // CockroachDB does not support the "divide" operator as is.
-    // See https://github.com/cockroachdb/cockroach/issues/41448.
-    #[connector_test(schema(schema_number), only(CockroachDb))]
-    async fn upsert_apply_number_ops_for_int_cockroach(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1 }"#).await?;
-        create_row(&runner, r#"{ id: 2, optInt: 3}"#).await?;
-
-        // Increment
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optInt", "increment", "10").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optInt", "increment", "10").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":13}}}"###
-        );
-
-        // Decrement
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optInt", "decrement", "10").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optInt", "decrement", "10").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":3}}}"###
-        );
-
-        // Multiply
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optInt", "multiply", "2").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optInt", "multiply", "2").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":6}}}"###
-        );
-
-        // Set
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optInt", "set", "5").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":5}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optInt", "set", "5").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":5}}}"###
-        );
-
-        // Set null
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optInt", "set", "null").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optInt", "set", "null").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optInt":null}}}"###
-        );
-
-        Ok(())
-    }
-
     // "An upsert mutation" should "correctly apply all number operations for Float"
-    #[connector_test(schema(schema_number), exclude(MongoDb))]
+    #[connector_test(schema(schema_number))]
     async fn upsert_apply_number_ops_for_float(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1 }"#).await?;
-        create_row(&runner, r#"{ id: 2, optFloat: 5.5}"#).await?;
-
-        // Increment
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optFloat", "increment", "4.6").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optFloat", "increment", "4.6").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":10.1}}}"###
-        );
-
-        // Decrement
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optFloat", "decrement", "4.6").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optFloat", "decrement", "4.6").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":5.5}}}"###
-        );
-
-        // Multiply
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optFloat", "multiply", "2").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optFloat", "multiply", "2").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":11}}}"###
-        );
-
-        // Divide
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optFloat", "divide", "2").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optFloat", "divide", "2").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":5.5}}}"###
-        );
-
-        // Set
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optFloat", "set", "5.1").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":5.1}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optFloat", "set", "5.1").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":5.1}}}"###
-        );
-
-        // Set null
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "1", "optFloat", "set", "null").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":null}}}"###
-        );
-        insta::assert_snapshot!(
-          query_number_operation(&runner, "2", "optFloat", "set", "null").await?,
-          @r###"{"data":{"upsertOneTestModel":{"optFloat":null}}}"###
-        );
-
-        Ok(())
-    }
-
-    #[connector_test(schema(schema_number), only(MongoDb))]
-    async fn upsert_apply_number_ops_for_float_mongo(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1 }"#).await?;
         create_row(&runner, r#"{ id: 2, optFloat: 5.5}"#).await?;
 

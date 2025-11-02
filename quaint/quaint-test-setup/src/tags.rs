@@ -6,10 +6,9 @@ bitflags! {
     pub struct Tags: u8 {
         const POSTGRES      = 0b00000001;
         const SQLITE        = 0b00000010;
-        const MSSQL         = 0b00000100;
-        const MYSQL5_7      = 0b00001000;
-        const MYSQL8        = 0b00010000;
-        const MYSQL_MARIADB = 0b00100000;
+        const MYSQL5_7      = 0b00000100;
+        const MYSQL8        = 0b00001000;
+        const MYSQL_MARIADB = 0b00010000;
     }
 }
 
@@ -40,9 +39,8 @@ impl FromStr for Tags {
 }
 
 /// All the tags, sorted by name.
-fn tag_names<'a>() -> [(&'a str, Tags); 7] {
+fn tag_names<'a>() -> [(&'a str, Tags); 6] {
     [
-        ("mssql", Tags::MSSQL),
         ("mysql", Tags::MYSQL5_7 | Tags::MYSQL8 | Tags::MYSQL_MARIADB),
         ("mysql5_7", Tags::MYSQL5_7),
         ("mysql8", Tags::MYSQL8),

@@ -2,7 +2,7 @@
 use indoc::indoc;
 use query_engine_tests::*;
 
-#[test_suite(suite = "setdefault_onU_1to1_req", exclude(MongoDb, MySQL, Vitess))]
+#[test_suite(suite = "setdefault_onU_1to1_req", exclude(MySQL, Vitess))]
 mod one2one_req {
     fn required_with_default() -> String {
         let schema = indoc! {
@@ -86,8 +86,8 @@ mod one2one_req {
     }
 
     /// Updating the parent with no default for SetDefault fails.
-    /// Only postgres (except CockroachDB) allows setting no default for a SetDefault FK.
-    #[connector_test(schema(required_without_default), only(Postgres), exclude(CockroachDb))]
+    /// Only postgres allows setting no default for a SetDefault FK.
+    #[connector_test(schema(required_without_default), only(Postgres))]
     async fn update_parent_fail(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation { createOneParent(data: { id: 1, uniq: "1", child: { create: { id: 1 }}}) { id }}"#),
@@ -105,7 +105,7 @@ mod one2one_req {
     }
 }
 
-#[test_suite(suite = "setdefault_onU_1to1_opt", exclude(MongoDb, MySQL, Vitess))]
+#[test_suite(suite = "setdefault_onU_1to1_opt", exclude(MySQL, Vitess))]
 mod one2one_opt {
     fn optional_with_default() -> String {
         let schema = indoc! {
@@ -210,7 +210,7 @@ mod one2one_opt {
     }
 }
 
-#[test_suite(suite = "setdefault_onU_1toM_req", exclude(MongoDb, MySQL, Vitess))]
+#[test_suite(suite = "setdefault_onU_1toM_req", exclude(MySQL, Vitess))]
 mod one2many_req {
     fn required_with_default() -> String {
         let schema = indoc! {
@@ -294,8 +294,8 @@ mod one2many_req {
     }
 
     /// Updating the parent with no default for SetDefault fails.
-    /// Only postgres (except CockroachDB) allows setting no default for a SetDefault FK.
-    #[connector_test(schema(required_without_default), only(Postgres), exclude(CockroachDb))]
+    /// Only postgresallows setting no default for a SetDefault FK.
+    #[connector_test(schema(required_without_default), only(Postgres))]
     async fn update_parent_fail(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation { createOneParent(data: { id: 1, uniq: "1", children: { create: { id: 1 }}}) { id }}"#),
@@ -313,7 +313,7 @@ mod one2many_req {
     }
 }
 
-#[test_suite(suite = "setdefault_onU_1toM_opt", exclude(MongoDb, MySQL, Vitess))]
+#[test_suite(suite = "setdefault_onU_1toM_opt", exclude(MySQL, Vitess))]
 mod one2many_opt {
     fn optional_with_default() -> String {
         let schema = indoc! {

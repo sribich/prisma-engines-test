@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(exclude(CockroachDb))]
+#[test_suite]
 mod set_inside_update {
     use query_engine_tests::{DatamodelWithParams, run_query, run_query_json};
     use query_test_macros::relation_link_test;

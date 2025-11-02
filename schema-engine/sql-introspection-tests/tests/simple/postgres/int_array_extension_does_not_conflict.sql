@@ -1,5 +1,4 @@
 -- tags=postgres
--- exclude=cockroachdb
 
 -- Test repro for https://github.com/prisma/prisma/issues/14389
 

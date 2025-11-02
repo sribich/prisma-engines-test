@@ -1,12 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg(target_arch = "wasm32")]
-use tsify::Tsify;
-
 // ---- Common type definitions ----
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[serde(tag = "tag", content = "value", rename_all = "camelCase")]
 pub enum JsResult<R, E> {
     Ok(R),

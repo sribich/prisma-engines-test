@@ -110,11 +110,6 @@ impl<'db> ScalarFieldWalker<'db> {
         self.scalar_field_type().as_enum().map(|id| self.db.walk(id))
     }
 
-    /// Is this field's type a composite type? If yes, walk the composite type.
-    pub fn field_type_as_composite_type(self) -> Option<CompositeTypeWalker<'db>> {
-        self.scalar_field_type().as_composite_type().map(|id| self.db.walk(id))
-    }
-
     /// Is this field's type an extension type? If yes, return its ID.
     pub fn field_type_as_extension_type(self) -> Option<ExtensionTypeId> {
         self.scalar_field_type().as_extension_type()
@@ -354,10 +349,7 @@ impl<'db> ScalarFieldAttributeWalker<'db> {
     /// }
     /// ```
     pub fn as_index_field(self) -> IndexFieldWalker<'db> {
-        match self.args().path.field_in_index() {
-            Either::Left(id) => IndexFieldWalker::new(self.db.walk(id)),
-            Either::Right(ctid) => IndexFieldWalker::new(self.db.walk(ctid)),
-        }
+        IndexFieldWalker::new(self.db.walk(self.args().path.field_in_index()))
     }
 
     /// Gives the full path from the current model to the field included in the index.
@@ -394,16 +386,8 @@ impl<'db> ScalarFieldAttributeWalker<'db> {
     pub fn as_path_to_indexed_field(self) -> Vec<(&'db str, Option<&'db str>)> {
         let path = &self.args().path;
         let root_name = self.db.walk(path.root()).name();
-        let mut result = vec![(root_name, None)];
 
-        for (ctid, field_id) in path.path() {
-            let ct = &self.db.asts[*ctid];
-            let field = ct[*field_id].name();
-
-            result.push((field, Some(ct.name())));
-        }
-
-        result
+        vec![(root_name, None)]
     }
 
     /// Similar to the method [`as_path_to_indexed_field`], but prefers the
@@ -420,20 +404,7 @@ impl<'db> ScalarFieldAttributeWalker<'db> {
                 .unwrap_or_else(|| self.db.walk(path.root()).name())
         };
 
-        let mut result = vec![(root, None)];
-
-        for (ctid, field_id) in path.path() {
-            let ct = &self.db.asts[*ctid];
-
-            let field = &self.db.types.composite_type_fields[&(*ctid, *field_id)]
-                .mapped_name
-                .and_then(|id| self.db.interner.get(id))
-                .unwrap_or_else(|| ct[*field_id].name());
-
-            result.push((field, Some(ct.name())));
-        }
-
-        result
+        vec![(root, None)]
     }
 
     /// The sort order (asc or desc) on the field.

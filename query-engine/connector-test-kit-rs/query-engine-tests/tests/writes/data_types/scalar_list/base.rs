@@ -58,8 +58,7 @@ mod basic_types {
     }
 
     // "Scalar lists" should "be behave like regular values for create and update operations"
-    // Skipped for CockroachDB as enum array concatenation is not supported (https://github.com/cockroachdb/cockroach/issues/71388).
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn behave_like_regular_val_for_create_and_update(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, format!(r#"mutation {{
@@ -252,8 +251,7 @@ mod basic_types {
         Ok(())
     }
 
-    // Skipped for CockroachDB as enum array concatenation is not supported (https://github.com/cockroachdb/cockroach/issues/71388).
-    #[connector_test(exclude(CockroachDb))]
+    #[connector_test]
     async fn update_mut_push_empty_enum_array(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1 }"#).await?;
         create_row(&runner, r#"{ id: 2 }"#).await?;
@@ -328,22 +326,6 @@ mod basic_types {
             }
           }"#),
           @r###"{"data":{"updateOneScalarModel":{"strings":["present","future"],"ints":[14,15],"floats":[1,2],"booleans":[false,true],"dateTimes":["2019-07-31T23:59:01.000Z","2019-07-31T23:59:02.000Z"],"bytes":["dGVzdA==","dGVzdA=="]}}}"###
-        );
-
-        Ok(())
-    }
-
-    // Test that Cockroach will not work with enum push
-    #[connector_test(only(CockroachDb))]
-    async fn cockroachdb_doesnot_support_enum_push(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1 }"#).await?;
-        create_row(&runner, r#"{ id: 2 }"#).await?;
-
-        assert_error!(
-            &runner,
-            r#"mutation { updateOneScalarModel(where: { id: 1 }, data: { enums: { push: A }}) { id }}"#,
-            2009,
-            "Unable to match input value to any allowed input type for the field"
         );
 
         Ok(())

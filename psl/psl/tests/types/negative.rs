@@ -210,39 +210,3 @@ fn should_fail_on_native_type_in_unsupported_mysql() {
 
     expect_error(dml, &expected);
 }
-
-#[test]
-fn should_fail_on_native_type_in_unsupported_sqlserver() {
-    let dml = indoc! {r#"
-        datasource pg {
-          provider = "sqlserver"
-          url = "sqlserver://"
-        }
-
-        model Blog {
-          id      Int                 @id
-          text    Unsupported("Text")
-          decimal Unsupported("Real")
-          TEXT    Unsupported("TEXT")
-        }
-    "#};
-
-    let expected = expect![[r#"
-        [1;91merror[0m: [1mError validating: The type `Unsupported("Text")` you specified in the type definition for the field `text` is supported as a native type by Prisma. Please use the native type notation `String @pg.Text` for full support.[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
-        [1;94m   | [0m
-        [1;94m 7 | [0m  id      Int                 @id
-        [1;94m 8 | [0m  [1;91mtext    Unsupported("Text")[0m
-        [1;94m 9 | [0m  decimal Unsupported("Real")
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError validating: The type `Unsupported("Real")` you specified in the type definition for the field `decimal` is supported as a native type by Prisma. Please use the native type notation `Float @pg.Real` for full support.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
-        [1;94m   | [0m
-        [1;94m 8 | [0m  text    Unsupported("Text")
-        [1;94m 9 | [0m  [1;91mdecimal Unsupported("Real")[0m
-        [1;94m10 | [0m  TEXT    Unsupported("TEXT")
-        [1;94m   | [0m
-    "#]];
-
-    expect_error(dml, &expected);
-}

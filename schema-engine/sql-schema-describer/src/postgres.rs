@@ -13,7 +13,7 @@ use enumflags2::BitFlags;
 use indexmap::IndexMap;
 use indoc::indoc;
 use psl::{
-    builtin_connectors::{CockroachType, KnownPostgresType, PostgresType},
+    builtin_connectors::{KnownPostgresType, PostgresType},
     datamodel_connector::NativeTypeInstance,
 };
 use quaint::{Value, connector::ResultRow, prelude::Queryable};
@@ -106,8 +106,6 @@ impl fmt::Display for SqlIndexAlgorithm {
 #[derive(Clone, Copy, Debug)]
 #[repr(u8)]
 pub enum Circumstances {
-    Cockroach,
-    CockroachWithPostgresNativeTypes, // TODO: this is a temporary workaround
     CanPartitionTables,
 }
 
@@ -573,16 +571,7 @@ impl<'a> SqlSchemaDescriber<'a> {
         SqlSchemaDescriber { conn, circumstances }
     }
 
-    fn is_cockroach(&self) -> bool {
-        self.circumstances.contains(Circumstances::Cockroach)
-    }
-
     async fn get_extensions(&self, pg_ext: &mut PostgresSchemaExt) -> DescriberResult<()> {
-        // CockroachDB does not support extensions.
-        if self.is_cockroach() {
-            return Ok(());
-        }
-
         let sql = indoc! {r#"
             SELECT
                 ext.extname AS extension_name,
@@ -613,10 +602,6 @@ impl<'a> SqlSchemaDescriber<'a> {
 
     async fn get_procedures(&self, sql_schema: &mut SqlSchema) -> DescriberResult<()> {
         let namespaces = &sql_schema.namespaces;
-
-        if self.is_cockroach() {
-            return Ok(());
-        }
 
         let sql = r#"
             SELECT p.proname AS name, n.nspname as namespace,
@@ -783,11 +768,7 @@ impl<'a> SqlSchemaDescriber<'a> {
         let mut table_defaults = Vec::new();
         let mut view_defaults = Vec::new();
 
-        let is_visible_clause = if self.is_cockroach() {
-            " AND info.is_hidden = 'NO'"
-        } else {
-            ""
-        };
+        let is_visible_clause = "";
 
         let sql = format!(
             r#"
@@ -849,15 +830,7 @@ impl<'a> SqlSchemaDescriber<'a> {
                 None => false,
             };
 
-            let tpe = if self.is_cockroach()
-                && !self
-                    .circumstances
-                    .contains(Circumstances::CockroachWithPostgresNativeTypes)
-            {
-                get_column_type_cockroachdb(&col, sql_schema)
-            } else {
-                get_column_type_postgresql(&col, sql_schema)
-            };
+            let tpe = get_column_type_postgresql(&col, sql_schema);
 
             let default = col
                 .get("column_default")
@@ -867,12 +840,7 @@ impl<'a> SqlSchemaDescriber<'a> {
             let description = col.get_string("description");
 
             let auto_increment = is_identity
-                || matches!(default.as_ref().map(|d| &d.kind), Some(DefaultKind::Sequence(_)))
-                || (self.is_cockroach()
-                    && matches!(
-                        default.as_ref().map(|d| &d.kind),
-                        Some(DefaultKind::DbGenerated(Some(s))) if s == "unique_rowid()"
-                    ));
+                || matches!(default.as_ref().map(|d| &d.kind), Some(DefaultKind::Sequence(_)));
 
             match container_id {
                 Either::Left(table_id) => {
@@ -1265,23 +1233,7 @@ impl<'a> SqlSchemaDescriber<'a> {
         let namespaces = &sql_schema.namespaces;
         // On postgres 9, pg_sequences does not exist, and the information schema view does not
         // contain the cache size.
-        let sql = if self.is_cockroach() {
-            r#"
-              SELECT
-                  sequencename AS sequence_name,
-                  schemaname AS namespace,
-                  start_value,
-                  min_value,
-                  max_value,
-                  increment_by,
-                  cycle,
-                  cache_size
-              FROM pg_sequences
-              WHERE schemaname = ANY ( $1 )
-              ORDER BY sequence_name
-            "#
-        } else {
-            r#"
+        let sql = r#"
               SELECT
                   sequence_name,
                   sequence_schema AS namespace,
@@ -1294,8 +1246,7 @@ impl<'a> SqlSchemaDescriber<'a> {
               FROM information_schema.sequences
               WHERE sequence_schema = ANY ( $1 )
               ORDER BY sequence_name
-            "#
-        };
+            "#;
 
         let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
         let sequences = rows.into_iter().map(|seq| Sequence {
@@ -1439,23 +1390,16 @@ fn index_from_row(
             misc => panic!("Unexpected sort order `{misc}`, collation should be ASC, DESC or Null"),
         });
 
-        let algorithm = if circumstances.contains(Circumstances::Cockroach) {
-            match index_algo.as_str() {
-                "inverted" => SqlIndexAlgorithm::Gin,
-                _ => SqlIndexAlgorithm::BTree,
-            }
-        } else {
-            match index_algo.as_str() {
-                "btree" => SqlIndexAlgorithm::BTree,
-                "hash" => SqlIndexAlgorithm::Hash,
-                "gist" => SqlIndexAlgorithm::Gist,
-                "gin" => SqlIndexAlgorithm::Gin,
-                "spgist" => SqlIndexAlgorithm::SpGist,
-                "brin" => SqlIndexAlgorithm::Brin,
-                other => {
-                    tracing::warn!("Unknown index algorithm on {index_name}: {other}");
-                    SqlIndexAlgorithm::BTree
-                }
+        let algorithm = match index_algo.as_str() {
+            "btree" => SqlIndexAlgorithm::BTree,
+            "hash" => SqlIndexAlgorithm::Hash,
+            "gist" => SqlIndexAlgorithm::Gist,
+            "gin" => SqlIndexAlgorithm::Gin,
+            "spgist" => SqlIndexAlgorithm::SpGist,
+            "brin" => SqlIndexAlgorithm::Brin,
+            other => {
+                tracing::warn!("Unknown index algorithm on {index_name}: {other}");
+                SqlIndexAlgorithm::BTree
             }
         };
 
@@ -1511,7 +1455,7 @@ fn index_from_row(
         pg_ext.indexes.push((index_id, algorithm));
 
         // only enable nulls first/last on Postgres
-        if !circumstances.contains(Circumstances::Cockroach) && algorithm == SqlIndexAlgorithm::BTree && !is_primary_key
+        if algorithm == SqlIndexAlgorithm::BTree && !is_primary_key
         {
             let nulls_first = row.get_expect_bool("nulls_first");
 
@@ -1659,91 +1603,3 @@ fn get_udt_column_type_family(
     }
 }
 
-// Separate from get_column_type_postgresql because of native types.
-fn get_column_type_cockroachdb(row: &ResultRow, schema: &SqlSchema) -> ColumnType {
-    use ColumnTypeFamily::*;
-    let data_type = row.get_expect_string("data_type");
-    let full_data_type = row.get_expect_string("full_data_type");
-    let is_required = match row.get_expect_string("is_nullable").to_lowercase().as_ref() {
-        "no" => true,
-        "yes" => false,
-        x => panic!("unrecognized is_nullable variant '{x}'"),
-    };
-
-    let arity = match matches!(data_type.as_str(), "ARRAY") {
-        true => ColumnArity::List,
-        false if is_required => ColumnArity::Required,
-        false => ColumnArity::Nullable,
-    };
-
-    let precision = SqlSchemaDescriber::get_precision(row);
-    let unsupported_type = || (Unsupported(full_data_type.clone()), None);
-    let enum_id: Option<_> = match data_type.as_str() {
-        "ARRAY" if full_data_type.starts_with('_') => {
-            let namespace = row.get_string("type_schema_name");
-            schema.find_enum(&full_data_type[1..], namespace.as_deref())
-        }
-        _ => {
-            let namespace = row.get_string("type_schema_name");
-            schema.find_enum(&full_data_type, namespace.as_deref())
-        }
-    };
-
-    let (family, native_type) = match full_data_type.as_str() {
-        _ if data_type == "USER-DEFINED" || data_type == "ARRAY" && enum_id.is_some() => (Enum(enum_id.unwrap()), None),
-        "int2" | "_int2" => (Int, Some(CockroachType::Int2)),
-        "int4" | "_int4" => (Int, Some(CockroachType::Int4)),
-        "int8" | "_int8" => (BigInt, Some(CockroachType::Int8)),
-        "float4" | "_float4" => (Float, Some(CockroachType::Float4)),
-        "float8" | "_float8" => (Float, Some(CockroachType::Float8)),
-        "bool" | "_bool" => (Boolean, Some(CockroachType::Bool)),
-        "text" | "_text" => (String, Some(CockroachType::String(precision.character_maximum_length))),
-        "varchar" | "_varchar" => (String, Some(CockroachType::String(precision.character_maximum_length))),
-        "bpchar" | "_bpchar" => (String, Some(CockroachType::Char(precision.character_maximum_length))),
-        // https://www.cockroachlabs.com/docs/stable/string.html
-        "char" | "_char" if data_type == "\"char\"" => (String, Some(CockroachType::CatalogSingleChar)),
-        "char" | "_char" => (String, Some(CockroachType::Char(precision.character_maximum_length))),
-        "date" | "_date" => (DateTime, Some(CockroachType::Date)),
-        "bytea" | "_bytea" => (Binary, Some(CockroachType::Bytes)),
-        "jsonb" | "_jsonb" => (Json, Some(CockroachType::JsonB)),
-        "uuid" | "_uuid" => (Uuid, Some(CockroachType::Uuid)),
-        // bit and varbit should be binary, but are currently mapped to strings.
-        "bit" | "_bit" => (String, Some(CockroachType::Bit(precision.character_maximum_length))),
-        "varbit" | "_varbit" => (String, Some(CockroachType::VarBit(precision.character_maximum_length))),
-        "numeric" | "_numeric" => (
-            Decimal,
-            Some(CockroachType::Decimal(
-                match (precision.numeric_precision, precision.numeric_scale) {
-                    (None, None) => None,
-                    (Some(prec), Some(scale)) => Some((prec, scale)),
-                    _ => None,
-                },
-            )),
-        ),
-        "pg_lsn" | "_pg_lsn" => unsupported_type(),
-        "oid" | "_oid" => (Int, Some(CockroachType::Oid)),
-        "time" | "_time" => (DateTime, Some(CockroachType::Time(precision.time_precision))),
-        "timetz" | "_timetz" => (DateTime, Some(CockroachType::Timetz(precision.time_precision))),
-        "timestamp" | "_timestamp" => (DateTime, Some(CockroachType::Timestamp(precision.time_precision))),
-        "timestamptz" | "_timestamptz" => (DateTime, Some(CockroachType::Timestamptz(precision.time_precision))),
-        "tsquery" | "_tsquery" => unsupported_type(),
-        "tsvector" | "_tsvector" => unsupported_type(),
-        "txid_snapshot" | "_txid_snapshot" => unsupported_type(),
-        "inet" | "_inet" => (String, Some(CockroachType::Inet)),
-        //geometric
-        "box" | "_box" => unsupported_type(),
-        "circle" | "_circle" => unsupported_type(),
-        "line" | "_line" => unsupported_type(),
-        "lseg" | "_lseg" => unsupported_type(),
-        "path" | "_path" => unsupported_type(),
-        "polygon" | "_polygon" => unsupported_type(),
-        _ => enum_id.map(|id| (Enum(id), None)).unwrap_or_else(unsupported_type),
-    };
-
-    ColumnType {
-        full_data_type,
-        family,
-        arity,
-        native_type: native_type.map(NativeTypeInstance::new::<CockroachType>),
-    }
-}

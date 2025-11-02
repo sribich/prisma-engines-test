@@ -29,7 +29,6 @@ impl From<&FieldSelection> for ModelProjection {
                 .selections()
                 .filter_map(|selected| match selected {
                     SelectedField::Scalar(sf) => Some(sf.clone().into()),
-                    SelectedField::Composite(_cf) => None,
                     SelectedField::Relation(_) => None,
                     SelectedField::Virtual(_) => None,
                 })
@@ -86,7 +85,6 @@ impl ModelProjection {
                 }
                 Field::Scalar(sf) => vec![sf.clone()],
                 Field::Relation(rf) => rf.scalar_fields(),
-                Field::Composite(_) => todo!(), // [Composites] todo
             })
             .unique_by(|field| field.name().to_owned())
     }

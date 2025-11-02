@@ -270,10 +270,8 @@ impl TestApi {
                 let mut line = line.to_string();
 
                 while let Some(idx) = line.find('?') {
-                    let replacer = if self.is_postgres() || self.is_cockroach() {
+                    let replacer = if self.is_postgres() {
                         format!("${counter}")
-                    } else if self.is_mssql() {
-                        format!("@P{counter}")
                     } else {
                         unimplemented!()
                     };
@@ -292,11 +290,6 @@ impl TestApi {
         }
 
         out
-    }
-
-    /// Returns true only when testing on MSSQL.
-    pub fn is_mssql(&self) -> bool {
-        self.root.is_mssql()
     }
 
     /// Returns true only when testing on MariaDB.
@@ -337,11 +330,6 @@ impl TestApi {
     /// Returns true only when testing on postgres version 16.
     pub fn is_postgres_16(&self) -> bool {
         self.root.is_postgres_16()
-    }
-
-    /// Returns true only when testing on cockroach.
-    pub fn is_cockroach(&self) -> bool {
-        self.root.is_cockroach()
     }
 
     /// Returns true only when testing on sqlite.

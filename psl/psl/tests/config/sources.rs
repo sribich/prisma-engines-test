@@ -612,7 +612,7 @@ fn must_process_overrides_when_ignoring_env_errors() {
 fn fail_to_load_sources_for_invalid_source() {
     let dml = indoc! {r#"
         datasource pg1 {
-          provider = "AStrangeHalfMongoDatabase"
+          provider = "UnknownConnectorType"
           url = "https://localhost/postgres1"
         }
     "#};
@@ -620,11 +620,11 @@ fn fail_to_load_sources_for_invalid_source() {
     let error = parse_config(dml).map(drop).unwrap_err();
 
     let expectation = expect![[r#"
-        [1;91merror[0m: [1mDatasource provider not known: "AStrangeHalfMongoDatabase".[0m
+        [1;91merror[0m: [1mDatasource provider not known: "UnknownConnectorType".[0m
           [1;94m-->[0m  [4mschema.prisma:2[0m
         [1;94m   | [0m
         [1;94m 1 | [0mdatasource pg1 {
-        [1;94m 2 | [0m  provider = [1;91m"AStrangeHalfMongoDatabase"[0m
+        [1;94m 2 | [0m  provider = [1;91m"UnknownConnectorType"[0m
         [1;94m   | [0m
     "#]];
 
@@ -681,7 +681,7 @@ fn fail_when_no_source_is_declared() {
 fn referential_integrity_works() {
     let schema = indoc! {r#"
         datasource ps {
-          provider = "sqlserver"
+          provider = "mysql"
           referentialIntegrity = "prisma"
           url = "mysql://root:prisma@localhost:3306/mydb"
         }
@@ -700,7 +700,7 @@ fn referential_integrity_works() {
 fn relation_mode_works() {
     let schema = indoc! {r#"
         datasource ps {
-          provider = "sqlserver"
+          provider = "mysql"
           relationMode = "prisma"
           url = "mysql://root:prisma@localhost:3306/mydb"
         }
@@ -719,7 +719,7 @@ fn relation_mode_works() {
 fn relation_mode_default() {
     let schema = indoc! {r#"
         datasource ps {
-          provider = "sqlserver"
+          provider = "mysql"
           url = "mysql://root:prisma@localhost:3306/mydb"
         }
 

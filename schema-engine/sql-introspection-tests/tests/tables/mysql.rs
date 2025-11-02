@@ -392,7 +392,7 @@ async fn missing_select_rights(api: &mut TestApi) -> TestResult {
 
     let config = psl::parse_schema_without_extensions(datasource).unwrap();
 
-    let ctx = IntrospectionContext::new(config, Default::default(), None, PathBuf::new());
+    let ctx = IntrospectionContext::new(config, None, PathBuf::new());
 
     let res = conn.introspect(&ctx, &NoExtensionTypes).await.unwrap();
     assert!(res.is_empty);

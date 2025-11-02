@@ -46,36 +46,6 @@ pub enum OnConflict<'a> {
     /// # }
     /// ```
     ///
-    /// With Microsoft SQL server not supporting `IGNORE` in the `INSERT`
-    /// statement, the `INSERT` is converted to a `MERGE` statement. For it to work
-    /// in a correct way, the table should know all unique indices of the actual table.
-    ///
-    /// In this example our `users` table holds one unique index for the `id` column.
-    ///
-    /// ```rust
-    /// # use quaint::{ast::*, visitor::{Visitor, Mssql}};
-    /// # use indoc::indoc;
-    /// # fn main() -> Result<(), quaint::error::Error> {
-    /// let id = Column::from("id").table("users");
-    /// let table = Table::from("users").add_unique_index(id.clone());
-    /// let query: Insert = Insert::single_into(table).value(id, 1).into();
-    /// let (sql, _) = Mssql::build(query.on_conflict(OnConflict::DoNothing))?;
-    ///
-    /// let expected_sql = indoc!(
-    ///     "
-    ///     MERGE INTO [users]
-    ///     USING (SELECT @P1 AS [id]) AS [dual] ([id])
-    ///     ON [dual].[id] = [users].[id]
-    ///     WHEN NOT MATCHED THEN
-    ///     INSERT ([id]) VALUES ([dual].[id]);
-    /// "
-    /// );
-    ///
-    /// assert_eq!(expected_sql.replace('\n', " ").trim(), sql);
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
     /// If the `INSERT` statement misses a value for a unique column that does
     /// not have default value set, the visitor will raise a panic. For compound
     /// unique indices, the `add_unique_index` takes a vector as a parameter.

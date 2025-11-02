@@ -1,8 +1,8 @@
 use super::{
-    PrismaDatamodelParser, Rule, parse_composite_type::parse_composite_type, parse_enum::parse_enum,
-    parse_model::parse_model, parse_source_and_generator::parse_config_block, parse_view::parse_view,
+    PrismaDatamodelParser, Rule, parse_enum::parse_enum,
+    parse_model::parse_model, parse_source_and_generator::parse_config_block,
 };
-use crate::ast::*;
+use crate::{ast::*, parser::parse_view::parse_view};
 use diagnostics::{DatamodelError, Diagnostics, FileId};
 use pest::Parser;
 
@@ -20,12 +20,9 @@ pub fn parse_schema(datamodel_string: &str, diagnostics: &mut Diagnostics, file_
             while let Some(current) = pairs.next() {
                 match current.as_rule() {
                     Rule::model_declaration => {
-                        let keyword = current.clone().into_inner().find(|pair| matches!(pair.as_rule(), Rule::TYPE_KEYWORD | Rule::MODEL_KEYWORD | Rule::VIEW_KEYWORD) ).expect("Expected model, type or view keyword");
+                        let keyword = current.clone().into_inner().find(|pair| matches!(pair.as_rule(), Rule::MODEL_KEYWORD | Rule::VIEW_KEYWORD) ).expect("Expected model, type or view keyword");
 
                         match keyword.as_rule() {
-                            Rule::TYPE_KEYWORD => {
-                                top_level_definitions.push(Top::CompositeType(parse_composite_type(current, pending_block_comment.take(), diagnostics, file_id)))
-                            }
                             Rule::MODEL_KEYWORD => {
                                 top_level_definitions.push(Top::Model(parse_model(current, pending_block_comment.take(), diagnostics, file_id)))
                             }
@@ -35,19 +32,11 @@ pub fn parse_schema(datamodel_string: &str, diagnostics: &mut Diagnostics, file_
                             _ => unreachable!(),
                         }
 
-                    },
+                    },                    
                     Rule::enum_declaration => top_level_definitions.push(Top::Enum(parse_enum(current,pending_block_comment.take(),  diagnostics, file_id))),
                     Rule::config_block => {
                         top_level_definitions.push(parse_config_block(current, diagnostics, file_id));
                     },
-                    Rule::type_alias => {
-                        let error = DatamodelError::new_validation_error(
-                            "Invalid type definition. Please check the documentation in https://pris.ly/d/composite-types",
-                            (file_id, current.as_span()).into()
-                        );
-
-                        diagnostics.push_error(error);
-                    }
                     Rule::comment_block => {
                         match pairs.peek().map(|b| b.as_rule()) {
                             Some(Rule::empty_lines) => {

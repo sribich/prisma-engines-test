@@ -100,43 +100,8 @@ fn authentication_failure_must_return_a_known_error_on_mysql(api: TestApi) {
     assert_eq!(json_error, expected);
 }
 
-#[test_connector(tags(Mssql))]
-fn authentication_failure_must_return_a_known_error_on_mssql(api: TestApi) {
-    let mut url = JdbcString::from_str(&format!("jdbc:{}", api.connection_string())).unwrap();
-    let properties = url.properties_mut();
-    let user = properties.get("user").cloned().unwrap();
-
-    *properties.get_mut("password").unwrap() = "obviously-not-right".to_string();
-
-    let dm = format!(
-        r#"
-            datasource db {{
-              provider = "sqlserver"
-              url      = "{}"
-            }}
-        "#,
-        url.to_string().replace("jdbc:", "")
-    );
-
-    let error = tok(connection_error(dm));
-
-    let json_error = serde_json::to_value(error.to_user_facing()).unwrap();
-    let expected = json!({
-        "is_panic": false,
-        "message": format!("Authentication failed against database server, the provided database credentials for `{user}` are not valid.\n\nPlease make sure to provide valid database credentials for the database server at the configured address."),
-        "meta": {
-            "database_user": user,
-        },
-        "error_code": "P1000"
-    });
-
-    assert_eq!(json_error, expected);
-}
-
 // TODO(tech-debt): get rid of provider-specific PSL `dm` declaration, and use `test_api::datamodel_with_provider` utility instead.
 // See: https://github.com/prisma/team-orm/issues/835.
-// This issue also currently prevents us from defining an `Mssql`-specific copy of this `unreachable_database_*` test case,
-// due to url parsing differences between the `url` crate and `quaint`'s `MssqlUrl` struct.
 #[test_connector(tags(Mysql))]
 fn unreachable_database_must_return_a_proper_error_on_mysql(api: TestApi) {
     let mut url: Url = api.connection_string().parse().unwrap();
@@ -347,7 +312,7 @@ fn datamodel_parser_errors_must_return_a_known_error(api: TestApi) {
 
     let error = api.schema_push_w_datasource(bad_dm).send_unwrap_err().to_user_facing();
 
-    let expected_msg = "\u{1b}[1;91merror\u{1b}[0m: \u{1b}[1mType \"Post\" is neither a built-in type, nor refers to another model, composite type, or enum.\u{1b}[0m\n  \u{1b}[1;94m-->\u{1b}[0m  \u{1b}[4mschema.prisma:10\u{1b}[0m\n\u{1b}[1;94m   | \u{1b}[0m\n\u{1b}[1;94m 9 | \u{1b}[0m            id Float @id\n\u{1b}[1;94m10 | \u{1b}[0m            post \u{1b}[1;91mPost\u{1b}[0m[]\n\u{1b}[1;94m   | \u{1b}[0m\n";
+    let expected_msg = "\u{1b}[1;91merror\u{1b}[0m: \u{1b}[1mType \"Post\" is neither a built-in type, nor refers to another model or enum.\u{1b}[0m\n  \u{1b}[1;94m-->\u{1b}[0m  \u{1b}[4mschema.prisma:10\u{1b}[0m\n\u{1b}[1;94m   | \u{1b}[0m\n\u{1b}[1;94m 9 | \u{1b}[0m            id Float @id\n\u{1b}[1;94m10 | \u{1b}[0m            post \u{1b}[1;91mPost\u{1b}[0m[]\n\u{1b}[1;94m   | \u{1b}[0m\n";
 
     let expected_error = user_facing_errors::Error::from(user_facing_errors::KnownError {
         error_code: std::borrow::Cow::Borrowed("P1012"),
@@ -358,7 +323,7 @@ fn datamodel_parser_errors_must_return_a_known_error(api: TestApi) {
     assert_eq!(error, expected_error);
 }
 
-#[test_connector(exclude(CockroachDb, Sqlite))]
+#[test_connector(exclude(Sqlite))]
 fn unique_constraint_errors_in_migrations_must_return_a_known_error(api: TestApi) {
     let dm = r#"
         model Fruit {
@@ -394,7 +359,7 @@ fn unique_constraint_errors_in_migrations_must_return_a_known_error(api: TestApi
 
     let expected_msg = if api.is_vitess() {
         "Unique constraint failed on the (not available)"
-    } else if api.is_mysql() || api.is_mssql() {
+    } else if api.is_mysql() {
         "Unique constraint failed on the constraint: `Fruit_name_key`"
     } else {
         "Unique constraint failed on the fields: (`name`)"
@@ -402,7 +367,7 @@ fn unique_constraint_errors_in_migrations_must_return_a_known_error(api: TestApi
 
     let expected_target = if api.is_vitess() {
         serde_json::Value::Null
-    } else if api.is_mysql() || api.is_mssql() {
+    } else if api.is_mysql() {
         json!("Fruit_name_key")
     } else {
         json!(["name"])
@@ -458,7 +423,6 @@ async fn connection_string_problems_give_a_nice_error() {
             "postgresql",
             "postgresql://root:password-with-#@localhost:5432/postgres",
         ),
-        ("sqlserver", "sqlserver://root:password-with-#@localhost:5432/postgres"),
     ];
 
     for provider in providers {
@@ -491,14 +455,6 @@ async fn connection_string_problems_give_a_nice_error() {
         let json_error = serde_json::to_value(error.to_user_facing()).unwrap();
 
         let details = match provider.0 {
-            "sqlserver" => {
-                indoc!(
-                    "Error parsing connection string: Conversion error: invalid digit found in string in database URL.
-                    Please refer to the documentation in https://www.prisma.io/docs/reference/database-reference/connection-urls
-                    for constructing a correct connection string. In some cases, certain characters must be escaped.
-                    Please check the string for any illegal characters.",
-                ).replace('\n', " ")
-            },
             _ => {
                 indoc!(
                     "invalid port number in database URL.

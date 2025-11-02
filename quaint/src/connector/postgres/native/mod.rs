@@ -1,5 +1,4 @@
 //! Definitions for the Postgres connector.
-//! This module is not compatible with wasm32-* targets.
 //! This module is only available with the `postgresql-native` feature.
 mod cache;
 pub(crate) mod column_type;
@@ -65,7 +64,6 @@ impl Debug for PostgresClient {
 }
 
 const DB_SYSTEM_NAME_POSTGRESQL: &str = "postgresql";
-const DB_SYSTEM_NAME_COCKROACHDB: &str = "cockroachdb";
 
 /// A connector interface for the PostgreSQL database.
 ///
@@ -80,8 +78,6 @@ pub struct PostgreSql<Cache> {
     socket_timeout: Option<Duration>,
     cache: Cache,
     is_healthy: AtomicBool,
-    is_cockroachdb: bool,
-    is_materialize: bool,
     db_system_name: &'static str,
 }
 
@@ -181,8 +177,6 @@ impl PostgresNativeUrl {
     }
 
     /// On Postgres, we set the SEARCH_PATH and client-encoding through client connection parameters to save a network roundtrip on connection.
-    /// We can't always do it for CockroachDB because it does not expect quotes for unsafe identifiers (https://github.com/cockroachdb/cockroach/issues/101328), which might change once the issue is fixed.
-    /// To circumvent that problem, we only set the SEARCH_PATH through client connection parameters for Cockroach when the identifier is safe, so that the quoting does not matter.
     fn set_search_path(&self, config: &mut Config) {
         // PGBouncer does not support the search_path connection parameter.
         // https://www.pgbouncer.org/config.html#ignore_startup_parameters
@@ -191,10 +185,6 @@ impl PostgresNativeUrl {
         }
 
         if let Some(schema) = &self.query_params.schema {
-            if self.flavour().is_cockroach() && is_safe_identifier(schema) {
-                config.search_path(CockroachSearchPath(schema).to_string());
-            }
-
             if self.flavour().is_postgres() {
                 config.search_path(PostgresSearchPath(schema).to_string());
             }
@@ -246,8 +236,6 @@ impl PostgreSqlWithNoCache {
             single_use_connection: false,
             cache: NoOpCache,
             is_healthy: AtomicBool::new(true),
-            is_cockroachdb: false,
-            is_materialize: false,
             db_system_name: DB_SYSTEM_NAME_POSTGRESQL,
         })
     }
@@ -261,9 +249,6 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
         let tls = tls_manager.get_connector().await?;
         let (client, conn) = timeout::connect(url.connect_timeout(), config.connect(tls)).await?;
 
-        let is_cockroachdb = conn.parameter("crdb_version").is_some();
-        let is_materialize = conn.parameter("mz_version").is_some();
-
         let handle = tokio::spawn(
             conn.map(|r| {
                 if let Err(e) = r {
@@ -275,15 +260,12 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
         );
 
         // On Postgres, we set the SEARCH_PATH and client-encoding through client connection parameters to save a network roundtrip on connection.
-        // We can't always do it for CockroachDB because it does not expect quotes for unsafe identifiers (https://github.com/cockroachdb/cockroach/issues/101328), which might change once the issue is fixed.
-        // To circumvent that problem, we only set the SEARCH_PATH through client connection parameters for Cockroach when the identifier is safe, so that the quoting does not matter.
         // Finally, to ensure backward compatibility, we keep sending a database query in case the flavour is set to Unknown.
-        if let Some(schema) = &url.query_params.schema {
+        if let Some(_schema) = &url.query_params.schema {
             // PGBouncer does not support the search_path connection parameter.
             // https://www.pgbouncer.org/config.html#ignore_startup_parameters
             if url.query_params.pg_bouncer
                 || url.flavour().is_unknown()
-                || (url.flavour().is_cockroach() && !is_safe_identifier(schema))
             {
                 let session_variables = format!(
                     r##"{set_search_path}"##,
@@ -294,11 +276,7 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
             }
         }
 
-        let db_system_name = if is_cockroachdb {
-            DB_SYSTEM_NAME_COCKROACHDB
-        } else {
-            DB_SYSTEM_NAME_POSTGRESQL
-        };
+        let db_system_name = DB_SYSTEM_NAME_POSTGRESQL;
 
         Ok(Self {
             client: PostgresClient(client),
@@ -308,8 +286,6 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
             single_use_connection: url.single_use_connections(),
             cache: url.cache_settings().into(),
             is_healthy: AtomicBool::new(true),
-            is_cockroachdb,
-            is_materialize,
             db_system_name,
         })
     }
@@ -391,14 +367,11 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
             nullables.push(nullable)
         }
 
-        // If the server is CockroachDB or Materialize, skip this step (#1248).
-        if !self.is_cockroachdb && !self.is_materialize {
-            // patch up our null inference with data from EXPLAIN
-            let nullable_patch = self.nullables_from_explain(stmt).await?;
+        // patch up our null inference with data from EXPLAIN
+        let nullable_patch = self.nullables_from_explain(stmt).await?;
 
-            for (nullable, patch) in nullables.iter_mut().zip(nullable_patch) {
-                *nullable = patch.or(*nullable);
-            }
+        for (nullable, patch) in nullables.iter_mut().zip(nullable_patch) {
+            *nullable = patch.or(*nullable);
         }
 
         Ok(nullables)
@@ -506,15 +479,6 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
     pub async fn close(self) {
         drop(self.client);
         self.handle.await.expect("connection task panicked")
-    }
-}
-
-// A SearchPath connection parameter (Display-impl) for connection initialization.
-struct CockroachSearchPath<'a>(&'a str);
-
-impl Display for CockroachSearchPath<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.0)
     }
 }
 
@@ -957,7 +921,6 @@ mod tests {
     use super::*;
     use crate::connector::Queryable;
     pub(crate) use crate::connector::postgres::url::PostgresFlavour;
-    use crate::tests::test_api::CRDB_CONN_STR;
     use crate::tests::test_api::postgres::CONN_STR;
     use url::Url;
 
@@ -1042,59 +1005,6 @@ mod tests {
         assert_eq!(test_path("héllo").await.as_deref(), Some("\"héllo\""));
         assert_eq!(test_path("héll0$").await.as_deref(), Some("\"héll0$\""));
         assert_eq!(test_path("héll_0$").await.as_deref(), Some("\"héll_0$\""));
-
-        // Not safe
-        assert_eq!(test_path("Hello").await.as_deref(), Some("\"Hello\""));
-        assert_eq!(test_path("hEllo").await.as_deref(), Some("\"hEllo\""));
-        assert_eq!(test_path("$hello").await.as_deref(), Some("\"$hello\""));
-        assert_eq!(test_path("hello!").await.as_deref(), Some("\"hello!\""));
-        assert_eq!(test_path("hello#").await.as_deref(), Some("\"hello#\""));
-        assert_eq!(test_path("he llo").await.as_deref(), Some("\"he llo\""));
-        assert_eq!(test_path(" hello").await.as_deref(), Some("\" hello\""));
-        assert_eq!(test_path("he-llo").await.as_deref(), Some("\"he-llo\""));
-        assert_eq!(test_path("hÉllo").await.as_deref(), Some("\"hÉllo\""));
-        assert_eq!(test_path("1337").await.as_deref(), Some("\"1337\""));
-        assert_eq!(test_path("_HELLO").await.as_deref(), Some("\"_HELLO\""));
-        assert_eq!(test_path("HELLO").await.as_deref(), Some("\"HELLO\""));
-        assert_eq!(test_path("HELLO$").await.as_deref(), Some("\"HELLO$\""));
-        assert_eq!(test_path("ÀBRACADABRA").await.as_deref(), Some("\"ÀBRACADABRA\""));
-
-        for ident in RESERVED_KEYWORDS {
-            assert_eq!(test_path(ident).await.as_deref(), Some(format!("\"{ident}\"").as_str()));
-        }
-
-        for ident in RESERVED_TYPE_FUNCTION_NAMES {
-            assert_eq!(test_path(ident).await.as_deref(), Some(format!("\"{ident}\"").as_str()));
-        }
-    }
-
-    #[tokio::test]
-    async fn test_custom_search_path_crdb() {
-        async fn test_path(schema_name: &str) -> Option<String> {
-            let mut url = Url::parse(&CRDB_CONN_STR).unwrap();
-            url.query_pairs_mut().append_pair("schema", schema_name);
-
-            let mut pg_url = PostgresNativeUrl::new(url).unwrap();
-            pg_url.set_flavour(PostgresFlavour::Cockroach);
-
-            let tls_manager = MakeTlsConnectorManager::new(pg_url.clone());
-
-            let client = PostgreSqlWithDefaultCache::new(pg_url, &tls_manager).await.unwrap();
-
-            let result_set = client.query_raw("SHOW search_path", &[]).await.unwrap();
-            let row = result_set.first().unwrap();
-
-            row[0].typed.to_string()
-        }
-
-        // Safe
-        assert_eq!(test_path("hello").await.as_deref(), Some("hello"));
-        assert_eq!(test_path("_hello").await.as_deref(), Some("_hello"));
-        assert_eq!(test_path("àbracadabra").await.as_deref(), Some("àbracadabra"));
-        assert_eq!(test_path("h3ll0").await.as_deref(), Some("h3ll0"));
-        assert_eq!(test_path("héllo").await.as_deref(), Some("héllo"));
-        assert_eq!(test_path("héll0$").await.as_deref(), Some("héll0$"));
-        assert_eq!(test_path("héll_0$").await.as_deref(), Some("héll_0$"));
 
         // Not safe
         assert_eq!(test_path("Hello").await.as_deref(), Some("\"Hello\""));

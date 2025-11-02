@@ -86,7 +86,7 @@ async fn transactions(api: &mut dyn TestApi) -> crate::Result<()> {
     Ok(())
 }
 
-#[test_each_connector(tags("mssql", "postgresql", "mysql"))]
+#[test_each_connector(tags("postgresql", "mysql"))]
 async fn transactions_with_isolation_works(api: &mut dyn TestApi) -> crate::Result<()> {
     // This test only tests that the SET isolation level statements are accepted.
     api.conn()
@@ -116,57 +116,11 @@ async fn transactions_with_isolation_works(api: &mut dyn TestApi) -> crate::Resu
     Ok(())
 }
 
-#[test_each_connector(tags("mssql"))]
-async fn mssql_transaction_isolation_level(api: &mut dyn TestApi) -> crate::Result<()> {
-    let table = api.create_temp_table("id int, value int").await?;
-
-    let conn_a = api.conn();
-    // Start a transaction with the default isolation level, which in tests is
-    // set to READ UNCOMMITED via the DB url and insert a row, but do not commit the transaction.
-    let tx_a = conn_a.start_transaction(None).await?;
-    let insert = Insert::single_into(&table).value("value", 3).value("id", 4);
-    let rows_affected = tx_a.execute(insert.into()).await?;
-    assert_eq!(1, rows_affected);
-
-    // We want to verify that pooled connection behaves the same way, so we test both cases.
-    let pool = api.create_pool()?;
-    for conn_b in [
-        Box::new(pool.check_out().await?) as Box<dyn TransactionCapable>,
-        Box::new(api.create_additional_connection().await?),
-    ] {
-        // Start a transaction that explicitly sets the isolation level to SNAPSHOT and query the table
-        // expecting to see the old state.
-        let tx_b = conn_b.start_transaction(Some(IsolationLevel::Snapshot)).await?;
-        let res = tx_b.query(Select::from_table(&table).into()).await?;
-        assert_eq!(0, res.len());
-
-        // Start a transaction without an explicit isolation level, it should be run with the default
-        // again, which is set to READ UNCOMMITED here.
-        let tx_c = conn_b.start_transaction(None).await?;
-        let res = tx_c.query(Select::from_table(&table).into()).await?;
-        assert_eq!(1, res.len());
-    }
-
-    Ok(())
-}
-
 // SQLite only supports serializable.
 #[test_each_connector(tags("sqlite"))]
 async fn sqlite_serializable_tx(api: &mut dyn TestApi) -> crate::Result<()> {
     api.conn()
         .start_transaction(Some(IsolationLevel::Serializable))
-        .await?
-        .commit()
-        .await?;
-
-    Ok(())
-}
-
-// Only SQL Server supports snapshot.
-#[test_each_connector(tags("mssql"))]
-async fn mssql_snapshot_tx(api: &mut dyn TestApi) -> crate::Result<()> {
-    api.conn()
-        .start_transaction(Some(IsolationLevel::Snapshot))
         .await?
         .commit()
         .await?;
@@ -696,8 +650,8 @@ async fn single_default_value_insert(api: &mut dyn TestApi) -> crate::Result<()>
     Ok(())
 }
 
-#[cfg(any(feature = "mssql", feature = "postgresql", feature = "sqlite"))]
-#[test_each_connector(tags("mssql", "postgresql", "sqlite"))]
+#[cfg(any(feature = "postgresql", feature = "sqlite"))]
+#[test_each_connector(tags("postgresql", "sqlite"))]
 async fn returning_insert(api: &mut dyn TestApi) -> crate::Result<()> {
     let table = api.get_name();
 
@@ -767,138 +721,6 @@ async fn returning_update(api: &mut dyn TestApi) -> crate::Result<()> {
     let row = res.get(0).unwrap();
     assert_eq!(Some(1), row["id"].as_i32());
     assert_eq!(Some("Updated"), row["name"].as_str());
-
-    Ok(())
-}
-
-#[cfg(feature = "mssql")]
-#[test_each_connector(tags("mssql"))]
-async fn returning_decimal_insert_with_type_defs(api: &mut dyn TestApi) -> crate::Result<()> {
-    use bigdecimal::BigDecimal;
-    use std::str::FromStr;
-
-    let dec = BigDecimal::from_str("17661757261711787211853")?;
-    let table = api.create_temp_table("id int, val numeric(26,0)").await?;
-    let col = Column::from("val").type_family(TypeFamily::Decimal(Some((26, 0))));
-
-    let insert = Insert::single_into(&table).value("id", 2).value(col, dec.clone());
-
-    let res = api
-        .conn()
-        .insert(Insert::from(insert).returning(vec!["id", "val"]))
-        .await?;
-
-    assert_eq!(1, res.len());
-
-    let row = res.get(0).unwrap();
-    assert_eq!(Some(2), row["id"].as_i32());
-    assert_eq!(Some(&dec), row["val"].as_numeric());
-
-    Ok(())
-}
-
-#[cfg(feature = "mssql")]
-#[test_each_connector(tags("mssql"))]
-async fn returning_constant_nvarchar_insert_with_type_defs(api: &mut dyn TestApi) -> crate::Result<()> {
-    let table = api.create_temp_table("id int, val nvarchar(4000)").await?;
-    let col = Column::from("val").type_family(TypeFamily::Text(Some(TypeDataLength::Constant(4000))));
-
-    let insert = Insert::single_into(&table).value("id", 2).value(col, "meowmeow");
-
-    let res = api
-        .conn()
-        .insert(Insert::from(insert).returning(vec!["id", "val"]))
-        .await?;
-
-    assert_eq!(1, res.len());
-
-    let row = res.get(0).unwrap();
-    assert_eq!(Some(2), row["id"].as_i32());
-    assert_eq!(Some("meowmeow"), row["val"].as_str());
-
-    Ok(())
-}
-
-#[cfg(feature = "mssql")]
-#[test_each_connector(tags("mssql"))]
-async fn returning_max_nvarchar_insert_with_type_defs(api: &mut dyn TestApi) -> crate::Result<()> {
-    let table = api.create_temp_table("id int, val nvarchar(max)").await?;
-    let col = Column::from("val").type_family(TypeFamily::Text(Some(TypeDataLength::Maximum)));
-
-    let insert = Insert::single_into(&table).value("id", 2).value(col, "meowmeow");
-
-    let res = api
-        .conn()
-        .insert(Insert::from(insert).returning(vec!["id", "val"]))
-        .await?;
-
-    assert_eq!(1, res.len());
-
-    let row = res.get(0).unwrap();
-    assert_eq!(Some(2), row["id"].as_i32());
-    assert_eq!(Some("meowmeow"), row["val"].as_str());
-
-    Ok(())
-}
-
-#[cfg(feature = "mssql")]
-#[test_each_connector(tags("mssql"))]
-async fn returning_constant_varchar_insert_with_type_defs(api: &mut dyn TestApi) -> crate::Result<()> {
-    let table = api.create_temp_table("id int, val varchar(4000)").await?;
-    let col = Column::from("val").type_family(TypeFamily::Text(Some(TypeDataLength::Constant(4000))));
-
-    let insert = Insert::single_into(&table).value("id", 2).value(col, "meowmeow");
-
-    let res = api
-        .conn()
-        .insert(Insert::from(insert).returning(vec!["id", "val"]))
-        .await?;
-
-    assert_eq!(1, res.len());
-
-    let row = res.get(0).unwrap();
-    assert_eq!(Some(2), row["id"].as_i32());
-    assert_eq!(Some("meowmeow"), row["val"].as_str());
-
-    Ok(())
-}
-
-#[cfg(feature = "mssql")]
-#[test_each_connector(tags("mssql"))]
-async fn returning_max_varchar_insert_with_type_defs(api: &mut dyn TestApi) -> crate::Result<()> {
-    let table = api.create_temp_table("id int, val varchar(max)").await?;
-    let col = Column::from("val").type_family(TypeFamily::Text(Some(TypeDataLength::Maximum)));
-
-    let insert = Insert::single_into(&table).value("id", 2).value(col, "meowmeow");
-
-    let res = api
-        .conn()
-        .insert(Insert::from(insert).returning(vec!["id", "val"]))
-        .await?;
-
-    assert_eq!(1, res.len());
-
-    let row = res.get(0).unwrap();
-    assert_eq!(Some(2), row["id"].as_i32());
-    assert_eq!(Some("meowmeow"), row["val"].as_str());
-
-    Ok(())
-}
-
-#[cfg(feature = "mssql")]
-#[test_each_connector(tags("mssql"))]
-async fn multiple_resultset_should_return_the_last_one(api: &mut dyn TestApi) -> crate::Result<()> {
-    let res = api
-        .conn()
-        .query_raw("SELECT 1 AS foo; SELECT 1 AS foo, 2 AS bar;", &[])
-        .await?;
-
-    assert_eq!(&vec!["foo", "bar"], res.columns());
-
-    let row = res.into_single()?;
-
-    assert_eq!(Some(&Value::int32(1)), row.get("foo"));
-    assert_eq!(Some(&Value::int32(2)), row.get("bar"));
 
     Ok(())
 }
@@ -1011,8 +833,8 @@ async fn single_insert_conflict_do_nothing_single_unique_with_autogen_default(
     Ok(())
 }
 
-#[cfg(any(feature = "mssql", feature = "postgresql"))]
-#[test_each_connector(tags("postgresql", "mssql"))]
+#[cfg(any(feature = "postgresql"))]
+#[test_each_connector(tags("postgresql"))]
 async fn single_insert_conflict_do_nothing_with_returning(api: &mut dyn TestApi) -> crate::Result<()> {
     let constraint = api.unique_constraint("id");
 
@@ -1484,7 +1306,7 @@ async fn json_filtering_works(api: &mut dyn TestApi) -> crate::Result<()> {
     Ok(())
 }
 
-#[test_each_connector(tags("mssql", "postgresql"))]
+#[test_each_connector(tags("postgresql"))]
 async fn xml_filtering_works(api: &mut dyn TestApi) -> crate::Result<()> {
     let table = api
         .create_temp_table(&format!("{}, xmlfield {}", api.autogen_id("id"), "xml"))
@@ -1673,7 +1495,7 @@ async fn op_test_div_one_level(api: &mut dyn TestApi) -> crate::Result<()> {
     let row = api.conn().select(q).await?.into_single()?;
 
     match api.system() {
-        "mssql" | "postgres" => assert_eq!(Some(2.0), row[0].as_f32()),
+        "postgres" => assert_eq!(Some(2.0), row[0].as_f32()),
         _ => assert_eq!(Some(2.0), row[0].as_f64()),
     }
 
@@ -3567,30 +3389,6 @@ async fn update_with_subselect_using_main_table_does_not_throw_error(api: &mut d
     api.delete_table(&table_2).await?;
 
     assert_eq!(res?, 1);
-
-    Ok(())
-}
-
-#[test_each_connector(tags("mssql"))]
-async fn double_rollback_error(api: &mut dyn TestApi) -> crate::Result<()> {
-    api.conn().raw_cmd("BEGIN TRAN").await?;
-    api.conn().raw_cmd("ROLLBACK").await?;
-
-    let err = api.conn().raw_cmd("ROLLBACK").await.unwrap_err();
-
-    assert!(matches!(err.kind(), ErrorKind::TransactionAlreadyClosed(_)));
-
-    Ok(())
-}
-
-#[test_each_connector(tags("mssql"))]
-async fn double_commit_error(api: &mut dyn TestApi) -> crate::Result<()> {
-    api.conn().raw_cmd("BEGIN TRAN").await?;
-    api.conn().raw_cmd("COMMIT").await?;
-
-    let err = api.conn().raw_cmd("COMMIT").await.unwrap_err();
-
-    assert!(matches!(err.kind(), ErrorKind::TransactionAlreadyClosed(_)));
 
     Ok(())
 }

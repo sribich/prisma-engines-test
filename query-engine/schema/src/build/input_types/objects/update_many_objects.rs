@@ -21,7 +21,7 @@ pub(crate) fn checked_update_many_input_type(ctx: &'_ QuerySchema, model: Model)
     input_object.set_container(model.clone());
     input_object.set_fields(move || {
         let mut filtered_fields = update_one_objects::filter_checked_update_fields(ctx, &model, None)
-            .filter(|field| matches!(field, ModelField::Scalar(_) | ModelField::Composite(_)));
+            .filter(|field| matches!(field, ModelField::Scalar(_)));
 
         let field_mapper = UpdateDataInputFieldMapper::new_checked();
         field_mapper.map_all(ctx, &mut filtered_fields)
@@ -45,7 +45,7 @@ pub(crate) fn unchecked_update_many_input_type(
     input_object.set_fields(move || {
         let mut filtered_fields =
             update_one_objects::filter_unchecked_update_fields(ctx, &model, parent_field.as_ref())
-                .filter(|field| matches!(field, ModelField::Scalar(_) | ModelField::Composite(_)));
+                .filter(|field| matches!(field, ModelField::Scalar(_)));
 
         let field_mapper = UpdateDataInputFieldMapper::new_unchecked();
         field_mapper.map_all(ctx, &mut filtered_fields)

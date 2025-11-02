@@ -34,7 +34,7 @@ mod order_by_dependent {
     }
 
     // "[Hops: 1] Ordering by related record field ascending" should "work"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_1_related_record_asc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -55,7 +55,7 @@ mod order_by_dependent {
     }
 
     // "[Hops: 1] Ordering by related record field descending" should "work"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_1_related_record_desc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -100,7 +100,7 @@ mod order_by_dependent {
     }
 
     // "[Hops: 2] Ordering by related record field ascending" should "work"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_2_related_record_asc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -119,7 +119,7 @@ mod order_by_dependent {
     }
 
     // "[Hops: 2] Ordering by related record field descending" should "work"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn hop_2_related_record_desc(runner: Runner) -> TestResult<()> {
         create_row(&runner, 1, Some(2), Some(3), None).await?;
         create_row(&runner, 4, Some(5), Some(6), None).await?;
@@ -157,9 +157,6 @@ mod order_by_dependent {
                 }
               }
             }"#,
-            // Depends on how null values are handled.
-            MongoDb(_) | Sqlite(_) => vec![r#"{"data":{"findManyModelA":[{"id":2,"b":{"c":null}},{"id":3,"b":null},{"id":1,"b":{"c":{"id":1}}}]}}"#],
-            SqlServer(_) => vec![r#"{"data":{"findManyModelA":[{"id":3,"b":null},{"id":2,"b":{"c":null}},{"id":1,"b":{"c":{"id":1}}}]}}"#],
             Postgres(_) => vec![r#"{"data":{"findManyModelA":[{"id":1,"b":{"c":{"id":1}}},{"id":2,"b":{"c":null}},{"id":3,"b":null}]}}"#],
             _ => vec![
               r#"{"data":{"findManyModelA":[{"id":2,"b":{"c":null}},{"id":3,"b":null},{"id":1,"b":{"c":{"id":1}}}]}}"#,
@@ -223,7 +220,7 @@ mod order_by_dependent {
     }
 
     // "[Circular with differing records] Ordering by related record field ascending" should "work"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn circular_diff_related_record_asc(runner: Runner) -> TestResult<()> {
         // Records form circles with their relations
         create_row(&runner, 1, Some(1), Some(1), Some(3)).await?;
@@ -243,10 +240,8 @@ mod order_by_dependent {
               }
             }
           }"#,
-          MongoDb(_) | Sqlite(_) => vec![r#"{"data":{"findManyModelA":[{"id":3,"b":null},{"id":4,"b":null},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}}]}}"#],
-          MySql(_)
-          | CockroachDb(_)
-          | Vitess(Some(VitessVersion::PlanetscaleJsWasm)) => vec![
+          Sqlite(_) => vec![r#"{"data":{"findManyModelA":[{"id":3,"b":null},{"id":4,"b":null},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}}]}}"#],
+          MySql(_) => vec![
             r#"{"data":{"findManyModelA":[{"id":4,"b":null},{"id":3,"b":null},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}}]}}"#,
             r#"{"data":{"findManyModelA":[{"id":3,"b":null},{"id":4,"b":null},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":2,"b":{"c":{"a":{"id":4}}}}]}}"#,
           ],
@@ -260,7 +255,7 @@ mod order_by_dependent {
     }
 
     // "[Circular with differing records] Ordering by related record field descending" should "work"
-    #[connector_test(exclude(SqlServer))]
+    #[connector_test]
     async fn circular_diff_related_record_desc(runner: Runner) -> TestResult<()> {
         // Records form circles with their relations
         create_row(&runner, 1, Some(1), Some(1), Some(3)).await?;
@@ -280,10 +275,8 @@ mod order_by_dependent {
                 }
               }
             }"#,
-            MongoDb(_) | Sqlite(_)=> vec![r#"{"data":{"findManyModelA":[{"id":2,"b":{"c":{"a":{"id":4}}}},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":3,"b":null},{"id":4,"b":null}]}}"#],
-            MySql(_)
-            | CockroachDb(_)
-            | Vitess(Some(VitessVersion::PlanetscaleJsWasm)) => vec![
+            Sqlite(_)=> vec![r#"{"data":{"findManyModelA":[{"id":2,"b":{"c":{"a":{"id":4}}}},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":3,"b":null},{"id":4,"b":null}]}}"#],
+            MySql(_) => vec![
               r#"{"data":{"findManyModelA":[{"id":2,"b":{"c":{"a":{"id":4}}}},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":4,"b":null},{"id":3,"b":null}]}}"#,
               r#"{"data":{"findManyModelA":[{"id":2,"b":{"c":{"a":{"id":4}}}},{"id":1,"b":{"c":{"a":{"id":3}}}},{"id":3,"b":null},{"id":4,"b":null}]}}"#,
             ],

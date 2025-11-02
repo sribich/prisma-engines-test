@@ -813,76 +813,10 @@ fn mapping_foreign_keys_on_sqlite_should_error() {
 }
 
 #[test]
-fn relation_field_in_composite_type_errors() {
-    let schema = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongodb://"
-        }
-
-        type Address {
-            street String
-            test Test
-        }
-
-        model Test {
-            id Int @id
-        }
-    "#;
-
-    let expect = expect![[r#"
-        [1;91merror[0m: [1mError validating composite type "Address": Test refers to a model, making this a relation field. Relation fields inside composite types are not supported.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
-        [1;94m   | [0m
-        [1;94m 8 | [0m            street String
-        [1;94m 9 | [0m            test [1;91mTest[0m
-        [1;94m   | [0m
-    "#]];
-
-    expect.assert_eq(&parse_unwrap_err(schema));
-}
-
-#[test]
-fn relation_attribute_on_a_composite_field_errors() {
-    let schema = r#"
-        datasource db {
-            provider = "mongodb"
-            url = "mongodb://"
-        }
-
-        type Address {
-            street String
-        }
-
-        model Test {
-            id Int @id
-            addres Address? @relation("TestAddress")
-        }
-    "#;
-
-    let expect = expect![[r#"
-        [1;91merror[0m: [1mError parsing attribute "@relation": Invalid field type, not a relation.[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
-        [1;94m   | [0m
-        [1;94m12 | [0m            id Int @id
-        [1;94m13 | [0m            addres Address? [1;91m@relation("TestAddress")[0m
-        [1;94m   | [0m
-        [1;91merror[0m: [1mNo such argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
-        [1;94m   | [0m
-        [1;94m12 | [0m            id Int @id
-        [1;94m13 | [0m            addres Address? @relation([1;91m"TestAddress"[0m)
-        [1;94m   | [0m
-    "#]];
-
-    expect.assert_eq(&parse_unwrap_err(schema));
-}
-
-#[test]
 fn a_typoed_relation_should_fail_gracefully() {
     let dml = indoc! {r#"
         datasource db {
-          provider = "sqlserver"
+          provider = "postgres"
           url      = env("DATABASE_URL")
         }
 

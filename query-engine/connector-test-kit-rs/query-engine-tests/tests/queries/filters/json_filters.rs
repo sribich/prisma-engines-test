@@ -16,17 +16,6 @@ mod json_filters {
         schema.to_owned()
     }
 
-    fn cdb_json() -> String {
-        let schema = indoc! {
-            r#"model TestModel {
-                #id(id, Int, @id)
-                json Json @test.JsonB
-            }"#
-        };
-
-        schema.to_owned()
-    }
-
     #[connector_test(exclude(MySQL(5.6)))]
     async fn no_path_without_filter(runner: Runner) -> TestResult<()> {
         assert_error!(
@@ -112,7 +101,7 @@ mod json_filters {
         Ok(())
     }
 
-    #[connector_test(schema(pg_json), capabilities(JsonFilteringArrayPath), exclude(CockroachDb))]
+    #[connector_test(schema(pg_json), capabilities(JsonFilteringArrayPath))]
     async fn extract_array_path_pg_json(runner: Runner) -> TestResult<()> {
         extract_array_path_runner(runner).await?;
 
@@ -242,7 +231,7 @@ mod json_filters {
 
         match runner.connector_version() {
             // MariaDB does not support finding arrays in arrays, unlike MySQL
-            ConnectorVersion::MySql(Some(MySqlVersion::MariaDb | MySqlVersion::MariaDbJsWasm)) => {
+            ConnectorVersion::MySql(Some(MySqlVersion::MariaDb)) => {
                 let res = run_query!(runner, jsonq(&runner, r#"array_contains: "[[1, 2]]" "#, None));
                 insta::allow_duplicates! {
                     insta::assert_snapshot!(
@@ -701,37 +690,14 @@ mod json_filters {
         Ok(())
     }
 
-    // CockroachDB does not support JSON comparisons (https://github.com/cockroachdb/cockroach/issues/49144).
-    #[connector_test(schema(pg_json), only(Postgres), exclude(CockroachDb))]
+    #[connector_test(schema(pg_json), only(Postgres))]
     async fn gt_gte_pg_json(runner: Runner) -> TestResult<()> {
         gt_gte_runner(runner).await?;
 
         Ok(())
     }
 
-    #[connector_test(schema(cdb_json), only(CockroachDb))]
-    async fn cockroach_errors_on_json_gt_lt(runner: Runner) -> TestResult<()> {
-        let query = format!(
-            r#"query {{
-            findManyTestModel(
-                where: {{
-                    AND: [
-                        {{ json: {{ {}, gte: "1" }} }},
-                        {{ json: {{ {}, lt: "3" }} }},
-                    ]
-                }}
-            ) {{ json }}
-        }}"#,
-            json_path(&runner),
-            json_path(&runner)
-        );
-
-        assert_error!(&runner, query, 2009);
-        Ok(())
-    }
-
-    // CockroachDB does not support JSON comparisons (https://github.com/cockroachdb/cockroach/issues/49144).
-    #[connector_test(only(Postgres), exclude(CockroachDb))]
+    #[connector_test(only(Postgres))]
     async fn gt_gte(runner: Runner) -> TestResult<()> {
         gt_gte_runner(runner).await?;
 
@@ -782,16 +748,14 @@ mod json_filters {
         Ok(())
     }
 
-    // CockroachDB does not support JSON comparisons (https://github.com/cockroachdb/cockroach/issues/49144).
-    #[connector_test(schema(pg_json), only(Postgres), exclude(CockroachDb))]
+    #[connector_test(schema(pg_json), only(Postgres))]
     async fn lt_lte_pg_json(runner: Runner) -> TestResult<()> {
         lt_lte_runner(runner).await?;
 
         Ok(())
     }
 
-    // CockroachDB does not support JSON comparisons (https://github.com/cockroachdb/cockroach/issues/49144).
-    #[connector_test(only(Postgres), exclude(CockroachDb))]
+    #[connector_test(only(Postgres))]
     async fn lt_lte(runner: Runner) -> TestResult<()> {
         lt_lte_runner(runner).await?;
 
@@ -902,16 +866,14 @@ mod json_filters {
         Ok(())
     }
 
-    // CockroachDB does not support JSON comparisons (https://github.com/cockroachdb/cockroach/issues/49144).
-    #[connector_test(schema(pg_json), only(Postgres), exclude(CockroachDb))]
+    #[connector_test(schema(pg_json), only(Postgres))]
     async fn multi_filtering_pg_json(runner: Runner) -> TestResult<()> {
         multi_filtering_runner(runner).await?;
 
         Ok(())
     }
 
-    // CockroachDB does not support JSON comparisons (https://github.com/cockroachdb/cockroach/issues/49144).
-    #[connector_test(only(Postgres), exclude(CockroachDb))]
+    #[connector_test(only(Postgres))]
     async fn multi_filtering(runner: Runner) -> TestResult<()> {
         multi_filtering_runner(runner).await?;
 
@@ -976,7 +938,7 @@ mod json_filters {
 
     fn json_path(runner: &Runner) -> &'static str {
         match runner.connector_version() {
-            ConnectorVersion::Postgres(_) | ConnectorVersion::CockroachDb(_) => r#"path: ["a", "b"]"#,
+            ConnectorVersion::Postgres(_) => r#"path: ["a", "b"]"#,
             ConnectorVersion::Sqlite(_) | ConnectorVersion::MySql(_) | ConnectorVersion::Vitess(_) => {
                 r#"path: "$.a.b""#
             }

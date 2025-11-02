@@ -12,6 +12,10 @@ services:
     networks:
       - databases
     tmpfs: /pgtmpfs12
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      timeout: 20s
+      retries: 5
 
   mysql57:
     image: mysql:5.7
@@ -26,6 +30,10 @@ services:
     networks:
       - databases
     tmpfs: /var/lib/mysql5.7
+    healthcheck:
+      test: "mysql $$MYSQL_DATABASE -uroot -p$$MYSQL_ROOT_PASSWORD -e 'SELECT 1;'"
+      timeout: 20s
+      retries: 10
 
   mysql8:
     image: mysql:8.0.22
@@ -41,6 +49,10 @@ services:
     networks:
       - databases
     tmpfs: /var/lib/mysql8
+    healthcheck:
+      test: "mysql $$MYSQL_DATABASE -u$$MYSQL_USER -p$$MYSQL_ROOT_PASSWORD -e 'SELECT 1;'"
+      timeout: 20s
+      retries: 10
 
   mariadb:
     image: mariadb:10
@@ -54,26 +66,10 @@ services:
     networks:
       - databases
     tmpfs: /var/lib/mariadb
-
-  mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    restart: unless-stopped
-    environment:
-      ACCEPT_EULA: 'Y'
-      SA_PASSWORD: '<YourStrong@Passw0rd>'
-    ports:
-      - '1433:1433'
-    networks:
-      - databases
-
-  cockroach_22_2:
-    image: prismagraphql/cockroachdb-custom:22.2
-    restart: unless-stopped
-    command: start-single-node --insecure
-    ports:
-      - '26259:26257'
-    networks:
-      - databases
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      timeout: 20s
+      retries: 10
 
 networks:
   databases:

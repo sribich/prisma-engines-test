@@ -57,9 +57,9 @@ pub(crate) fn parse_model(
         Some(name) => Model {
             name,
             fields,
+            is_view: false,
             attributes,
             documentation: doc_comment.and_then(parse_comment_block),
-            is_view: false,
             span: Span::from((file_id, pair_span)),
         },
         _ => panic!("Encountered impossible model declaration during parsing",),

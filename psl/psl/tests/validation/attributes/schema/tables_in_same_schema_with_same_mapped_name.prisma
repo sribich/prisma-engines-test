@@ -1,5 +1,5 @@
 datasource mydb {
-  provider = "sqlserver"
+  provider = "postgres"
   url = env("TEST_DB_URL")
   schemas  = ["base", "transactional"]
 }

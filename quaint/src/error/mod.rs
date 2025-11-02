@@ -1,6 +1,4 @@
 //! Error module
-
-#[cfg(not(target_arch = "wasm32"))]
 pub mod native;
 
 pub(crate) mod name;
@@ -12,11 +10,8 @@ use thiserror::Error;
 #[cfg(feature = "pooled")]
 use std::time::Duration;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub use native::NativeErrorKind;
 
-#[cfg(feature = "mssql")]
-pub use crate::connector::mssql::MssqlError;
 #[cfg(feature = "mysql")]
 pub use crate::connector::mysql::MysqlError;
 #[cfg(feature = "postgresql")]
@@ -133,7 +128,6 @@ impl Error {
     }
 
     /// Determines if the error was associated with closed connection.
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn is_closed(&self) -> bool {
         matches!(self.kind, ErrorKind::Native(NativeErrorKind::ConnectionClosed))
     }
@@ -157,7 +151,6 @@ impl fmt::Display for Error {
 
 #[derive(Debug, Error)]
 pub enum ErrorKind {
-    #[cfg(not(target_arch = "wasm32"))]
     #[error("Error in the underlying connector")]
     Native(NativeErrorKind),
 
@@ -279,7 +272,6 @@ pub enum ErrorKind {
     RanQueryWithOpaqueParam(String),
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Error {
         Error::builder(ErrorKind::Native(NativeErrorKind::IoError(e))).build()

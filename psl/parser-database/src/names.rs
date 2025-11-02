@@ -4,7 +4,7 @@ pub use reserved_model_names::is_reserved_type_name;
 
 use crate::{
     Context, DatamodelError, FileId, StringId,
-    ast::{self, ConfigBlockProperty, TopId, WithAttributes, WithIdentifier, WithName, WithSpan},
+    ast::{self, ConfigBlockProperty, TopId, WithAttributes, WithIdentifier, WithName},
     types::ScalarType,
 };
 use reserved_model_names::{validate_enum_name, validate_model_name};
@@ -13,14 +13,13 @@ use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 /// Resolved names for use in the validation process.
 #[derive(Default)]
 pub(super) struct Names {
-    /// Models, enums, composite types and type aliases
+    /// Models and enums
     pub(super) tops: HashMap<StringId, crate::TopId>,
     /// Generators have their own namespace.
     pub(super) generators: HashMap<StringId, crate::TopId>,
     /// Datasources have their own namespace.
     pub(super) datasources: HashMap<StringId, crate::TopId>,
     pub(super) model_fields: HashMap<(crate::ModelId, StringId), ast::FieldId>,
-    pub(super) composite_type_fields: HashMap<(crate::CompositeTypeId, StringId), ast::FieldId>,
 }
 
 /// `resolve_names()` is responsible for populating `ParserDatabase.names` and
@@ -106,27 +105,6 @@ pub(super) fn resolve_names(ctx: &mut Context<'_>) {
                             field.name(),
                             "model",
                             field.identifier().span,
-                        ))
-                    }
-                }
-
-                &mut names.tops
-            }
-            (ast::TopId::CompositeType(ctid), ast::Top::CompositeType(ct)) => {
-                validate_identifier(ct.identifier(), "Composite type", ctx);
-
-                for (field_id, field) in ct.iter_fields() {
-                    let field_name_id = ctx.interner.intern(field.name());
-                    // Check that there is no duplicate field on the composite type
-                    if names
-                        .composite_type_fields
-                        .insert(((file_id, ctid), field_name_id), field_id)
-                        .is_some()
-                    {
-                        ctx.push_error(DatamodelError::new_composite_type_duplicate_field_error(
-                            ct.name(),
-                            field.name(),
-                            field.identifier().span(),
                         ))
                     }
                 }

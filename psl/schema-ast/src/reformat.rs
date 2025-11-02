@@ -9,6 +9,9 @@ type Pair<'a> = pest::iterators::Pair<'a, Rule>;
 
 /// Reformat a PSL string.
 pub fn reformat(input: &str, indent_width: usize) -> Option<String> {
+
+    println!("{}", input);
+
     let mut ast = PrismaDatamodelParser::parse(Rule::schema, input).ok()?;
     let mut renderer = Renderer::new(indent_width);
     renderer.stream.reserve(input.len() / 2);
@@ -18,6 +21,8 @@ pub fn reformat(input: &str, indent_width: usize) -> Option<String> {
     if !renderer.stream.ends_with('\n') {
         renderer.stream.push('\n');
     }
+
+    println!("{}", &renderer.stream);
 
     // TODO: why do we need to use a `Some` here?
     // Also: if we really want to return an `Option<String>`, why do unwrap in `ast.next()`?
@@ -44,7 +49,7 @@ fn reformat_top(target: &mut Renderer, pair: Pair<'_>) {
                     _ => target.end_line(),
                 }
             }
-            Rule::CATCH_ALL | Rule::BLOCK_LEVEL_CATCH_ALL | Rule::arbitrary_block | Rule::type_alias => {
+            Rule::CATCH_ALL | Rule::BLOCK_LEVEL_CATCH_ALL | Rule::arbitrary_block => {
                 target.write(current.as_str());
             }
             Rule::EOI => {}

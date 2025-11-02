@@ -18,7 +18,7 @@ impl<'db> RelationFieldWalker<'db> {
     pub fn one_side_is_view(self) -> bool {
         self.model().ast_model().is_view() || self.related_model().ast_model().is_view()
     }
-
+    
     /// The foreign key name of the relation (`@relation(map: ...)`).
     pub fn mapped_name(self) -> Option<&'db str> {
         self.attributes().mapped_name.map(|string_id| &self.db[string_id])

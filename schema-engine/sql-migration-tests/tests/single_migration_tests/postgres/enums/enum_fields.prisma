@@ -1,5 +1,4 @@
 // tags=postgres
-// exclude=cockroachdb
 
 datasource mydb {
     provider = "postgresql"

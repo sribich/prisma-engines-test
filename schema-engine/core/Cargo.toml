@@ -9,7 +9,6 @@ psl = { workspace = true, features = ["all"] }
 schema-connector = { workspace = true, features = [
     "all-native",
 ] }
-mongodb-schema-connector = { workspace = true }
 sql-schema-connector = { workspace = true, features = [
     "all-native",
 ] }

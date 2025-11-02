@@ -455,7 +455,7 @@ mod one2many_opt {
     }
 }
 
-#[test_suite(schema(schema), exclude(SqlServer), relation_mode = "prisma")]
+#[test_suite(schema(schema), relation_mode = "prisma")]
 mod multiple_cascading_paths {
     use indoc::indoc;
     use query_engine_tests::run_query;

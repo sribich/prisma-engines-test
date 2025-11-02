@@ -1,7 +1,7 @@
 use barrel::types;
 use sql_introspection_tests::test_api::*;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn relations_between_ignored_models_should_not_have_field_level_ignores(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -40,7 +40,7 @@ async fn relations_between_ignored_models_should_not_have_field_level_ignores(ap
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn fields_we_cannot_sanitize_are_commented_out_and_warned(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "Test" (
@@ -82,7 +82,7 @@ async fn fields_we_cannot_sanitize_are_commented_out_and_warned(api: &mut TestAp
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn unsupported_type_keeps_its_usages(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -132,7 +132,7 @@ async fn unsupported_type_keeps_its_usages(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_only_an_unsupported_id(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -182,7 +182,7 @@ async fn a_table_with_only_an_unsupported_id(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_unsupported_types_in_a_relation(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -217,7 +217,7 @@ async fn a_table_with_unsupported_types_in_a_relation(api: &mut TestApi) -> Test
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn dbgenerated_in_unsupported(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE "Blog" (
@@ -253,7 +253,7 @@ async fn dbgenerated_in_unsupported(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn commenting_out_a_table_without_columns(api: &mut TestApi) -> TestResult {
     api.raw_cmd("CREATE TABLE \"Test\" ();").await;
 
@@ -286,7 +286,7 @@ async fn commenting_out_a_table_without_columns(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn ignore_on_back_relation_field_if_pointing_to_ignored_model(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -327,8 +327,7 @@ async fn ignore_on_back_relation_field_if_pointing_to_ignored_model(api: &mut Te
 // Postgres9 does not support partition tables, and Postgres10 does not support primary keys on
 // partition tables without an workaround (see the following tests for details).
 #[test_connector(
-    tags(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16),
-    exclude(CockroachDb)
+    tags(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16)
 )]
 async fn partition_table_gets_comment(api: &mut TestApi) -> TestResult {
     api.raw_cmd(
@@ -396,7 +395,7 @@ ALTER TABLE blocks
 // constraints on each of the parttions, but we are not allowed to define one on the main table.
 // Our introspection currently only reads the propertieds/index properties for the main table, so
 // these models will always be ignored.
-#[test_connector(tags(Postgres), exclude(Postgres9, CockroachDb))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 async fn partition_table_gets_postgres10(api: &mut TestApi) -> TestResult {
     api.raw_cmd(
         r#"
@@ -452,7 +451,7 @@ ALTER TABLE blocks_p2_0 ADD CONSTRAINT b2_unique UNIQUE (id);
 }
 
 // Postgres9 does not support row level security
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 async fn row_level_security_warning(api: &mut TestApi) -> TestResult {
     api.raw_cmd(
         r#"

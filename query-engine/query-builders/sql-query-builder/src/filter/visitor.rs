@@ -325,7 +325,6 @@ impl FilterVisitorExt for FilterVisitor {
             Filter::Aggregation(filter) => (self.visit_aggregation_filter(filter, ctx), None),
             Filter::ScalarList(filter) => (self.visit_scalar_list_filter(filter, ctx), None),
             Filter::Empty => (ConditionTree::NoCondition, None),
-            Filter::Composite(_) => unimplemented!("SQL connectors do not support composites yet."),
         }
     }
 

@@ -10,9 +10,6 @@ pub type ModelId = InFile<ast::ModelId>;
 /// See [ast::EnumId]
 pub type EnumId = InFile<ast::EnumId>;
 
-/// See [ast::CompositeTypeId]
-pub type CompositeTypeId = InFile<ast::CompositeTypeId>;
-
 /// See [ast::TopId]
 pub type TopId = InFile<ast::TopId>;
 

@@ -270,7 +270,6 @@ impl<'a> RelationFieldPair<'a> {
                 match (field.any_field_required(), field.next.on_delete_action()) {
                     (false, SetNull) => None,
                     (true, Restrict) => None,
-                    (true, NoAction) if self.context.sql_family.is_mssql() => None,
                     (_, Cascade) => Some("Cascade"),
                     (_, SetDefault) => Some("SetDefault"),
                     (true, SetNull) => Some("SetNull"),

@@ -67,8 +67,7 @@ mod create_many_and_return {
     // Covers: AutoIncrement ID working with basic autonincrement functionality.
     #[connector_test(
         schema(schema_2),
-        capabilities(CreateManyWriteableAutoIncId, InsertReturning),
-        exclude(CockroachDb)
+        capabilities(CreateManyWriteableAutoIncId, InsertReturning)
     )]
     async fn basic_create_many_autoincrement(runner: Runner) -> TestResult<()> {
         let res = run_query_json!(
@@ -102,38 +101,6 @@ mod create_many_and_return {
                 // Sqlite sets the next autoincrement as MAX(id) + 1
                 r#"[{"id":123,"str1":"1","str2":"1","str3":"1"},{"id":321,"str1":"2","str2":null,"str3":null},{"id":322,"str1":"1","str2":null,"str3":"SOME_DEFAULT"}]"#
             ]
-        );
-
-        Ok(())
-    }
-
-    fn schema_2_cockroachdb() -> String {
-        let schema = indoc! {
-            r#"model Test {
-              #id(id, BigInt, @id @default(autoincrement()))
-              str1 String
-              str2 String?
-              str3 String? @default("SOME_DEFAULT")
-            }"#
-        };
-
-        schema.to_owned()
-    }
-
-    // Covers: AutoIncrement ID working with basic autonincrement functionality.
-    #[connector_test(schema(schema_2_cockroachdb), only(CockroachDb))]
-    async fn basic_create_many_autoinc_cockroachdb(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation {
-            createManyTestAndReturn(data: [
-              { id: 123, str1: "1", str2: "1", str3: "1"},
-              { id: 321, str1: "2",            str3: null},
-              {          str1: "1"},
-            ]) {
-              str1 str2 str3
-            }
-          }"#),
-          @r###"{"data":{"createManyTestAndReturn":[{"str1":"1","str2":"1","str3":"1"},{"str1":"2","str2":null,"str3":null},{"str1":"1","str2":null,"str3":"SOME_DEFAULT"}]}}"###
         );
 
         Ok(())

@@ -6,7 +6,6 @@ edition.workspace = true
 [dependencies]
 psl.workspace = true
 quaint.workspace = true
-mongodb-client.workspace = true
 schema-core.workspace = true
 schema-connector.workspace = true
 sql-schema-connector = { workspace = true, features = [
@@ -19,5 +18,4 @@ serde_json.workspace = true
 tokio.workspace = true
 
 connection-string.workspace = true
-mongodb.workspace = true
 url.workspace = true

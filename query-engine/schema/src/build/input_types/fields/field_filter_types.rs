@@ -1,7 +1,7 @@
 use super::{field_ref_type::WithFieldRefInputExt, objects::*, *};
 use constants::{aggregations, filters};
 use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{CompositeFieldRef, DefaultKind, NativeTypeInstance, PrismaValue};
+use query_structure::{DefaultKind, NativeTypeInstance, PrismaValue};
 
 /// Builds filter types for the given model field.
 pub(crate) fn get_field_filter_types(
@@ -20,16 +20,6 @@ pub(crate) fn get_field_filter_types(
                 to_one_relation_filter_shorthand_types(ctx, &rf),
             ]
         }
-
-        ModelField::Composite(cf) if cf.is_list() => vec![
-            InputType::object(to_many_composite_filter_object(ctx, cf.clone())),
-            InputType::list(to_one_composite_filter_shorthand_types(ctx, cf)),
-        ],
-
-        ModelField::Composite(cf) => vec![
-            InputType::object(to_one_composite_filter_object(ctx, cf.clone())),
-            to_one_composite_filter_shorthand_types(ctx, cf),
-        ],
 
         ModelField::Scalar(sf) if field.is_list() => vec![InputType::object(scalar_list_filter_type(ctx, sf))],
 
@@ -96,79 +86,6 @@ fn to_one_relation_filter_object(ctx: &'_ QuerySchema, rf: RelationFieldRef) -> 
                 .optional()
                 .nullable_if(!rf.is_required()),
         ]
-    });
-
-    object
-}
-
-/// Builds shorthand composite equality (`equals`) filter for to-one: `where: { composite_field: { ... } }` (no `equals` in between).
-fn to_one_composite_filter_shorthand_types(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> InputType<'_> {
-    InputType::object(filter_objects::composite_equality_object(ctx, cf))
-}
-
-fn to_one_composite_filter_object(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(IdentifierType::ToOneCompositeFilterInput(cf.typ(), cf.arity()));
-
-    let mut object = init_input_object_type(ident);
-    object.require_exactly_one_field();
-    object.set_container(cf.typ());
-    object.set_tag(ObjectTag::CompositeEnvelope);
-
-    object.set_fields(move || {
-        let composite_where_object = filter_objects::where_object_type(ctx, cf.typ().into());
-        let composite_equals_object = filter_objects::composite_equality_object(ctx, cf.clone());
-
-        let mut fields = vec![
-            simple_input_field(filters::EQUALS, InputType::object(composite_equals_object), None)
-                .optional()
-                .nullable_if(!cf.is_required()),
-            simple_input_field(filters::IS, InputType::object(composite_where_object.clone()), None)
-                .optional()
-                .nullable_if(!cf.is_required()),
-            simple_input_field(filters::IS_NOT, InputType::object(composite_where_object), None)
-                .optional()
-                .nullable_if(!cf.is_required()),
-        ];
-
-        if ctx.has_capability(ConnectorCapability::UndefinedType) && cf.is_optional() {
-            fields.push(is_set_input_field());
-        }
-
-        fields
-    });
-    object
-}
-
-fn to_many_composite_filter_object(ctx: &'_ QuerySchema, cf: CompositeFieldRef) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(IdentifierType::ToManyCompositeFilterInput(cf.typ()));
-
-    let mut object = init_input_object_type(ident);
-    object.require_exactly_one_field();
-    object.set_container(cf.typ());
-    object.set_tag(ObjectTag::CompositeEnvelope);
-    object.set_fields(move || {
-        let composite_where_object = filter_objects::where_object_type(ctx, cf.typ().into());
-        let composite_equals_object = filter_objects::composite_equality_object(ctx, cf.clone());
-
-        let mut fields = vec![
-            simple_input_field(
-                filters::EQUALS,
-                InputType::list(InputType::object(composite_equals_object)),
-                None,
-            )
-            .optional(),
-            simple_input_field(filters::EVERY, InputType::object(composite_where_object.clone()), None).optional(),
-            simple_input_field(filters::SOME, InputType::object(composite_where_object.clone()), None).optional(),
-            simple_input_field(filters::NONE, InputType::object(composite_where_object), None).optional(),
-            simple_input_field(filters::IS_EMPTY, InputType::boolean(), None).optional(),
-        ];
-
-        // TODO: Remove from required lists once we have optional lists
-        if ctx.has_capability(ConnectorCapability::UndefinedType) {
-            fields.push(is_set_input_field());
-        }
-
-        fields
     });
 
     object

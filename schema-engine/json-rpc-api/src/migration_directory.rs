@@ -3,12 +3,8 @@ use std::hash;
 use crate::js_result::JsResult;
 use serde::{Deserialize, Serialize};
 
-#[cfg(target_arch = "wasm32")]
-use tsify::Tsify;
-
 /// Information about a migration file within a migration directory.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct MigrationFile {
     /// Relative path to the migration file from the migration directory.
     /// E.g., `migration.sql`.
@@ -20,7 +16,6 @@ pub struct MigrationFile {
 
 /// Information about a migration directory.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[serde(rename_all = "camelCase")]
 pub struct MigrationDirectory {
     /// Relative path to a migration directory from `baseDir`.

@@ -29,11 +29,7 @@ impl PostgresDestructiveChangeCheckerFlavour {
     }
 
     fn datamodel_connector(&self) -> &dyn psl::datamodel_connector::Connector {
-        if self.circumstances.contains(Circumstances::IsCockroachDb) {
-            psl::builtin_connectors::COCKROACH
-        } else {
-            psl::builtin_connectors::POSTGRES
-        }
+        psl::builtin_connectors::POSTGRES
     }
 }
 

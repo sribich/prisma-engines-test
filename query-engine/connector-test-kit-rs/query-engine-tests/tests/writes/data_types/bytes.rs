@@ -31,7 +31,7 @@ mod bytes {
     }
 
     // "Using a bytes field" should "work"
-    #[connector_test(schema(basic), exclude(Sqlserver("mssql.js.wasm")))]
+    #[connector_test(schema(basic))]
     async fn using_bytes_field(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -77,7 +77,7 @@ mod bytes {
         Ok(())
     }
 
-    #[connector_test(schema(bytes_id), exclude(MySQL, Vitess, SqlServer,))]
+    #[connector_test(schema(bytes_id), exclude(MySQL, Vitess))]
     async fn byte_id_coercion(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(runner, r#"

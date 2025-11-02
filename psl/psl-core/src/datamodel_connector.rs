@@ -50,8 +50,8 @@ pub trait Connector: Send + Sync {
 
     /// The database flavour, divergences in database backends capabilities might consider
     /// us to use a different flavour, like in the case of CockroachDB. However other databases
-    /// are less divergent as to consider sharing a flavour with others, like Planetscale and MySQL
-    /// or Neon and Postgres, which respectively have the Mysql and Postgres flavours.
+    /// are less divergent as to consider sharing a flavour with others, like MySQL
+    /// or Postgres, which respectively have the Mysql and Postgres flavours.
     fn flavour(&self) -> Flavour;
 
     /// The name of the connector. Can be used in error messages.
@@ -294,14 +294,6 @@ pub trait Connector: Send + Sync {
         unreachable!("This method is only implemented on connectors with lateral join support.")
     }
 
-    fn is_sql(&self) -> bool {
-        self.flavour().is_sql()
-    }
-
-    fn is_mongo(&self) -> bool {
-        self.flavour().is_mongo()
-    }
-
     fn supports_shard_keys(&self) -> bool {
         false
     }
@@ -313,22 +305,9 @@ pub trait Connector: Send + Sync {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Flavour {
-    Cockroach,
-    Mongo,
-    Sqlserver,
     Mysql,
     Postgres,
     Sqlite,
-}
-
-impl Flavour {
-    pub fn is_sql(&self) -> bool {
-        !self.is_mongo()
-    }
-
-    pub fn is_mongo(&self) -> bool {
-        matches!(self, Flavour::Mongo)
-    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]

@@ -96,7 +96,6 @@ impl SelectionResult {
             .iter()
             .filter_map(|(selection, _)| match selection {
                 SelectedField::Scalar(sf) => Some(sf.clone()),
-                SelectedField::Composite(_) => None,
                 SelectedField::Relation(_) => None,
                 SelectedField::Virtual(_) => None,
             })

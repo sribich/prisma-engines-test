@@ -3,7 +3,7 @@ use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn spgist_raw_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data box)",);
@@ -27,7 +27,7 @@ async fn spgist_raw_ops(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 async fn spgist_inet_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
@@ -51,7 +51,7 @@ async fn spgist_inet_ops(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn spgist_text_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text)",);
@@ -75,7 +75,7 @@ async fn spgist_text_ops(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn spgist_text_ops_varchar(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
     let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data varchar(420))",);

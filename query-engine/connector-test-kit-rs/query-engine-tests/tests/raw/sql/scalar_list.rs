@@ -1,7 +1,7 @@
 use indoc::indoc;
 use query_engine_tests::*;
 
-#[test_suite(only(Postgres, CockroachDb))]
+#[test_suite(only(Postgres))]
 mod scalar_list {
     use query_engine_tests::{fmt_query_raw, run_query, run_query_pretty};
 

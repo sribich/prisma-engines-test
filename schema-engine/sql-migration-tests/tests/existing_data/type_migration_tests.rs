@@ -29,9 +29,7 @@ fn altering_the_type_of_a_column_in_a_non_empty_table_warns(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm2).send().assert_warnings(&[
-        if api.is_cockroach() {
-            "You are about to alter the column `dogs` on the `User` table, which contains 1 non-null values. The data in that column will be cast from `Int8` to `Int4`.".into()
-        } else if api.is_postgres() {
+        if api.is_postgres() {
             "You are about to alter the column `dogs` on the `User` table, which contains 1 non-null values. The data in that column will be cast from `BigInt` to `Integer`.".into()
         } else if api.lower_cases_table_names() {
             "You are about to alter the column `dogs` on the `user` table, which contains 1 non-null values. The data in that column will be cast from `BigInt` to `Int`.".into()
@@ -164,7 +162,7 @@ fn changing_an_int_array_column_to_scalar_is_not_possible(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn int_to_string_conversions_work(api: TestApi) {
     let dm1 = r#"
         model Cat {
@@ -197,7 +195,7 @@ fn int_to_string_conversions_work(api: TestApi) {
         .assert_single_row(|row| row.assert_text_value("tag", "20"));
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn string_to_int_conversions_are_risky(api: TestApi) {
     let dm1 = r#"
         model Cat {
@@ -252,18 +250,6 @@ fn string_to_int_conversions_are_risky(api: TestApi) {
             api.dump_table("Cat")
                 .assert_single_row(|row| row.assert_int_value("tag", 20));
         }
-    } else if api.is_mssql() {
-        api.schema_push_w_datasource(dm2)
-        .force(true)
-        .send()
-        .assert_warnings(&[
-            "You are about to alter the column `tag` on the `Cat` table, which contains 1 non-null values. The data in that column will be cast from `NVarChar(1000)` to `Int`.".into()
-        ])
-        .assert_executable()
-        .assert_has_executed_steps();
-
-        api.dump_table("Cat")
-            .assert_single_row(|row| row.assert_int_value("tag", 20));
     } else if api.is_sqlite() {
         api.schema_push_w_datasource(dm2)
             .force(true)
@@ -280,8 +266,8 @@ fn string_to_int_conversions_are_risky(api: TestApi) {
 }
 
 // of course, 2018-01-18T08:01:02Z gets cast to 20180118080102.0 on MySQL
-// of course, 2018-01-18T08:01:02Z gets cast to 1516262462000.0 (UNIX timestamp) on SQLite and Cockroach
-#[test_connector(exclude(Mysql, Sqlite, CockroachDb))]
+// of course, 2018-01-18T08:01:02Z gets cast to 1516262462000.0 (UNIX timestamp) on SQLite
+#[test_connector(exclude(Mysql, Sqlite))]
 fn datetime_to_float_conversions_are_impossible(api: TestApi) {
     let dm1 = r#"
         model Cat {

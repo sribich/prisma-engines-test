@@ -209,18 +209,6 @@ fn sqlite_allows_unique_sort_order() {
 }
 
 #[test]
-fn sqlserver_allows_unique_sort_order() {
-    let dml = indoc! {r#"
-        model A {
-          id String @unique(sort: Desc)
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
 fn mysql_allows_compound_unique_sort_order() {
     let dml = indoc! {r#"
         model A {
@@ -249,20 +237,6 @@ fn sqlite_allows_compound_unique_sort_order() {
 }
 
 #[test]
-fn sqlserver_allows_compound_unique_sort_order() {
-    let dml = indoc! {r#"
-        model A {
-          a String
-          b String
-          @@unique([a(sort: Desc), b(sort: Asc)])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
 fn mysql_allows_index_sort_order() {
     let dml = indoc! {r#"
         model A {
@@ -274,21 +248,6 @@ fn mysql_allows_index_sort_order() {
     "#};
 
     let schema = with_header(dml, Provider::Mysql, &[]);
-    assert_valid(&schema);
-}
-
-#[test]
-fn sqlserver_allows_index_sort_order() {
-    let dml = indoc! {r#"
-        model A {
-          id Int @id
-          a String
-
-          @@index([a(sort: Desc)])
-        }
-    "#};
-
-    let schema = with_header(dml, Provider::SqlServer, &[]);
     assert_valid(&schema);
 }
 
@@ -327,65 +286,6 @@ fn mysql_fulltext_index_map() {
         .assert_has_model("A")
         .assert_fulltext_on_fields(&["a", "b"])
         .assert_mapped_name("my_text_index");
-}
-
-#[test]
-fn fulltext_index_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id String  @id @map("_id") @test.ObjectId
-          a  String
-          b  String
-
-          @@fulltext([a, b])
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Mongo, &[]))
-        .unwrap()
-        .assert_has_model("A")
-        .assert_fulltext_on_fields(&["a", "b"]);
-}
-
-#[test]
-fn duplicate_index_different_sort_order_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id String @id @default(auto()) @map("_id") @test.ObjectId
-          a  Int
-
-          @@index([a(sort: Desc)], map: "bbb")
-          @@index([a(sort: Asc)], map: "aaa")
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Mongo, &[]))
-        .unwrap()
-        .assert_has_model("A")
-        .assert_index_on_fields(&["a"])
-        .assert_mapped_name("bbb")
-        .assert_field("a")
-        .assert_descending();
-}
-
-#[test]
-fn fulltext_index_sort_mongodb() {
-    let dml = indoc! {r#"
-        model A {
-          id String  @id @map("_id") @test.ObjectId
-          a  String
-          b  String
-
-          @@fulltext([a, b(sort: Desc)])
-        }
-    "#};
-
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Mongo, &[]))
-        .unwrap()
-        .assert_has_model("A")
-        .assert_fulltext_on_fields(&["a", "b"])
-        .assert_field("b")
-        .assert_descending();
 }
 
 #[test]

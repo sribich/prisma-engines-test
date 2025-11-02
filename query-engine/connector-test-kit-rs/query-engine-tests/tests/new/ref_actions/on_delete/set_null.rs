@@ -1,4 +1,4 @@
-//! Only Postgres (except CockroachDB) allows SetNull on a non-nullable FK at all, rest fail during migration.
+//! Only Postgres allows SetNull on a non-nullable FK at all, rest fail during migration.
 
 use indoc::indoc;
 use query_engine_tests::*;
@@ -294,7 +294,6 @@ mod one2one_opt {
 #[test_suite(
     suite = "setnull_onD_1toM_opt",
     schema(optional),
-    exclude(MongoDb),
     relation_mode = "prisma"
 )]
 mod one2many_opt {

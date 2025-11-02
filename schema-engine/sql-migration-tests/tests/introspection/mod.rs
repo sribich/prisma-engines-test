@@ -39,7 +39,6 @@ fn introspect_force_with_invalid_schema() {
         },
         base_directory_path: "/".to_string(),
         force: true,
-        composite_type_depth: 0,
         namespaces: None,
     };
 
@@ -104,7 +103,6 @@ fn introspect_no_force_with_invalid_schema() {
         },
         base_directory_path: "/".to_string(),
         force: false,
-        composite_type_depth: 0,
         namespaces: None,
     };
 

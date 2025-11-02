@@ -619,83 +619,8 @@ mod many_count_rel {
     }
 
     // Regression test for: https://github.com/prisma/prisma/issues/7299
-    #[connector_test(schema(schema_one2m_multi_fks), capabilities(CompoundIds), exclude(CockroachDb))]
+    #[connector_test(schema(schema_one2m_multi_fks), capabilities(CompoundIds))]
     async fn count_one2m_compound_ids(runner: Runner) -> TestResult<()> {
-        run_query!(
-            runner,
-            r#"mutation {
-                createOneUserToObjective(
-                  data: {
-                    user: { create: {} }
-                    objective: { create: { name: "Objective 1" } }
-                    votes: { create: [{ user: { create: {} } }, { user: { create: {} } }] }
-                  }
-                ) {
-                  userId
-                  _count {
-                    votes
-                  }
-                }
-              }
-            "#
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"query {
-            findManyUserToObjective {
-              _count {
-                votes
-              }
-            }
-          }"#),
-          @r###"{"data":{"findManyUserToObjective":[{"_count":{"votes":2}}]}}"###
-        );
-
-        Ok(())
-    }
-
-    fn schema_one2m_multi_fks_cockroachdb() -> String {
-        let schema = indoc! {
-            r#"model User {
-              #id(id, BigInt, @id, @default(autoincrement()))
-              votes           Vote[]
-              UserToObjective UserToObjective[]
-            }
-
-            model Objective {
-              #id(id, BigInt, @default(autoincrement()), @id)
-              name            String            @unique
-              UserToObjective UserToObjective[] @relation(name: "UserObjectives")
-            }
-
-            model UserToObjective {
-              user        User      @relation(fields: [userId], references: [id])
-              userId      BigInt
-              objective   Objective @relation(name: "UserObjectives", fields: [objectiveId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-              objectiveId BigInt
-              votes       Vote[]
-
-              @@id([userId, objectiveId])
-            }
-
-            model Vote {
-              createdAt     DateTime        @default(now())
-              user          User            @relation(fields: [userId], references: [id])
-              userId        BigInt
-              userObjective UserToObjective @relation(fields: [objectiveId, followerId], references: [userId, objectiveId], onDelete: NoAction, onUpdate: NoAction)
-              objectiveId   BigInt
-              followerId    BigInt
-
-              @@id([userId, objectiveId])
-            }"#
-        };
-
-        schema.to_owned()
-    }
-
-    // Regression test for: https://github.com/prisma/prisma/issues/7299
-    #[connector_test(schema(schema_one2m_multi_fks_cockroachdb), only(CockroachDb))]
-    async fn count_one2m_compound_ids_cockroachdb(runner: Runner) -> TestResult<()> {
         run_query!(
             runner,
             r#"mutation {
@@ -825,60 +750,6 @@ mod many_count_rel {
             }
           }"#),
           @r###"{"data":{"findManyPost":[{"_count":{"comments":3,"categories":0}}]}}"###
-        );
-
-        Ok(())
-    }
-
-    fn composite_schema() -> String {
-        let schema = indoc! {
-            r#"model TestModel {
-              #id(id, Int, @id)
-              children Child[]
-            }
-
-            model Child {
-              #id(id, Int, @id)
-              testId Int?
-              test TestModel? @relation(fields:[testId], references: [id])
-              composite Composite?
-            }
-            
-            type Composite {
-              name String
-            }
-            "#
-        };
-
-        schema.to_owned()
-    }
-
-    #[connector_test(schema(composite_schema), capabilities(CompositeTypes))]
-    async fn filtered_count_composite(runner: Runner) -> TestResult<()> {
-        run_query!(
-            &runner,
-            r#"mutation { createOneTestModel(data: {
-                id: 1,
-                children: {
-                  create: [{ id: 1, composite: { name: "A" } }, { id: 2, composite: { name: "B" } }]
-                }
-              }) { id } }
-            "#
-        );
-        run_query!(
-            &runner,
-            r#"mutation { createOneTestModel(data: {
-                id: 2,
-                children: {
-                  create: [{ id: 3, composite: { name: "C" } }]
-                }
-              }) { id } }
-            "#
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"{ findManyTestModel { _count { children(where: { composite: { is: { name: { in: ["A", "C"] } } } }) } } }"#),
-          @r###"{"data":{"findManyTestModel":[{"_count":{"children":1}},{"_count":{"children":1}}]}}"###
         );
 
         Ok(())

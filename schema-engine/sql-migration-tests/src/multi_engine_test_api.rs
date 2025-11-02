@@ -61,8 +61,6 @@ impl TestApi {
         } else if tags.contains(Tags::Mysql) {
             let (_, cs) = tok(args.create_mysql_database());
             (tok(Quaint::new(&cs)).unwrap(), cs)
-        } else if tags.contains(Tags::Mssql) {
-            tok(args.create_mssql_database())
         } else if tags.contains(Tags::Sqlite) {
             let url = test_setup::sqlite_test_url(args.test_function_name());
 
@@ -109,11 +107,6 @@ impl TestApi {
         self.args.datasource_block(self.args.database_url(), &[], &[])
     }
 
-    /// Returns true only when testing on MSSQL.
-    pub fn is_mssql(&self) -> bool {
-        self.tags().contains(Tags::Mssql)
-    }
-
     /// Returns true only when testing on MySQL.
     pub fn is_mysql(&self) -> bool {
         self.tags().contains(Tags::Mysql)
@@ -147,11 +140,6 @@ impl TestApi {
     /// Returns true only when testing on postgres version 16.
     pub fn is_postgres_16(&self) -> bool {
         self.tags().contains(Tags::Postgres16)
-    }
-
-    /// Returns true only when testing on cockroach.
-    pub fn is_cockroach(&self) -> bool {
-        self.tags().contains(Tags::CockroachDb)
     }
 
     /// Returns true only when testing on sqlite.
@@ -207,14 +195,9 @@ impl TestApi {
 
         let connector = match &connection_info {
             ConnectionInfo::Native(NativeConnectionInfo::Postgres(_)) => {
-                if self.args.provider() == "cockroachdb" {
-                    SqlSchemaConnector::new_cockroach(params)?
-                } else {
-                    SqlSchemaConnector::new_postgres(params)?
-                }
+                SqlSchemaConnector::new_postgres(params)?
             }
             ConnectionInfo::Native(NativeConnectionInfo::Mysql(_)) => SqlSchemaConnector::new_mysql(params)?,
-            ConnectionInfo::Native(NativeConnectionInfo::Mssql(_)) => SqlSchemaConnector::new_mssql(params)?,
             ConnectionInfo::Native(NativeConnectionInfo::Sqlite { .. }) => {
                 SqlSchemaConnector::new_sqlite(params).unwrap()
             }

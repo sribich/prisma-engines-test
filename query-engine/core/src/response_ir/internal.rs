@@ -7,7 +7,7 @@ use crate::{
 };
 use connector::AggregationResult;
 use indexmap::IndexMap;
-use query_structure::{CompositeFieldRef, Field, Model, PrismaValue, SelectionResult, VirtualSelection};
+use query_structure::{Field, Model, PrismaValue, SelectionResult, VirtualSelection};
 use schema::{
     constants::{aggregations::*, output_fields::*},
     *,
@@ -578,9 +578,7 @@ fn serialize_objects(
         for (val, field) in values.into_iter().zip(fields.iter()) {
             match field {
                 SerializedField::Model(field, out_field) => {
-                    if let Field::Composite(cf) = field {
-                        object.insert(field.name().to_owned(), serialize_composite(cf, out_field, val)?);
-                    } else if !out_field.field_type().is_object() {
+                    if !out_field.field_type().is_object() {
                         object.insert(field.name().to_owned(), serialize_scalar(out_field, val)?);
                     }
                 }
@@ -678,68 +676,6 @@ fn process_nested_results(
     }
 
     Ok(nested_mapping)
-}
-
-// Problem: order of selections
-fn serialize_composite(cf: &CompositeFieldRef, out_field: &OutputField<'_>, value: PrismaValue) -> crate::Result<Item> {
-    match value {
-        PrismaValue::Null if !cf.is_required() => Ok(Item::Value(PrismaValue::Null)),
-
-        PrismaValue::List(values) if cf.is_list() => {
-            let values = values
-                .into_iter()
-                .map(|value| serialize_composite(cf, out_field, value))
-                .collect::<crate::Result<Vec<_>>>();
-
-            Ok(Item::List(values?.into()))
-        }
-
-        PrismaValue::Object(pairs) => {
-            let mut map = Map::new();
-            let object_type = out_field
-                .field_type()
-                .as_object_type()
-                .expect("Composite output field is not an object.");
-
-            let composite_type = cf.typ();
-
-            for (field_name, value) in pairs {
-                // The field on the composite type.
-                // This will cause clashes if one field has an @map("name") and the other field is named "field" directly.
-                let inner_field = composite_type
-                    .find_field(&field_name)
-                    .or_else(|| composite_type.find_field_by_db_name(&field_name))
-                    .unwrap();
-
-                // The field on the output object type. Used for the actual serialization process.
-                let inner_out_field = object_type.find_field(inner_field.name()).unwrap();
-
-                match &inner_field {
-                    Field::Composite(cf) => {
-                        map.insert(
-                            inner_field.name().to_owned(),
-                            serialize_composite(cf, inner_out_field, value)?,
-                        );
-                    }
-
-                    _ if !inner_out_field.field_type().is_object() => {
-                        map.insert(inner_field.name().to_owned(), serialize_scalar(inner_out_field, value)?);
-                    }
-
-                    _ => (),
-                }
-            }
-
-            Ok(Item::Map(map))
-        }
-
-        val => Err(CoreError::SerializationError(format!(
-            "Attempted to serialize '{}' with non-composite compatible type '{:?}' for field {}.",
-            val,
-            cf.typ().name(),
-            cf.name()
-        ))),
-    }
 }
 
 fn serialize_scalar(field: &OutputField<'_>, value: PrismaValue) -> crate::Result<Item> {

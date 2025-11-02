@@ -1,4 +1,3 @@
-mod cockroachdb;
 mod vitess;
 
 use psl::parser_database::ReferentialAction;
@@ -101,11 +100,7 @@ fn adding_an_inline_relation_must_result_in_a_foreign_key_in_the_model_table(api
             .assert_fk_on_columns(&["bid"], |fk| {
                 fk.assert_references("B", &["id"])
                     .assert_referential_action_on_update(ForeignKeyAction::Cascade)
-                    .assert_referential_action_on_delete(if api.is_mssql() {
-                        ForeignKeyAction::NoAction
-                    } else {
-                        ForeignKeyAction::Restrict
-                    })
+                    .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
             })
             .assert_fk_on_columns(&["cid"], |fk| fk.assert_references("C", &["id"]))
     });
@@ -174,15 +169,6 @@ fn changing_the_type_of_a_field_referenced_by_a_fk_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm2).send().assert_green();
 
-    // TODO(2022-02-25): it appears that the migration above _does_ re-add the foreign key on
-    // cockroachdb, but (the logs show an ALTER TABLE ADD CONSTRAINT FOREIGN KEY) but it doesn't
-    // appear in the information schema. I haven't found an issue for this on the cockroach issue
-    // tracker. We should do a minimal reproduction and open an issue.
-    // Apart from this, it looks like this test would pass on cockroach.
-    if api.is_cockroach() {
-        return;
-    }
-
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_column("b_id", |col| col.assert_type_family(ColumnTypeFamily::String))
@@ -212,11 +198,7 @@ fn adding_an_inline_relation_to_a_model_with_an_exotic_id_type(api: TestApi) {
             .assert_fk_on_columns(&["b_id"], |fk| {
                 fk.assert_references("B", &["id"])
                     .assert_referential_action_on_update(ForeignKeyAction::Cascade)
-                    .assert_referential_action_on_delete(if api.is_mssql() {
-                        ForeignKeyAction::NoAction
-                    } else {
-                        ForeignKeyAction::Restrict
-                    })
+                    .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
             })
     });
 }
@@ -286,11 +268,7 @@ fn compound_foreign_keys_should_work_in_correct_order(api: TestApi) {
     api.assert_schema().assert_table("A", |t| {
         t.assert_foreign_keys_count(1)
             .assert_fk_on_columns(&["a", "b", "d"], |fk| {
-                fk.assert_referential_action_on_delete(if api.is_mssql() {
-                    ForeignKeyAction::NoAction
-                } else {
-                    ForeignKeyAction::Restrict
-                })
+                fk.assert_referential_action_on_delete(ForeignKeyAction::Restrict)
                 .assert_referential_action_on_update(ForeignKeyAction::Cascade)
                 .assert_references("B", &["a_id", "b_id", "d_id"])
             })
@@ -315,11 +293,7 @@ fn moving_an_inline_relation_to_the_other_side_must_work(api: TestApi) {
     api.schema_push_w_datasource(dm1).send().assert_green();
     api.assert_schema().assert_table("A", |t| {
         t.assert_foreign_keys_count(1).assert_fk_on_columns(&["b_id"], |fk| {
-            fk.assert_referential_action_on_delete(if api.is_mssql() {
-                ForeignKeyAction::NoAction
-            } else {
-                ForeignKeyAction::Restrict
-            })
+            fk.assert_referential_action_on_delete(ForeignKeyAction::Restrict)
             .assert_referential_action_on_update(ForeignKeyAction::Cascade)
             .assert_references("B", &["id"])
         })
@@ -345,11 +319,7 @@ fn moving_an_inline_relation_to_the_other_side_must_work(api: TestApi) {
                 .assert_foreign_keys_count(1)
                 .assert_fk_on_columns(&["a_id"], |fk| {
                     fk.assert_references("A", &["id"])
-                        .assert_referential_action_on_delete(if api.is_mssql() {
-                            ForeignKeyAction::NoAction
-                        } else {
-                            ForeignKeyAction::Restrict
-                        })
+                        .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
                         .assert_referential_action_on_update(ForeignKeyAction::Cascade)
                 })
         })
@@ -534,7 +504,7 @@ fn relations_with_mappings_on_referencing_side_can_reference_multiple_fields(api
     });
 }
 
-#[test_connector(exclude(Vitess, CockroachDb))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_referential_actions_should_work(api: TestApi) {
     let actions = &[
         (ReferentialAction::SetNull, ForeignKeyAction::SetNull),
@@ -574,7 +544,7 @@ fn on_delete_referential_actions_should_work(api: TestApi) {
 // 5.6 and 5.7 doesn't let you `SET DEFAULT` without setting the default value
 // (even if nullable). MySQL 8.0+ & MariaDB 10.0 allow you to create a table with
 // `SET DEFAULT`, but will silently use `NO ACTION` / `RESTRICT` instead.
-#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Mssql, Vitess, CockroachDb))]
+#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Vitess))]
 fn on_delete_set_default_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -599,7 +569,7 @@ fn on_delete_set_default_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_restrict_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -662,7 +632,7 @@ fn on_update_referential_actions_should_work(api: TestApi) {
 // 5.6 and 5.7 doesn't let you `SET DEFAULT` without setting the default value
 // (even if nullable). MySQL 8.0+ & MariaDB 10.0 allow you to create a table with
 // `SET DEFAULT`, but will silently use `NO ACTION` / `RESTRICT` instead.
-#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Mssql, Vitess, CockroachDb))]
+#[test_connector(exclude(Mysql56, Mysql57, Mariadb, Vitess))]
 fn on_update_set_default_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -687,7 +657,7 @@ fn on_update_set_default_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_update_restrict_should_work(api: TestApi) {
     let dm = r#"
         model A {
@@ -712,7 +682,7 @@ fn on_update_restrict_should_work(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_required_default_action(api: TestApi) {
     let dm = r#"
         model A {
@@ -733,31 +703,6 @@ fn on_delete_required_default_action(api: TestApi) {
         table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
             fk.assert_references("A", &["id"])
                 .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-        })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn on_delete_required_default_action_with_no_restrict(api: TestApi) {
-    let dm = r#"
-        model A {
-            id Int @id
-            b      B[]
-        }
-
-        model B {
-            id   Int @id
-            aId  Int
-            a    A    @relation(fields: [aId], references: [id])
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_delete(ForeignKeyAction::NoAction)
         })
     });
 }
@@ -817,7 +762,7 @@ fn on_delete_compound_optional_optional_default_action(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Mssql, Vitess))]
+#[test_connector(exclude(Vitess))]
 fn on_delete_compound_required_optional_default_action_with_restrict(api: TestApi) {
     let dm = r#"
         model A {
@@ -843,36 +788,6 @@ fn on_delete_compound_required_optional_default_action_with_restrict(api: TestAp
             .assert_fk_on_columns(&["aId1", "aId2"], |fk| {
                 fk.assert_references("A", &["id", "id2"])
                     .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-            })
-    });
-}
-
-#[test_connector(tags(Mssql))]
-fn on_delete_compound_required_optional_default_action_without_restrict(api: TestApi) {
-    let dm = r#"
-        model A {
-            id  Int @id
-            id2 Int
-            b      B[]
-            @@unique([id, id2])
-        }
-
-        model B {
-            id    Int @id
-            aId1  Int?
-            aId2  Int
-            a     A?    @relation(fields: [aId1, aId2], references: [id, id2])
-        }
-    "#;
-
-    api.schema_push_w_datasource(dm).send().assert_green();
-
-    api.assert_schema().assert_table("B", |table| {
-        table
-            .assert_foreign_keys_count(1)
-            .assert_fk_on_columns(&["aId1", "aId2"], |fk| {
-                fk.assert_references("A", &["id", "id2"])
-                    .assert_referential_action_on_delete(ForeignKeyAction::NoAction)
             })
     });
 }
@@ -927,7 +842,7 @@ fn on_update_required_default_action(api: TestApi) {
     });
 }
 
-#[test_connector(exclude(Vitess, CockroachDb))]
+#[test_connector(exclude(Vitess))]
 fn adding_mutual_references_on_existing_tables_works(api: TestApi) {
     let dm1 = r#"
         model A {
@@ -992,7 +907,7 @@ fn migrations_with_many_to_many_related_models_must_not_recreate_indexes(api: Te
 
     api.schema_push_w_datasource(dm_1).send().assert_green();
     api.assert_schema().assert_table("_ProfileToSkill", |t| {
-        if api.is_postgres() && !api.is_cockroach() {
+        if api.is_postgres() {
             t.assert_pk(|pk| pk.assert_columns(&["A", "B"]))
         } else {
             t.assert_index_on_columns(&["A", "B"], |idx| idx.assert_is_unique())
@@ -1021,7 +936,7 @@ fn migrations_with_many_to_many_related_models_must_not_recreate_indexes(api: Te
 
     api.schema_push_w_datasource(dm_2).send().assert_green();
     api.assert_schema().assert_table("_ProfileToSkill", |table| {
-        if api.is_postgres() && !api.is_cockroach() {
+        if api.is_postgres() {
             table.assert_pk(|pk| {
                 pk.assert_columns(&["A", "B"])
                     .assert_constraint_name("_ProfileToSkill_AB_pkey")
@@ -1150,19 +1065,11 @@ fn join_tables_between_models_with_compound_primary_keys_must_work(api: TestApi)
             .assert_has_column("cat_id")
             .assert_fk_on_columns(&["human_firstName", "human_lastName"], |fk| {
                 fk.assert_references("Human", &["firstName", "lastName"])
-                    .assert_referential_action_on_delete(if api.is_mssql() {
-                        ForeignKeyAction::NoAction
-                    } else {
-                        ForeignKeyAction::Restrict
-                    })
+                    .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
             })
             .assert_fk_on_columns(&["cat_id"], |fk| {
                 fk.assert_references("Cat", &["id"])
-                    .assert_referential_action_on_delete(if api.is_mssql() {
-                        ForeignKeyAction::NoAction
-                    } else {
-                        ForeignKeyAction::Restrict
-                    })
+                    .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
             })
             .assert_indexes_count(2)
             .assert_index_on_columns(&["cat_id", "human_firstName", "human_lastName"], |idx| {

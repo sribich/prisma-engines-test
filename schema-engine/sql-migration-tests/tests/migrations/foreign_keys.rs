@@ -218,11 +218,7 @@ fn changing_a_relation_field_to_a_scalar_field_must_work(api: TestApi) {
             .assert_column("b", |col| col.assert_type_is_int())
             .assert_foreign_keys_count(1)
             .assert_fk_on_columns(&["b"], |fk| {
-                let on_delete = if api.is_mssql() {
-                    ForeignKeyAction::NoAction
-                } else {
-                    ForeignKeyAction::Restrict
-                };
+                let on_delete = ForeignKeyAction::Restrict;
 
                 fk.assert_references("B", &["id"])
                     .assert_referential_action_on_delete(on_delete)
@@ -284,7 +280,7 @@ fn changing_a_foreign_key_constrained_column_from_nullable_to_required_and_back_
     api.schema_push_w_datasource(dm).send().assert_green();
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn changing_all_referenced_columns_of_foreign_key_works(api: TestApi) {
     let dm1 = r#"
        model Post {

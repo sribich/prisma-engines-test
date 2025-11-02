@@ -6,7 +6,6 @@ use query_engine_tests::*;
 #[test_suite(
     suite = "restrict_onD_1to1_req",
     schema(required),
-    exclude(SqlServer),
     relation_mode = "prisma"
 )]
 mod one2one_req {
@@ -49,7 +48,6 @@ mod one2one_req {
 #[test_suite(
     suite = "restrict_onD_1to1_opt",
     schema(optional),
-    exclude(SqlServer),
     relation_mode = "prisma"
 )]
 mod one2one_opt {
@@ -153,7 +151,6 @@ mod one2one_opt {
 #[test_suite(
     suite = "restrict_onD_1toM_req",
     schema(required),
-    exclude(SqlServer),
     relation_mode = "prisma"
 )]
 mod one2many_req {
@@ -222,7 +219,6 @@ mod one2many_req {
 #[test_suite(
     suite = "restrict_onD_1toM_opt",
     schema(optional),
-    exclude(SqlServer),
     relation_mode = "prisma"
 )]
 mod one2many_opt {

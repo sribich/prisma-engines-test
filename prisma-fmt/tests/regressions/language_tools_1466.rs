@@ -1,8 +1,8 @@
 #[test]
-fn code_actions_should_not_crash_on_validation_errors_with_mongodb() {
+fn code_actions_should_not_crash_on_validation_errors() {
     let schema = r#"
         datasource db {
-          provider = "mongodb"
+          provider = "postgres"
           url      = env("DATABASE_URL")
         }
 

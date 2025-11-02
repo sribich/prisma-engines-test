@@ -389,7 +389,7 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
                                     idx.fields
                                         .iter()
                                         .zip(fields.iter())
-                                        .all(|(idx_field, field)| matches!(idx_field.path.field_in_index(), either::Either::Left(id) if id == *field))
+                                        .all(|(idx_field, field)| matches!(idx_field.path.field_in_index(), id if id == *field))
                                 }
                             });
                     if fields_are_unique {

@@ -195,7 +195,7 @@ mod atomic_number_ops {
     }
 
     // "A nested updateOne mutation" should "correctly apply all number operations for Int"
-    #[connector_test(schema(schema_3), exclude(CockroachDb))]
+    #[connector_test(schema(schema_3))]
     async fn nested_update_int_ops(runner: Runner) -> TestResult<()> {
         create_test_model(&runner, 1, None, None).await?;
         create_test_model(&runner, 2, Some(3), None).await?;
@@ -263,137 +263,9 @@ mod atomic_number_ops {
         Ok(())
     }
 
-    // CockroachDB does not support the "divide" operator as is.
-    // See https://github.com/cockroachdb/cockroach/issues/41448.
-    #[connector_test(schema(schema_3), only(CockroachDb))]
-    async fn nested_update_int_ops_cockroach(runner: Runner) -> TestResult<()> {
-        create_test_model(&runner, 1, None, None).await?;
-        create_test_model(&runner, 2, Some(3), None).await?;
-
-        // Increment
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optInt", "increment", "10").await?,
-          @r###"{"optInt":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optInt", "increment", "10").await?,
-          @r###"{"optInt":13}"###
-        );
-
-        // Decrement
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optInt", "decrement", "10").await?,
-          @r###"{"optInt":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optInt", "decrement", "10").await?,
-          @r###"{"optInt":3}"###
-        );
-
-        // Multiply
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optInt", "multiply", "2").await?,
-          @r###"{"optInt":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optInt", "multiply", "2").await?,
-          @r###"{"optInt":6}"###
-        );
-
-        // Set
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optInt", "set", "5").await?,
-          @r###"{"optInt":5}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optInt", "set", "5").await?,
-          @r###"{"optInt":5}"###
-        );
-
-        // Set null
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optInt", "set", "null").await?,
-          @r###"{"optInt":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optInt", "set", "null").await?,
-          @r###"{"optInt":null}"###
-        );
-
-        Ok(())
-    }
-
     // "A nested updateOne mutation" should "correctly apply all number operations for Int"
-    #[connector_test(schema(schema_3), exclude(MongoDb))]
+    #[connector_test(schema(schema_3))]
     async fn nested_update_float_ops(runner: Runner) -> TestResult<()> {
-        create_test_model(&runner, 1, None, None).await?;
-        create_test_model(&runner, 2, None, Some("5.5")).await?;
-
-        // Increment
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optFloat", "increment", "4.6").await?,
-          @r###"{"optFloat":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optFloat", "increment", "4.6").await?,
-          @r###"{"optFloat":10.1}"###
-        );
-
-        // Decrement
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optFloat", "decrement", "4.6").await?,
-          @r###"{"optFloat":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optFloat", "decrement", "4.6").await?,
-          @r###"{"optFloat":5.5}"###
-        );
-
-        // Multiply
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optFloat", "multiply", "2").await?,
-          @r###"{"optFloat":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optFloat", "multiply", "2").await?,
-          @r###"{"optFloat":11}"###
-        );
-
-        // Divide
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optFloat", "divide", "2").await?,
-          @r###"{"optFloat":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optFloat", "divide", "2").await?,
-          @r###"{"optFloat":5.5}"###
-        );
-
-        // Set
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optFloat", "set", "5.1").await?,
-          @r###"{"optFloat":5.1}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optFloat", "set", "5.1").await?,
-          @r###"{"optFloat":5.1}"###
-        );
-
-        // Set null
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 1, "optFloat", "set", "null").await?,
-          @r###"{"optFloat":null}"###
-        );
-        insta::assert_snapshot!(
-          query_nested_number_ops(&runner, 2, "optFloat", "set", "null").await?,
-          @r###"{"optFloat":null}"###
-        );
-
-        Ok(())
-    }
-
-    #[connector_test(schema(schema_3), only(MongoDb))]
-    async fn nested_update_float_ops_mongo(runner: Runner) -> TestResult<()> {
         create_test_model(&runner, 1, None, None).await?;
         create_test_model(&runner, 2, None, Some("5.5")).await?;
 

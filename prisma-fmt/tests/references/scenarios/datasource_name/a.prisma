@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource d<|>b {
-provider = "mongodb"
+provider = "postgres"
 url      = env("DATABASE_URL")
 }
 

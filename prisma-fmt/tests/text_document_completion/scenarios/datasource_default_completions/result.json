@@ -6,7 +6,7 @@
       "kind": 5,
       "documentation": {
         "kind": "markdown",
-        "value": "```prisma\nprovider = \"foo\"\n```\n___\nDescribes which datasource connector to use. Can be one of the following datasource providers: `postgresql`, `mysql`, `sqlserver`, `sqlite`, `mongodb` or `cockroachdb`.\n\n"
+        "value": "```prisma\nprovider = \"foo\"\n```\n___\nDescribes which datasource connector to use. Can be one of the following datasource providers: `postgresql`, `mysql`, or `sqlite`.\n\n"
       },
       "insertText": "provider = $0",
       "insertTextFormat": 2

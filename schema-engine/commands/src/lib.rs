@@ -47,15 +47,6 @@ pub fn dialect_for_provider(provider: &str) -> CoreResult<Box<dyn schema_connect
             #[cfg(feature = "postgresql")]
             Flavour::Postgres => Ok(Box::new(SqlSchemaDialect::postgres())),
 
-            #[cfg(feature = "postgresql")]
-            Flavour::Cockroach => Ok(Box::new(SqlSchemaDialect::cockroach())),
-
-            #[cfg(feature = "mongodb")]
-            Flavour::Mongo => Ok(Box::new(mongodb_schema_connector::MongoDbSchemaDialect)),
-
-            #[cfg(feature = "mssql")]
-            Flavour::Sqlserver => Ok(Box::new(SqlSchemaDialect::mssql())),
-
             #[cfg(feature = "mysql")]
             Flavour::Mysql => Ok(Box::new(SqlSchemaDialect::mysql())),
 

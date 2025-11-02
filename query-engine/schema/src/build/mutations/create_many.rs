@@ -137,7 +137,6 @@ fn filter_create_many_fields<'a>(
                 true
             }
         }
-        ModelField::Composite(_) => true,
         _ => false,
     })
 }

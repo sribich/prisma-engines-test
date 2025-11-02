@@ -18,8 +18,6 @@ pub async fn sql_schema_from_migration_history(
     filter: &SchemaFilter,
     external_shadow_db: UsingExternalShadowDb,
 ) -> ConnectorResult<SqlSchema> {
-    let is_vanilla_postgres = !connector.is_cockroachdb();
-
     match external_shadow_db {
         UsingExternalShadowDb::Yes => {
             sql_schema_from_migration_history_for_external_db(connector, migrations, namespaces, filter).await
@@ -97,17 +95,9 @@ pub async fn sql_schema_from_migration_history(
             // if we don't drop the database, subsequent DROP DATABASE commands will fail
             drop(shadow_database);
 
-            if is_vanilla_postgres {
-                drop_db_try_force(main_connection, &shadow_database_name)
-                    .await
-                    .map_err(super::quaint_error_mapper(params))?;
-            } else {
-                let drop_database = format!("DROP DATABASE IF EXISTS \"{shadow_database_name}\"");
-                main_connection
-                    .raw_cmd(&drop_database)
-                    .await
-                    .map_err(super::quaint_error_mapper(params))?;
-            }
+            drop_db_try_force(main_connection, &shadow_database_name)
+                .await
+                .map_err(super::quaint_error_mapper(params))?;
 
             ret
         }

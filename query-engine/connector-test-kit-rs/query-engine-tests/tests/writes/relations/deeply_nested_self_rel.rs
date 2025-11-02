@@ -22,7 +22,7 @@ mod deep_nested_rel {
 
     // TODO:Bring back sql server when cascading rules can be set!
     // "A deeply nested self relation create" should "be executed completely"
-    #[connector_test(schema(schema_1), exclude(SqlServer))]
+    #[connector_test(schema(schema_1))]
     async fn deep_nested_create_should_work(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {

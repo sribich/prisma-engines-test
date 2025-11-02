@@ -1,4 +1,3 @@
-mod mssql;
 mod mysql;
 mod postgresql;
 mod sqlite;
@@ -11,7 +10,7 @@ use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn remapping_fields_with_invalid_characters(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -32,7 +31,7 @@ async fn remapping_fields_with_invalid_characters(api: &mut TestApi) -> TestResu
         })
         .await?;
 
-    let native_string = if api.sql_family().is_mssql() || api.sql_family().is_mysql() {
+    let native_string = if api.sql_family().is_mysql() {
         "@db.Text"
     } else {
         ""
@@ -59,7 +58,7 @@ async fn remapping_fields_with_invalid_characters(api: &mut TestApi) -> TestResu
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn remapping_tables_with_invalid_characters(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {
@@ -95,7 +94,7 @@ async fn remapping_tables_with_invalid_characters(api: &mut TestApi) -> TestResu
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Sqlite, Vitess, CockroachDb))]
+#[test_connector(exclude(Sqlite, Vitess))]
 async fn remapping_models_in_relations(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
@@ -147,7 +146,7 @@ async fn remapping_models_in_relations(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(Mssql, Sqlite, Vitess, CockroachDb))]
+#[test_connector(exclude(Sqlite, Vitess))]
 async fn remapping_models_in_relations_should_not_map_virtual_fields(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
@@ -199,7 +198,7 @@ async fn remapping_models_in_relations_should_not_map_virtual_fields(api: &mut T
     Ok(())
 }
 
-#[test_connector(exclude(Sqlite, Mssql, Vitess, CockroachDb))]
+#[test_connector(exclude(Sqlite, Vitess))]
 async fn remapping_fields_in_compound_relations(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
@@ -262,7 +261,7 @@ async fn remapping_fields_in_compound_relations(api: &mut TestApi) -> TestResult
     Ok(())
 }
 
-#[test_connector(capabilities(Enums), exclude(CockroachDb, Sqlite))]
+#[test_connector(capabilities(Enums), exclude(Sqlite))]
 async fn remapping_enum_values(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
@@ -310,7 +309,7 @@ async fn remapping_enum_values(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(capabilities(Enums), exclude(CockroachDb, Sqlite))]
+#[test_connector(capabilities(Enums), exclude(Sqlite))]
 async fn remapping_enum_default_values(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
@@ -385,7 +384,7 @@ async fn remapping_compound_primary_keys(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 async fn not_automatically_remapping_invalid_compound_unique_key_names(api: &mut TestApi) -> TestResult {
     api.barrel()
         .execute(|migration| {

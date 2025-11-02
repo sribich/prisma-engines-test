@@ -23,6 +23,6 @@ all-native = [
     "sqlite-native",
 ]
 postgresql-native = ["quaint/postgresql-native"]
-mssql-native = ["quaint/mssql-native"]
+mssql-native = []
 mysql-native = ["quaint/mysql-native"]
 sqlite-native = ["quaint/sqlite-native"]

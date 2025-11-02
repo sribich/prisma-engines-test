@@ -66,42 +66,9 @@ mod create_many {
     // Covers: AutoIncrement ID working with basic autonincrement functionality.
     #[connector_test(
         schema(schema_2),
-        capabilities(CreateManyWriteableAutoIncId),
-        exclude(CockroachDb, Sqlite("cfd1"))
+        capabilities(CreateManyWriteableAutoIncId)
     )]
     async fn basic_create_many_autoincrement(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation {
-            createManyTest(data: [
-              { id: 123, str1: "1", str2: "1", str3: "1"},
-              { id: 321, str1: "2",            str3: null},
-              {          str1: "1"},
-            ]) {
-              count
-            }
-          }"#),
-          @r###"{"data":{"createManyTest":{"count":3}}}"###
-        );
-
-        Ok(())
-    }
-
-    fn schema_2_cockroachdb() -> String {
-        let schema = indoc! {
-            r#"model Test {
-              #id(id, BigInt, @id @default(autoincrement()))
-              str1 String
-              str2 String?
-              str3 String? @default("SOME_DEFAULT")
-            }"#
-        };
-
-        schema.to_owned()
-    }
-
-    // Covers: AutoIncrement ID working with basic autonincrement functionality.
-    #[connector_test(schema(schema_2_cockroachdb), only(CockroachDb))]
-    async fn basic_create_many_autoinc_cockroachdb(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
             createManyTest(data: [
@@ -501,9 +468,7 @@ mod create_many {
     async fn create_many_with_many_fields(runner: Runner) -> TestResult<()> {
         const FIELDS_IN_TEST_MODEL: usize = 12;
 
-        if let Some(max_bind_values) = runner.max_bind_values()
-            && !runner.connector_version().is_wasm()
-        {
+        if let Some(max_bind_values) = runner.max_bind_values() {
             assert!(
                 max_bind_values < FIELDS_IN_TEST_MODEL,
                 "When QUERY_BATCH_SIZE is set, its value must be less than {FIELDS_IN_TEST_MODEL}, otherwise the test will not be testing what it's supposed to; instead got {max_bind_values}. Either update this test, or the QUERY_BATCH_SIZE env var value in .envrc and GitHub Actions pipelines"
@@ -533,35 +498,6 @@ mod create_many {
 #[test_suite(schema(json_opt), exclude(MySql(5.6)), capabilities(CreateMany, Json))]
 mod json_create_many {
     use query_engine_tests::{assert_error, run_query};
-
-    #[connector_test(only(MongoDb))]
-    async fn create_many_json(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation {
-              createManyTestModel(data: [
-                { id: 1, json: "{}" },
-                { id: 2, json: "null" },
-                { id: 3, json: null },
-                { id: 4 },
-              ]) {
-                count
-              }
-            }"#),
-          @r###"{"data":{"createManyTestModel":{"count":4}}}"###
-        );
-
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"{
-              findManyTestModel {
-                id
-                json
-              }
-            }"#),
-          @r###"{"data":{"findManyTestModel":[{"id":1,"json":"{}"},{"id":2,"json":null},{"id":3,"json":null},{"id":4,"json":null}]}}"###
-        );
-
-        Ok(())
-    }
 
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn create_many_json_adv(runner: Runner) -> TestResult<()> {

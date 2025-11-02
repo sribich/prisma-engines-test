@@ -4,7 +4,6 @@
 //! This crate contains constants and utilities that are useful for writing tests across the
 //! engines.
 
-pub mod mssql;
 pub mod mysql;
 pub mod postgres;
 /// Tokio test runtime utils.
@@ -20,7 +19,6 @@ mod test_api_args;
 pub use capabilities::Capabilities;
 pub use diff::panic_with_diff;
 pub use enumflags2::BitFlags;
-pub use mssql::reset_schema as reset_mssql_schema;
 pub use sqlite::sqlite_test_url;
 pub use tags::{Tags, tags_from_comma_separated_list};
 pub use test_api_args::{DatasourceBlock, TestApiArgs};

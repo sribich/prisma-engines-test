@@ -1,10 +1,7 @@
 use super::common_test_data;
 use query_engine_tests::*;
 
-// On PlanetScale (wasm), this fails with:
-// "TypeError: The encoded data was not valid for encoding utf-8"
-// at "TextDecoder.decode"
-#[test_suite(schema(schemas::common_nullable_types), exclude(Vitess("planetscale.js.wasm")))]
+#[test_suite(schema(schemas::common_nullable_types))]
 mod bytes_filter_spec {
     use query_engine_tests::run_query;
 
@@ -42,8 +39,6 @@ mod bytes_filter_spec {
         match_connector_result!(
           &runner,
           r#"query { findManyTestModel(where: { bytes: null }) { id }}"#,
-          // MongoDB excludes undefined fields
-          MongoDb(_) => vec![r#"{"data":{"findManyTestModel":[]}}"#],
           _ => vec![r#"{"data":{"findManyTestModel":[{"id":3}]}}"#]
         );
 

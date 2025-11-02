@@ -31,7 +31,6 @@ expose-drivers = []
 all-native = [
   "postgresql-native",
   "mysql-native",
-  "mssql-native",
   "sqlite-native",
 ]
 
@@ -54,9 +53,6 @@ postgresql-native = [
   "dep:tokio-tungstenite",
 ]
 postgresql = []
-
-mssql-native = ["mssql", "dep:tiberius", "dep:tokio-util", "tokio/time", "tokio/net"]
-mssql = []
 
 mysql-native = ["mysql", "dep:mysql_async", "tokio/time", "dep:lru-cache"]
 mysql = ["chrono/std"]
@@ -85,6 +81,7 @@ itertools.workspace = true
 regex.workspace = true
 enumflags2.workspace = true
 pin-project.workspace = true
+tokio-util = { workspace = true }
 
 either.workspace = true
 base64.workspace = true
@@ -113,8 +110,6 @@ tokio = { workspace = true, features = ["macros", "time"] }
 expect-test.workspace = true
 tracing-test.workspace = true
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { workspace = true, features = ["js"] }
 
 [dependencies.tokio-tungstenite]
 workspace = true
@@ -133,30 +128,6 @@ optional = true
 workspace = true
 features = ["chrono", "column_decltype"]
 optional = true
-
-[target.'cfg(not(any(target_os = "macos", target_os = "ios")))'.dependencies.tiberius]
-workspace = true
-optional = true
-features = [
-  "sql-browser-tokio",
-  "chrono",
-  "tds73",
-  "bigdecimal",
-  "native-tls",
-  "winauth",
-]
-
-[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies.tiberius]
-workspace = true
-optional = true
-features = [
-  "sql-browser-tokio",
-  "vendored-openssl",
-  "chrono",
-  "bigdecimal",
-  "tds73",
-  "winauth",
-]
 
 [dependencies.tokio-postgres]
 workspace = true
@@ -185,11 +156,6 @@ optional = true
 [dependencies.tokio]
 workspace = true
 features = ["rt-multi-thread", "macros", "sync"]
-optional = true
-
-[dependencies.tokio-util]
-workspace = true
-features = ["compat"]
 optional = true
 
 [dependencies.query-template]

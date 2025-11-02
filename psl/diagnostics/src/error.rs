@@ -189,14 +189,6 @@ impl DatamodelError {
         Self::new(msg, span)
     }
 
-    pub fn new_composite_type_duplicate_field_error(type_name: &str, field_name: &str, span: Span) -> DatamodelError {
-        let msg = format!(
-            "Field \"{}\" is already defined on {} \"{}\".",
-            field_name, "composite type", type_name
-        );
-        Self::new(msg, span)
-    }
-
     pub fn new_duplicate_field_error(
         model_name: &str,
         field_name: &str,
@@ -231,26 +223,8 @@ impl DatamodelError {
         )
     }
 
-    pub fn new_composite_type_validation_error(message: &str, composite_type_name: &str, span: Span) -> DatamodelError {
-        let msg = format!("Error validating composite type \"{composite_type_name}\": {message}",);
-        Self::new(msg, span)
-    }
-
     pub fn new_enum_validation_error(message: &str, enum_name: &str, span: Span) -> DatamodelError {
         Self::new(format!("Error validating enum `{enum_name}`: {message}"), span)
-    }
-
-    pub fn new_composite_type_field_validation_error(
-        message: &str,
-        composite_type_name: &str,
-        field: &str,
-        span: Span,
-    ) -> DatamodelError {
-        let msg = format!(
-            "Error validating field `{}` in {} `{}`: {}",
-            field, "composite type", composite_type_name, message
-        );
-        Self::new(msg, span)
     }
 
     pub fn new_field_validation_error(
@@ -303,14 +277,14 @@ impl DatamodelError {
 
     pub fn new_type_not_found_error(type_name: &str, span: Span) -> DatamodelError {
         let msg = format!(
-            "Type \"{type_name}\" is neither a built-in type, nor refers to another model, composite type, or enum."
+            "Type \"{type_name}\" is neither a built-in type, nor refers to another model or enum."
         );
         Self::new(msg, span)
     }
 
     pub fn new_type_for_case_not_found_error(type_name: &str, suggestion: &str, span: Span) -> DatamodelError {
         let msg = format!(
-            "Type \"{type_name}\" is neither a built-in type, nor refers to another model, composite type, or enum. Did you mean \"{suggestion}\"?"
+            "Type \"{type_name}\" is neither a built-in type, nor refers to another model or enum. Did you mean \"{suggestion}\"?"
         );
         Self::new(msg, span)
     }

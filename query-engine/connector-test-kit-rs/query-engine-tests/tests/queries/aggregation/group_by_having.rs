@@ -42,10 +42,6 @@ mod aggr_group_by_having {
                 _sum { int }
               }
             }"#,
-            MongoDb(_) => vec![
-              r#"{"data":{"groupByTestModel":[{"string":"group2","int":5,"_count":{"_all":1},"_sum":{"int":5}},{"string":"group1","int":5,"_count":{"_all":1},"_sum":{"int":5}}]}}"#,
-              r#"{"data":{"groupByTestModel":[{"string":"group1","int":5,"_count":{"_all":1},"_sum":{"int":5}},{"string":"group2","int":5,"_count":{"_all":1},"_sum":{"int":5}}]}}"#
-            ],
             _ => vec![r#"{"data":{"groupByTestModel":[{"string":"group1","int":5,"_count":{"_all":1},"_sum":{"int":5}},{"string":"group2","int":5,"_count":{"_all":1},"_sum":{"int":5}}]}}"#]
         );
 
@@ -168,9 +164,6 @@ mod aggr_group_by_having {
               }
             }
           }"#,
-          // On MongoDB, having sum returns 0 where there are inexistant element
-          // Contrary to SQL which returns NULL and therefore excludes group3
-          MongoDb(_) => vec![r#"{"data":{"groupByTestModel":[{"string":"group2","_sum":{"float":5,"int":5}},{"string":"group3","_sum":{"float":0,"int":0}}]}}"#],
           _ => vec![r#"{"data":{"groupByTestModel":[{"string":"group2","_sum":{"float":5,"int":5}}]}}"#]
         );
 
@@ -237,8 +230,6 @@ mod aggr_group_by_having {
             }
           }
         }"#,
-          // MongoDB returns null for aggregations on undefined fields, so it's included
-          MongoDb(_) => vec![r#"{"data":{"groupByTestModel":[{"string":"group3","_min":{"float":null,"int":null}}]}}"#],
           _ => vec![r#"{"data":{"groupByTestModel":[]}}"#]
         );
 
@@ -305,8 +296,6 @@ mod aggr_group_by_having {
             }
           }
         }"#,
-          // MongoDB returns null for aggregations on undefined fields, so it's included
-          MongoDb(_) => vec![r#"{"data":{"groupByTestModel":[{"string":"group3","_max":{"float":null,"int":null}}]}}"#],
           _ => vec![r#"{"data":{"groupByTestModel":[]}}"#]
         );
 
@@ -505,9 +494,6 @@ mod decimal_aggregation_group_by_having {
               }
             }
           }"#,
-          // On MongoDB, having sum returns 0 where there are inexistant element
-          // Contrary to SQL which returns NULL and therefore excludes group3
-          MongoDb(_) => vec![r#"{"data":{"groupByTestModel":[{"string":"group2","_sum":{"decimal":"5"}},{"string":"group3","_sum":{"decimal":"0"}}]}}"#],
           _ => vec![r#"{"data":{"groupByTestModel":[{"string":"group2","_sum":{"decimal":"5"}}]}}"#]
         );
 
@@ -568,8 +554,6 @@ mod decimal_aggregation_group_by_having {
             }
           }
         }"#,
-          // MongoDB returns null for aggregations on undefined fields, so it's included
-          MongoDb(_) => vec![r#"{"data":{"groupByTestModel":[{"string":"group3","_min":{"decimal":null}}]}}"#],
           _ => vec![r#"{"data":{"groupByTestModel":[]}}"#]
         );
 
@@ -630,8 +614,6 @@ mod decimal_aggregation_group_by_having {
             }
           }
         }"#,
-          // MongoDB returns null for aggregations on undefined fields, so it's included
-          MongoDb(_) => vec![r#"{"data":{"groupByTestModel":[{"string":"group3","_max":{"decimal":null}}]}}"#],
           _ => vec![r#"{"data":{"groupByTestModel":[]}}"#]
         );
 

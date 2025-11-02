@@ -1,7 +1,7 @@
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::postgres::{SQLOperatorClassKind, SqlIndexAlgorithm};
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn gin_change_from_btree(api: TestApi) {
     let dm = r#"
         model A {
@@ -38,7 +38,7 @@ fn gin_change_from_btree(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn gin_array_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -63,7 +63,7 @@ fn gin_array_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn gin_array_default_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -88,7 +88,7 @@ fn gin_array_default_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn gin_array_ops_default(api: TestApi) {
     let dm = r#"
         model A {
@@ -113,7 +113,7 @@ fn gin_array_ops_default(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gin_jsonb_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -138,7 +138,7 @@ fn gin_jsonb_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gin_jsonb_ops_default(api: TestApi) {
     let dm = r#"
         model A {
@@ -163,7 +163,7 @@ fn gin_jsonb_ops_default(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gin_jsonb_path_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -188,7 +188,7 @@ fn gin_jsonb_path_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn from_jsonb_ops_to_jsonb_path_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -222,7 +222,7 @@ fn from_jsonb_ops_to_jsonb_path_ops(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn compound_index_with_different_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -247,7 +247,7 @@ fn compound_index_with_different_ops(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gin_raw_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -274,7 +274,7 @@ fn gin_raw_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn gin_raw_ops_default(api: TestApi) {
     let dm = r#"
         model A {

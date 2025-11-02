@@ -11,9 +11,6 @@ pub struct IntrospectionContext {
     /// This should always be true. TODO: change everything where it's
     /// set to false to take the config into account.
     pub render_config: bool,
-    /// How many layers of composite types should be traversed on
-    /// MongoDB introspection.
-    pub composite_type_depth: CompositeTypeDepth,
     previous_schema: psl::ValidatedSchema,
     namespaces: Option<Vec<String>>,
     base_directory_path: PathBuf,
@@ -23,13 +20,11 @@ impl IntrospectionContext {
     /// Create a new context.
     pub fn new(
         previous_schema: psl::ValidatedSchema,
-        composite_type_depth: CompositeTypeDepth,
         namespaces: Option<Vec<String>>,
         base_directory_path: PathBuf,
     ) -> Self {
         IntrospectionContext {
             previous_schema,
-            composite_type_depth,
             render_config: true,
             namespaces,
             base_directory_path,
@@ -40,7 +35,6 @@ impl IntrospectionContext {
     /// configuration blocks.
     pub fn new_config_only(
         previous_schema: psl::ValidatedSchema,
-        composite_type_depth: CompositeTypeDepth,
         namespaces: Option<Vec<String>>,
         base_directory_path: PathBuf,
     ) -> Result<Self, String> {
@@ -64,7 +58,6 @@ impl IntrospectionContext {
 
         Ok(Self::new(
             previous_schema_config_only,
-            composite_type_depth,
             namespaces,
             base_directory_path,
         ))
@@ -110,12 +103,8 @@ impl IntrospectionContext {
         match self.datasource().active_provider {
             #[cfg(feature = "postgresql")]
             "postgresql" => SqlFamily::Postgres,
-            #[cfg(feature = "cockroachdb")]
-            "cockroachdb" => SqlFamily::Postgres,
             #[cfg(feature = "sqlite")]
             "sqlite" => SqlFamily::Sqlite,
-            #[cfg(feature = "mssql")]
-            "sqlserver" => SqlFamily::Mssql,
             #[cfg(feature = "mysql")]
             "mysql" => SqlFamily::Mysql,
             name => unreachable!("The name `{}` for the datamodel connector is not known", name),
@@ -148,49 +137,5 @@ impl IntrospectionContext {
     pub fn without_config_rendering(mut self) -> Self {
         self.render_config = false;
         self
-    }
-}
-
-/// Control type for composite type traversal.
-#[derive(Debug, Clone, Copy)]
-pub enum CompositeTypeDepth {
-    /// Allow maximum of n layers of nested types.
-    Level(usize),
-    /// Unrestricted traversal.
-    Infinite,
-    /// No traversal, typing into dynamic Json.
-    None,
-}
-
-impl From<isize> for CompositeTypeDepth {
-    fn from(size: isize) -> Self {
-        match size {
-            size if size < 0 => Self::Infinite,
-            0 => Self::None,
-            _ => Self::Level(size as usize),
-        }
-    }
-}
-
-impl Default for CompositeTypeDepth {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
-impl CompositeTypeDepth {
-    /// Traversal is not allowed.
-    pub fn is_none(self) -> bool {
-        matches!(self, Self::None)
-    }
-
-    /// Go one level down in nested composite types.
-    pub fn level_down(self) -> CompositeTypeDepth {
-        match self {
-            CompositeTypeDepth::Level(level) if level > 1 => Self::Level(level - 1),
-            CompositeTypeDepth::Level(_) => Self::None,
-            CompositeTypeDepth::Infinite => Self::Infinite,
-            CompositeTypeDepth::None => Self::None,
-        }
     }
 }

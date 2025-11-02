@@ -11,7 +11,7 @@ use crate::{
     sql_schema_differ::{SqlSchemaDifferFlavour, column::ColumnTypeChange, differ_database::DifferDatabase},
 };
 use enumflags2::BitFlags;
-use psl::builtin_connectors::{CockroachType, KnownPostgresType, PostgresType};
+use psl::builtin_connectors::{KnownPostgresType, PostgresType};
 use regex::RegexSet;
 use sql_schema_describer::{
     postgres::PostgresSchemaExt,
@@ -44,15 +44,11 @@ impl PostgresSchemaDifferFlavour {
     pub fn new(circumstances: BitFlags<Circumstances>) -> Self {
         Self { circumstances }
     }
-
-    fn is_cockroachdb(&self) -> bool {
-        self.circumstances.contains(Circumstances::IsCockroachDb)
-    }
 }
 
 impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
     fn can_alter_primary_keys(&self) -> bool {
-        self.is_cockroachdb()
+        false
     }
 
     fn can_rename_foreign_key(&self) -> bool {
@@ -60,10 +56,6 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
     }
 
     fn column_autoincrement_changed(&self, columns: MigrationPair<TableColumnWalker<'_>>) -> bool {
-        if self.is_cockroachdb() {
-            return false;
-        }
-
         columns.previous.is_autoincrement() != columns.next.is_autoincrement()
     }
 
@@ -79,11 +71,7 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
             (None, None) => (),
         };
 
-        if self.is_cockroachdb() {
-            cockroach_column_type_change(columns)
-        } else {
-            postgres_column_type_change(columns)
-        }
+        postgres_column_type_change(columns)
     }
 
     fn push_enum_steps(&self, steps: &mut Vec<SqlMigrationStep>, db: &DifferDatabase<'_>) {
@@ -113,63 +101,7 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
     }
 
     fn push_alter_sequence_steps(&self, steps: &mut Vec<SqlMigrationStep>, db: &DifferDatabase<'_>) {
-        if !self.is_cockroachdb() {
-            return;
-        }
-
-        let schemas: MigrationPair<(&SqlDatabaseSchema, &PostgresSchemaExt)> = db
-            .schemas
-            .map(|schema| (schema, schema.describer_schema.downcast_connector_data()));
-
-        let sequence_pairs = db
-            .all_column_pairs()
-            .map(|cols| {
-                schemas
-                    .zip(cols)
-                    .map(|((schema, ext), column_id)| (schema.walk(column_id), ext))
-            })
-            .filter_map(|cols| {
-                cols.map(|(col, ext)| {
-                    col.default()
-                        .as_ref()
-                        .and_then(|d| d.as_sequence())
-                        .and_then(|sequence_name| ext.get_sequence(sequence_name))
-                })
-                .transpose()
-            });
-
-        for pair in sequence_pairs {
-            let prev = pair.previous.1;
-            let next = pair.next.1;
-            let mut changes: BitFlags<SequenceChange> = BitFlags::default();
-
-            if prev.min_value != next.min_value {
-                changes |= SequenceChange::MinValue;
-            }
-
-            if prev.max_value != next.max_value {
-                changes |= SequenceChange::MaxValue;
-            }
-
-            if prev.start_value != next.start_value {
-                changes |= SequenceChange::Start;
-            }
-
-            if prev.cache_size != next.cache_size {
-                changes |= SequenceChange::Cache;
-            }
-
-            if prev.increment_by != next.increment_by {
-                changes |= SequenceChange::Increment;
-            }
-
-            if !changes.is_empty() {
-                steps.push(SqlMigrationStep::AlterSequence(
-                    pair.map(|p| p.0 as u32),
-                    SequenceChanges(changes),
-                ));
-            }
-        }
+        return;
     }
 
     fn indexes_match(&self, a: IndexWalker<'_>, b: IndexWalker<'_>) -> bool {
@@ -210,23 +142,7 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
     }
 
     fn set_tables_to_redefine(&self, db: &mut DifferDatabase<'_>) {
-        if !self.is_cockroachdb() {
-            return;
-        }
-
-        let id_gets_dropped = db
-            .table_pairs()
-            .filter(|tables| {
-                tables.column_pairs().any(|columns| {
-                    let type_change = self.column_type_change(columns);
-                    let is_id = columns.previous.is_single_primary_key();
-
-                    is_id && matches!(type_change, Some(ColumnTypeChange::NotCastable))
-                }) || tables.dropped_columns().any(|col| col.is_single_primary_key())
-            })
-            .map(|t| t.table_ids());
-
-        db.tables_to_redefine = id_gets_dropped.collect();
+        return;
     }
 
     fn string_matches_bytes(&self, string: &str, bytes: &[u8]) -> bool {
@@ -302,60 +218,6 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
             let entry = db.extensions.entry(extension.name()).or_default();
             entry.next = Some(extension.id);
         }
-    }
-}
-
-fn cockroach_column_type_change(columns: MigrationPair<TableColumnWalker<'_>>) -> Option<ColumnTypeChange> {
-    use ColumnTypeChange::*;
-
-    let previous_type: Option<&CockroachType> = columns.previous.column_native_type();
-    let next_type: Option<&CockroachType> = columns.next.column_native_type();
-    let from_list_to_scalar = columns.previous.arity().is_list() && !columns.next.arity().is_list();
-    let from_scalar_to_list = !columns.previous.arity().is_list() && columns.next.arity().is_list();
-
-    match (previous_type, next_type) {
-        (_, Some(CockroachType::String(None))) if from_list_to_scalar => Some(SafeCast),
-        (_, Some(CockroachType::String(_))) if from_list_to_scalar => Some(RiskyCast),
-        (_, Some(CockroachType::Char(_))) if from_list_to_scalar => Some(RiskyCast),
-        (_, _) if from_scalar_to_list || from_list_to_scalar => Some(NotCastable),
-        (Some(previous), Some(next)) => cockroach_native_type_change_riskyness(*previous, *next, columns),
-        // Unsupported types will have None as Native type
-        (None, Some(_)) => Some(RiskyCast),
-        (Some(_), None) => Some(RiskyCast),
-        (None, None)
-            if columns.previous.column_type().full_data_type == columns.previous.column_type().full_data_type =>
-        {
-            None
-        }
-        (None, None) => Some(RiskyCast),
-    }
-}
-
-// https://go.crdb.dev/issue-v/49329/v22.1
-fn cockroach_native_type_change_riskyness(
-    previous: CockroachType,
-    next: CockroachType,
-    columns: MigrationPair<TableColumnWalker<'_>>,
-) -> Option<ColumnTypeChange> {
-    let covered_by_index = columns
-        .map(|col| col.is_part_of_secondary_index() || col.is_part_of_primary_key())
-        .into_tuple()
-        == (true, true);
-
-    match (previous, next) {
-        (CockroachType::Int4, CockroachType::String(None)) if !covered_by_index => Some(ColumnTypeChange::SafeCast),
-        (CockroachType::Int8, CockroachType::Int4) if !covered_by_index => Some(ColumnTypeChange::RiskyCast),
-        (previous, next) if previous == next => None,
-        // Timestamp default precisions
-        (CockroachType::Time(None), CockroachType::Time(Some(6)))
-        | (CockroachType::Time(Some(6)), CockroachType::Time(None))
-        | (CockroachType::Timetz(None), CockroachType::Timetz(Some(6)))
-        | (CockroachType::Timetz(Some(6)), CockroachType::Timetz(None))
-        | (CockroachType::Timestamptz(None), CockroachType::Timestamptz(Some(6)))
-        | (CockroachType::Timestamptz(Some(6)), CockroachType::Timestamptz(None))
-        | (CockroachType::Timestamp(None), CockroachType::Timestamp(Some(6)))
-        | (CockroachType::Timestamp(Some(6)), CockroachType::Timestamp(None)) => None,
-        _ => Some(ColumnTypeChange::NotCastable),
     }
 }
 

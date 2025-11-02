@@ -65,7 +65,7 @@ mod postgres {
     }
 
     // "Postgres native decimal types" should "work"
-    #[connector_test(schema(schema_decimal), only(Postgres), exclude(CockroachDb))]
+    #[connector_test(schema(schema_decimal), only(Postgres))]
     async fn native_decimal_types(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -85,43 +85,6 @@ mod postgres {
           }"#),
           // decFloat is cut due to precision
           @r###"{"data":{"createOneModel":{"float":1.1,"dfloat":2.2,"decFloat":"3.1","money":"3.51"}}}"###
-        );
-
-        Ok(())
-    }
-
-    fn schema_decimal_cockroach() -> String {
-        let schema = indoc! {
-            r#"model Model {
-              #id(id, String, @id, @default(cuid()))
-              float    Float   @test.Float4
-              dfloat   Float   @test.Float8
-              decFloat Decimal @test.Decimal(2, 1)
-            }"#
-        };
-
-        schema.to_owned()
-    }
-
-    // Cockroach does not support money.
-    #[connector_test(schema(schema_decimal_cockroach), only(CockroachDb))]
-    async fn native_decimal_types_cockroach(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation {
-            createOneModel(
-              data: {
-                float: 1.1
-                dfloat: 2.2
-                decFloat: 3.1234
-              }
-            ) {
-              float
-              dfloat
-              decFloat
-            }
-          }"#),
-          // decFloat is cut due to precision
-          @r###"{"data":{"createOneModel":{"float":1.1,"dfloat":2.2,"decFloat":"3.1"}}}"###
         );
 
         Ok(())
@@ -191,7 +154,7 @@ mod postgres {
     }
 
     // "Other Postgres native types" should "work"
-    #[connector_test(schema(schema_other_types), only(Postgres), exclude(CockroachDb,))]
+    #[connector_test(schema(schema_other_types), only(Postgres))]
     async fn native_other_types(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -212,42 +175,6 @@ mod postgres {
             }
           }"#),
           @r###"{"data":{"createOneModel":{"bool":true,"byteA":"dGVzdA==","xml":"<wurst>salat</wurst>","json":"{}","jsonb":"{\"a\":\"b\"}"}}}"###
-        );
-
-        Ok(())
-    }
-
-    fn schema_other_types_cockroach() -> String {
-        let schema = indoc! {
-            r#"model Model {
-              #id(id, String, @id, @default(cuid()))
-              bool  Boolean @test.Bool
-              byteA Bytes   @test.Bytes
-              jsonb Json    @test.JsonB
-            }"#
-        };
-
-        schema.to_owned()
-    }
-
-    // Cockroach does not support XML.
-    #[connector_test(schema(schema_other_types_cockroach), only(CockroachDb))]
-    async fn native_other_types_cockroach(runner: Runner) -> TestResult<()> {
-        insta::assert_snapshot!(
-          run_query!(&runner, r#"mutation {
-            createOneModel(
-              data: {
-                bool: true
-                byteA: "dGVzdA=="
-                jsonb: "{\"a\": \"b\"}"
-              }
-            ) {
-              bool
-              byteA
-              jsonb
-            }
-          }"#),
-          @r###"{"data":{"createOneModel":{"bool":true,"byteA":"dGVzdA==","jsonb":"{\"a\":\"b\"}"}}}"###
         );
 
         Ok(())

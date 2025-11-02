@@ -41,7 +41,6 @@ features!(
     AggregateApi,
     AtomicNumberOperations,
     ClientExtensions,
-    Cockroachdb,
     ConnectOrCreate,
     CreateMany,
     DataProxy,
@@ -61,9 +60,7 @@ features!(
     InteractiveTransactions,
     JsonProtocol,
     Metrics,
-    MicrosoftSqlServer,
     Middlewares,
-    MongoDb,
     MultiSchema,
     NApi,
     NamedConstraints,
@@ -195,7 +192,6 @@ impl<'a> FeatureMapWithProvider<'a> {
                 AtomicNumberOperations
                 | AggregateApi
                 | ClientExtensions
-                | Cockroachdb
                 | ConnectOrCreate
                 | CreateMany
                 | DataProxy
@@ -213,9 +209,7 @@ impl<'a> FeatureMapWithProvider<'a> {
                 | ImprovedQueryRaw
                 | InteractiveTransactions
                 | JsonProtocol
-                | MicrosoftSqlServer
                 | Middlewares
-                | MongoDb
                 | MultiSchema
                 | NamedConstraints
                 | NApi

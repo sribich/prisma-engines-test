@@ -1577,7 +1577,7 @@ fn multi_schema_tests(_api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), namespaces("one", "two"))]
+#[test_connector(tags(Postgres), namespaces("one", "two"))]
 fn migration_with_shadow_database(api: TestApi) {
     let conn_str = std::env::var("TEST_DATABASE_URL").unwrap();
 
@@ -1674,7 +1674,7 @@ fn migration_with_shadow_database(api: TestApi) {
         .assert_applied_migrations(&["init"]);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("multiSchema"))]
+#[test_connector(tags(Postgres), preview_features("multiSchema"))]
 fn migration_without_schema_change(api: TestApi) {
     let datasource = formatdoc! {r#"
             datasource db {{
@@ -1717,8 +1717,7 @@ fn migration_without_schema_change(api: TestApi) {
 }
 
 #[test_connector(
-    tags(Postgres, Mssql),
-    exclude(CockroachDb),
+    tags(Postgres),
     preview_features("multiSchema"),
     namespaces("one")
 )]

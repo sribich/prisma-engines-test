@@ -217,14 +217,6 @@ impl QuerySchema {
             .capabilities()
             .contains(ConnectorCapability::NativeUpsert)
     }
-
-    pub fn is_sql(&self) -> bool {
-        self.connector.is_sql()
-    }
-
-    pub fn is_mongo(&self) -> bool {
-        self.connector.is_mongo()
-    }
 }
 
 /// Designates a specific top-level operation on a corresponding model.

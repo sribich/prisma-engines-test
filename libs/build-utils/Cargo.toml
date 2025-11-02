@@ -1,6 +1,15 @@
 [package]
 name = "build-utils"
-version = "0.1.0"
+version.workspace = true
+authors.workspace = true
 edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
 
 [dependencies]
+gix = { workspace = true }

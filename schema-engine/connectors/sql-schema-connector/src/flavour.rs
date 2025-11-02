@@ -2,9 +2,6 @@
 //! in order to avoid cluttering the connector with conditionals. This is a private implementation
 //! detail of the SQL connector.
 
-#[cfg(feature = "mssql")]
-mod mssql;
-
 #[cfg(feature = "mysql")]
 mod mysql;
 
@@ -13,9 +10,6 @@ mod postgres;
 
 #[cfg(feature = "sqlite")]
 mod sqlite;
-
-#[cfg(feature = "mssql")]
-pub(crate) use mssql::{MssqlConnector, MssqlDialect};
 
 #[cfg(feature = "mysql")]
 pub(crate) use mysql::{MysqlConnector, MysqlDialect};
@@ -137,7 +131,6 @@ pub(crate) trait SqlDialect: Send + Sync + 'static {
     }
 
     #[cfg(any(
-        feature = "mssql-native",
         feature = "mysql-native",
         feature = "postgresql-native",
         feature = "sqlite-native"
@@ -149,7 +142,6 @@ pub(crate) trait SqlDialect: Send + Sync + 'static {
     ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>>;
 
     #[cfg(not(any(
-        feature = "mssql-native",
         feature = "mysql-native",
         feature = "postgresql-native",
         feature = "sqlite-native"

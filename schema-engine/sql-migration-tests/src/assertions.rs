@@ -848,26 +848,6 @@ impl PrimaryKeyAssertion<'_> {
         assert_eq!(self.pk.name(), constraint_name);
         self
     }
-
-    #[track_caller]
-    pub fn assert_non_clustered(self) -> Self {
-        if self.tags.contains(Tags::Mssql) {
-            let ext: &sql::mssql::MssqlSchemaExt = self.pk.schema.downcast_connector_data();
-            assert!(!ext.index_is_clustered(self.pk.id))
-        }
-
-        self
-    }
-
-    #[track_caller]
-    pub fn assert_clustered(self) -> Self {
-        if self.tags.contains(Tags::Mssql) {
-            let ext: &sql::mssql::MssqlSchemaExt = self.pk.schema.downcast_connector_data();
-            assert!(ext.index_is_clustered(self.pk.id))
-        }
-
-        self
-    }
 }
 
 pub struct ForeignKeyAssertion<'a> {
@@ -947,26 +927,6 @@ impl IndexAssertion<'_> {
 
     pub fn assert_is_unique(self) -> Self {
         assert_eq!(self.index.index_type(), IndexType::Unique);
-
-        self
-    }
-
-    #[track_caller]
-    pub fn assert_clustered(self) -> Self {
-        if self.tags.contains(Tags::Mssql) {
-            let ext: &sql::mssql::MssqlSchemaExt = self.index.schema.downcast_connector_data();
-            assert!(ext.index_is_clustered(self.index.id))
-        }
-
-        self
-    }
-
-    #[track_caller]
-    pub fn assert_non_clustered(self) -> Self {
-        if self.tags.contains(Tags::Mssql) {
-            let ext: &sql::mssql::MssqlSchemaExt = self.index.schema.downcast_connector_data();
-            assert!(!ext.index_is_clustered(self.index.id))
-        }
 
         self
     }

@@ -18,10 +18,10 @@ model MyModel {
 }
 
 /**
- * Types
+ * More Models
  */
 
-type YourType {
+model YourModel {
   // Example Comment
   field1 Int // Comment Field 1
   field2 Int // Comment Field 2

@@ -9,7 +9,7 @@ pub enum SourcePosition<'ast> {
     /// ```prisma
     /// datasource db {
     /// //         ^^
-    ///     provider = "mongodb"
+    ///     provider = "postgres"
     ///     url      = env("DATABASE_URL")
     /// }
     /// ```
@@ -17,7 +17,7 @@ pub enum SourcePosition<'ast> {
     /// In a property
     /// ```prisma
     /// datasource db {
-    ///     provider = "mongodb"
+    ///     provider = "postgres"
     /// //  ^^^^^^^^^^^^^^^^^^^^
     ///     url      = env("DATABASE_URL")
     /// }

@@ -3,13 +3,7 @@ use query_engine_tests::*;
 #[test_suite(
     schema(schema),
     exclude(
-        MongoDb,
-        Vitess("planetscale.js.wasm"),
-        Postgres("neon.js.wasm", "pg.js.wasm"),
-        Sqlite("libsql.js.wasm", "cfd1", "react-native", "better-sqlite3.js.wasm"),
-        Sqlserver("mssql.js.wasm"),
-        Mysql("mariadb.js.wasm", "mariadb-mysql.js.wasm"),
-        CockroachDb("pg.js.wasm")
+        Sqlite("react-native"),
     )
 )]
 mod logs {

@@ -764,7 +764,7 @@ fn prisma_type(native_type: &str) -> &str {
     TYPE_MAPS.get(kind).unwrap()
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn safe_casts_with_existing_data_should_work(api: TestApi) {
     let connector = psl::builtin_connectors::POSTGRES;
 
@@ -856,7 +856,7 @@ fn safe_casts_with_existing_data_should_work(api: TestApi) {
     }
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn risky_casts_with_existing_data_should_warn(api: TestApi) {
     let connector = psl::builtin_connectors::POSTGRES;
 
@@ -954,7 +954,7 @@ fn risky_casts_with_existing_data_should_warn(api: TestApi) {
     }
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn not_castable_with_existing_data_should_warn(api: TestApi) {
     let connector = psl::builtin_connectors::POSTGRES;
     let mut warnings = Vec::new();
@@ -1141,7 +1141,7 @@ static SAFE_CASTS_NON_LIST_TO_STRING: CastList = LazyLock::new(|| {
     ]
 });
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn safe_casts_from_array_with_existing_data_should_work(api: TestApi) {
     let connector = psl::builtin_connectors::POSTGRES;
 
@@ -1228,7 +1228,7 @@ fn safe_casts_from_array_with_existing_data_should_work(api: TestApi) {
     }
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn typescript_starter_schema_with_native_types_is_idempotent(api: TestApi) {
     let dm = r#"
         model Post {
@@ -1283,7 +1283,7 @@ fn typescript_starter_schema_with_native_types_is_idempotent(api: TestApi) {
         .assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn typescript_starter_schema_with_different_native_types_is_idempotent(api: TestApi) {
     let dm = r#"
         model Post {

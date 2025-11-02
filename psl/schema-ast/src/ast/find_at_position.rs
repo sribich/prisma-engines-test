@@ -1,5 +1,4 @@
 mod attribute;
-mod composite_type;
 mod datasource;
 mod r#enum;
 mod expression;
@@ -9,7 +8,6 @@ mod model;
 mod property;
 
 pub use attribute::AttributePosition;
-pub use composite_type::CompositeTypePosition;
 pub use datasource::SourcePosition;
 pub use r#enum::{EnumPosition, EnumValuePosition};
 pub use expression::ExpressionPosition;
@@ -29,10 +27,6 @@ impl ast::SchemaAst {
                     SchemaPosition::Model(model_id, ModelPosition::new(&self[model_id], position))
                 }
                 ast::TopId::Enum(enum_id) => SchemaPosition::Enum(enum_id, EnumPosition::new(&self[enum_id], position)),
-                ast::TopId::CompositeType(composite_type_id) => SchemaPosition::CompositeType(
-                    composite_type_id,
-                    CompositeTypePosition::new(&self[composite_type_id], position),
-                ),
                 ast::TopId::Source(source_id) => {
                     SchemaPosition::DataSource(source_id, SourcePosition::new(&self[source_id], position))
                 }
@@ -73,8 +67,6 @@ pub enum SchemaPosition<'ast> {
     Model(ast::ModelId, ModelPosition<'ast>),
     /// In an enum
     Enum(ast::EnumId, EnumPosition<'ast>),
-    /// In a composite type
-    CompositeType(ast::CompositeTypeId, CompositeTypePosition<'ast>),
     /// In a datasource
     DataSource(ast::SourceId, SourcePosition<'ast>),
     /// In a generator

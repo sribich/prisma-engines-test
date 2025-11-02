@@ -28,7 +28,7 @@ async fn enum_reintrospection_preserves_good_indentation(api: &mut TestApi) -> T
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_enums_array(api: &mut TestApi) -> TestResult {
     let sql = r#"
         CREATE TYPE "color" AS ENUM ('black','white');
@@ -67,7 +67,7 @@ async fn a_table_enums_array(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &mut TestApi) -> TestResult {
     let sql = r#"CREATE TYPE "threechars" AS ENUM ('123', 'wow','$§!');"#;
     api.raw_cmd(sql).await;
@@ -91,7 +91,7 @@ async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &m
     Ok(())
 }
 
-#[test_connector(exclude(CockroachDb), tags(Postgres))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_an_enum_default_value_that_is_an_empty_string(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TYPE "color" AS ENUM ('black', '');
@@ -130,7 +130,7 @@ async fn a_table_with_an_enum_default_value_that_is_an_empty_string(api: &mut Te
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_table_with_enum_default_values_that_look_like_booleans(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE Type truth as ENUM ('true', 'false', 'rumor');
@@ -170,7 +170,7 @@ async fn a_table_with_enum_default_values_that_look_like_booleans(api: &mut Test
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn invalid_enum_variants_regression(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TYPE invalid_enum AS ENUM ('Y','N','123','$§!');
@@ -221,7 +221,7 @@ async fn invalid_enum_variants_regression(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_variant_that_cannot_be_sanitized_triggers_dbgenerated_in_defaults(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE Type "A" as ENUM ('0', '1');
@@ -260,7 +260,7 @@ async fn a_variant_that_cannot_be_sanitized_triggers_dbgenerated_in_defaults(api
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_mapped_variant_will_not_warn(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE Type "A" as ENUM ('0first', '1second');
@@ -300,7 +300,7 @@ async fn a_mapped_variant_will_not_warn(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn a_mapped_enum_will_not_warn(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE Type "1A" as ENUM ('first', 'second');
@@ -343,7 +343,7 @@ async fn a_mapped_enum_will_not_warn(api: &mut TestApi) -> TestResult {
 }
 
 // Regression: https://github.com/prisma/prisma/issues/22456
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 async fn enum_array_type(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE TYPE "_foo" AS ENUM ('FIRST', 'SECOND');

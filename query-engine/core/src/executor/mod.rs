@@ -24,8 +24,7 @@ use async_trait::async_trait;
 use connector::Connector;
 use serde::{Deserialize, Serialize};
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait QueryExecutor: TransactionManager {
     /// Executes a single operation and returns its result.
     /// Implementers must honor the passed transaction ID and execute the operation on the transaction identified
@@ -95,8 +94,7 @@ impl TransactionOptions {
         self
     }
 }
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait TransactionManager {
     /// Starts a new transaction.
     /// Returns ID of newly opened transaction.

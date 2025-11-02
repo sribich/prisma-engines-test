@@ -1,6 +1,6 @@
 use sql_migration_tests::test_api::*;
 
-#[test_connector(exclude(CockroachDb))]
+#[test_connector]
 fn typescript_starter_schema_is_idempotent_without_native_type_annotations(api: TestApi) {
     let dm = r#"
         model Post {
@@ -29,7 +29,7 @@ fn typescript_starter_schema_is_idempotent_without_native_type_annotations(api: 
     api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres, Mysql, Mssql), exclude(CockroachDb))]
+#[test_connector(tags(Postgres, Mysql))]
 fn bigint_primary_keys_are_idempotent(api: TestApi) {
     let dm1 = r#"
             model Cat {

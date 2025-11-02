@@ -1,5 +1,4 @@
 mod autoincrement;
-mod composite_types;
 mod constraint_namespace;
 mod database_name;
 mod datasource;
@@ -21,20 +20,6 @@ use parser_database::walkers::RefinedRelationWalker;
 
 pub(super) fn validate(ctx: &mut Context<'_>) {
     let names = Names::new(ctx);
-
-    composite_types::detect_composite_cycles(ctx);
-    for composite_type in ctx.db.walk_composite_types() {
-        composite_types::composite_types_support(composite_type, ctx);
-
-        if !ctx.diagnostics.has_errors() {
-            composite_types::more_than_one_field(composite_type, ctx);
-
-            for field in composite_type.fields() {
-                composite_types::validate_default_value(field, ctx);
-                fields::validate_native_type_arguments(field, ctx);
-            }
-        }
-    }
 
     ctx.connector
         .validate_scalar_field_unknown_default_functions(ctx.db, ctx.diagnostics);
@@ -136,7 +121,6 @@ pub(super) fn validate(ctx: &mut Context<'_>) {
                 indexes::supports_clustering_setting(index, ctx);
                 indexes::clustering_can_be_defined_only_once(index, ctx);
                 indexes::opclasses_are_not_allowed_with_other_than_normal_indices(index, ctx);
-                indexes::composite_type_in_compound_unique_index(index, ctx);
             }
 
             for field_attribute in index.scalar_field_attributes() {

@@ -77,8 +77,7 @@ mod nested_create_many {
     }
 
     // "Nested createMany" should "error on duplicates by default"
-    // TODO(dom): Not working for mongo
-    #[connector_test(exclude(MongoDb))]
+    #[connector_test]
     async fn nested_createmany_fail_dups(runner: Runner) -> TestResult<()> {
         assert_error!(
             &runner,
@@ -107,8 +106,7 @@ mod nested_create_many {
     }
 
     // "Nested createMany" should "not error on duplicates with skipDuplicates true"
-    // TODO(dom): Not working for mongo
-    #[connector_test(exclude(Sqlite, SqlServer, MongoDb))]
+    #[connector_test(exclude(Sqlite))]
     async fn no_error_on_dups_when_skip_dups(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {

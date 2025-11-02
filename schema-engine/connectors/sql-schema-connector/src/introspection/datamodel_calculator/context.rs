@@ -43,14 +43,12 @@ impl<'a> DatamodelCalculatorContext<'a> {
         extension_types: &'a dyn ExtensionTypes,
     ) -> Self {
         let flavour: Box<dyn IntrospectionFlavour> = match ctx.sql_family() {
-            #[cfg(any(feature = "postgresql", feature = "cockroachdb"))]
+            #[cfg(any(feature = "postgresql"))]
             SqlFamily::Postgres => Box::new(flavour::PostgresIntrospectionFlavour),
             #[cfg(feature = "mysql")]
             SqlFamily::Mysql => Box::new(flavour::MysqlIntrospectionFlavour),
             #[cfg(feature = "sqlite")]
             SqlFamily::Sqlite => Box::new(flavour::SqliteIntrospectionFlavour),
-            #[cfg(feature = "mssql")]
-            SqlFamily::Mssql => Box::new(flavour::SqlServerIntrospectionFlavour),
             #[allow(unreachable_patterns)]
             _ => unimplemented!("Unsupported SQL family: {:?}", ctx.sql_family()),
         };
@@ -71,10 +69,6 @@ impl<'a> DatamodelCalculatorContext<'a> {
         ctx.introspection_map = IntrospectionMap::new(&ctx);
 
         ctx
-    }
-
-    pub(crate) fn is_cockroach(&self) -> bool {
-        self.active_connector().provider_name() == COCKROACH.provider_name()
     }
 
     pub(crate) fn relation_mode(&self) -> psl::datamodel_connector::RelationMode {

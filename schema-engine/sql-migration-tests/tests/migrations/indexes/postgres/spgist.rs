@@ -1,7 +1,7 @@
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::postgres::{SQLOperatorClassKind, SqlIndexAlgorithm};
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_change_from_btree(api: TestApi) {
     let dm = r#"
         model A {
@@ -38,7 +38,7 @@ fn spgist_change_from_btree(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn spgist_inet_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -63,7 +63,7 @@ fn spgist_inet_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb, Postgres9))]
+#[test_connector(tags(Postgres), exclude(Postgres9))]
 fn spgist_inet_ops_default(api: TestApi) {
     let dm = r#"
         model A {
@@ -88,7 +88,7 @@ fn spgist_inet_ops_default(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_text_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -113,7 +113,7 @@ fn spgist_text_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_text_ops_default(api: TestApi) {
     let dm = r#"
         model A {
@@ -138,7 +138,7 @@ fn spgist_text_ops_default(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_text_ops_varchar(api: TestApi) {
     let dm = r#"
         model A {
@@ -163,7 +163,7 @@ fn spgist_text_ops_varchar(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_text_ops_varchar_default(api: TestApi) {
     let dm = r#"
         model A {
@@ -188,7 +188,7 @@ fn spgist_text_ops_varchar_default(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_raw_ops(api: TestApi) {
     let dm = r#"
         model A {
@@ -213,7 +213,7 @@ fn spgist_raw_ops(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_no_steps();
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn spgist_raw_ops_default(api: TestApi) {
     let dm = r#"
         model A {

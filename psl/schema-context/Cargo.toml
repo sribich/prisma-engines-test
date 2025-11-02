@@ -1,0 +1,19 @@
+[package]
+name = "schema-context"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+diagnostics.workspace = true
+
+anyhow.workspace = true
+pest.workspace = true
+pest_derive.workspace = true
+serde.workspace = true
+serde_json.workspace = true

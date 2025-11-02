@@ -184,19 +184,12 @@ fn json_type_must_work_for_some_connectors() {
         .assert_has_scalar_field("json")
         .assert_scalar_type(ScalarType::Json);
 
-    let error = parse_unwrap_err(&format!("{MSSQL_SOURCE}\n{dml}"));
-
-    let expectation = expect![[r#"
-        [1;91merror[0m: [1mError validating field `json` in model `User`: Field `json` in model `User` can't be of type Json. The current connector does not support the Json type.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
-        [1;94m   | [0m
-        [1;94m 8 | [0m  id   Int    @id
-        [1;94m 9 | [0m  [1;91mjson Json[0m
-        [1;94m10 | [0m}
-        [1;94m   | [0m
-    "#]];
-
-    expectation.assert_eq(&error);
+    // SQLite does support it
+    psl::parse_schema_without_extensions(format!("{SQLITE_SOURCE}\n{dml}"))
+        .unwrap()
+        .assert_has_model("User")
+        .assert_has_scalar_field("json")
+        .assert_scalar_type(ScalarType::Json);
 
     // Postgres does support it
     psl::parse_schema_without_extensions(format!("{POSTGRES_SOURCE}\n{dml}"))
@@ -247,12 +240,19 @@ fn json_list_type_must_work_for_some_connectors() {
         }
     "#};
 
-    let schema = with_header(dml, Provider::Cockroach, &["cockroachdb"]);
+    let schema = with_header(dml, Provider::Sqlite, &[]);
 
     let error = parse_unwrap_err(&schema);
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError validating field `json_list` in model `User`: Field `json_list` in model `User` can't be of type Json[]. The current connector does not support the Json List type.[0m
+          [1;94m-->[0m  [4mschema.prisma:13[0m
+        [1;94m   | [0m
+        [1;94m12 | [0m  id   Int    @id
+        [1;94m13 | [0m  [1;91mjson_list Json[][0m
+        [1;94m14 | [0m}
+        [1;94m   | [0m
+        [1;91merror[0m: [1mField "json_list" in model "User" can't be a list. The current connector does not support lists of primitive types.[0m
           [1;94m-->[0m  [4mschema.prisma:13[0m
         [1;94m   | [0m
         [1;94m12 | [0m  id   Int    @id

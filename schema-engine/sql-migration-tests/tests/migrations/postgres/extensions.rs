@@ -5,7 +5,7 @@ use sql_migration_tests::test_api::*;
 
 const CONNECTOR: &dyn psl::datamodel_connector::Connector = psl::builtin_connectors::POSTGRES;
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn extensions_can_be_created(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -25,7 +25,7 @@ fn extensions_can_be_created(api: TestApi) {
     api.assert_schema().assert_has_extension("citext");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn multiple_extensions_can_be_created(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -46,7 +46,7 @@ fn multiple_extensions_can_be_created(api: TestApi) {
     api.assert_schema().assert_has_extension("pg_trgm");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn mapped_extensions_can_be_created(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -66,7 +66,7 @@ fn mapped_extensions_can_be_created(api: TestApi) {
     api.assert_schema().assert_has_extension("uuid-ossp");
 }
 
-#[test_connector(tags(Postgres14), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres14), preview_features("postgresqlExtensions"))]
 fn extensions_can_be_created_with_a_version(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -86,7 +86,7 @@ fn extensions_can_be_created_with_a_version(api: TestApi) {
     api.assert_schema().assert_has_extension("citext").assert_version("1.5");
 }
 
-#[test_connector(tags(Postgres14), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres14), preview_features("postgresqlExtensions"))]
 fn extension_version_can_be_changed(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -123,7 +123,7 @@ fn extension_version_can_be_changed(api: TestApi) {
     api.assert_schema().assert_has_extension("citext").assert_version("1.6");
 }
 
-#[test_connector(tags(Postgres14), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres14), preview_features("postgresqlExtensions"))]
 fn extension_version_does_not_change_on_empty(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -160,7 +160,7 @@ fn extension_version_does_not_change_on_empty(api: TestApi) {
     api.assert_schema().assert_has_extension("citext").assert_version("1.5");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn extension_schema_can_be_defined(api: TestApi) {
     api.raw_cmd("CREATE SCHEMA \"public-temp\"");
 
@@ -184,7 +184,7 @@ fn extension_schema_can_be_defined(api: TestApi) {
         .assert_schema("public-temp");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn relocatable_extension_can_be_relocated(api: TestApi) {
     api.raw_cmd("CREATE SCHEMA \"public-temp\"");
 
@@ -227,7 +227,7 @@ fn relocatable_extension_can_be_relocated(api: TestApi) {
         .assert_schema("public-temp");
 }
 
-#[test_connector(tags(Postgres14), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres14), preview_features("postgresqlExtensions"))]
 fn non_relocatable_extension_can_be_relocated(api: TestApi) {
     api.raw_cmd("CREATE SCHEMA \"public-temp\"");
 
@@ -268,7 +268,7 @@ fn non_relocatable_extension_can_be_relocated(api: TestApi) {
         .assert_schema("public-temp");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn removing_schema_definition_does_nothing(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -309,7 +309,7 @@ fn removing_schema_definition_does_nothing(api: TestApi) {
         .assert_schema("public");
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb), preview_features("postgresqlExtensions"))]
+#[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
 fn extension_functions_can_be_used_in_the_same_migration(api: TestApi) {
     let dm = indoc! {r#"
         datasource db {
@@ -337,7 +337,7 @@ fn extension_functions_can_be_used_in_the_same_migration(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn create_table_with_extension_types(api: TestApi) {
     let dm = indoc![
         r#"
@@ -382,7 +382,7 @@ fn create_table_with_extension_types(api: TestApi) {
     });
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn diff_extension_type_changed_modifiers(api: TestApi) {
     let dm1 = indoc! {r#"
         generator client {
@@ -446,7 +446,7 @@ fn diff_extension_type_changed_modifiers(api: TestApi) {
     .assert_eq(&diff);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn diff_extension_type_unchanged_modifiers(api: TestApi) {
     let dm = indoc! {r#"
         generator client {
@@ -486,7 +486,7 @@ fn diff_extension_type_unchanged_modifiers(api: TestApi) {
     .assert_eq(&diff);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn diff_extension_type_changed_db_type_modifiers(api: TestApi) {
     let dm1 = indoc! {r#"
         generator client {
@@ -543,7 +543,7 @@ fn diff_extension_type_changed_db_type_modifiers(api: TestApi) {
     .assert_eq(&diff);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn diff_extension_type_unchanged_db_type_modifiers(api: TestApi) {
     let dm = indoc! {r#"
         generator client {
@@ -582,7 +582,7 @@ fn diff_extension_type_unchanged_db_type_modifiers(api: TestApi) {
     .assert_eq(&diff);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn diff_unchanged_unsupported_type(api: TestApi) {
     let dm = indoc! {r#"
         generator client {
@@ -616,7 +616,7 @@ fn diff_unchanged_unsupported_type(api: TestApi) {
     .assert_eq(&diff);
 }
 
-#[test_connector(tags(Postgres), exclude(CockroachDb))]
+#[test_connector(tags(Postgres))]
 fn diff_changed_unsupported_type(api: TestApi) {
     let dm = indoc! {r#"
         generator client {

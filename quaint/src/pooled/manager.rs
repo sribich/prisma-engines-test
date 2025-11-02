@@ -5,8 +5,6 @@ use mobc::{Connection as MobcPooled, Manager};
 use prisma_metrics::WithMetricsInstrumentation;
 use tracing_futures::WithSubscriber;
 
-#[cfg(feature = "mssql-native")]
-use crate::connector::MssqlUrl;
 #[cfg(feature = "mysql-native")]
 use crate::connector::MysqlUrl;
 #[cfg(feature = "postgresql-native")]
@@ -106,9 +104,6 @@ pub enum QuaintManager {
 
     #[cfg(feature = "sqlite")]
     Sqlite { url: String, db_name: String },
-
-    #[cfg(feature = "mssql")]
-    Mssql { url: MssqlUrl },
 }
 
 #[async_trait]
@@ -159,12 +154,6 @@ impl Manager for QuaintManager {
                 } else {
                     Box::new(PostgreSqlWithTracingCache::new(url.clone(), tls_manager).await?) as Self::Connection
                 })
-            }
-
-            #[cfg(feature = "mssql-native")]
-            QuaintManager::Mssql { url } => {
-                use crate::connector::Mssql;
-                Ok(Box::new(Mssql::new(url.clone()).await?) as Self::Connection)
             }
         };
 
@@ -240,29 +229,6 @@ mod tests {
         let conn_string = format!(
             "{}?connection_limit=10",
             std::env::var("TEST_PSQL").expect("TEST_PSQL connection string not set.")
-        );
-
-        let pool = Quaint::builder(&conn_string).unwrap().build();
-
-        assert_eq!(10, pool.capacity().await as usize);
-    }
-
-    #[tokio::test]
-    #[cfg(feature = "mssql-native")]
-    async fn mssql_default_connection_limit() {
-        let conn_string = std::env::var("TEST_MSSQL").expect("TEST_MSSQL connection string not set.");
-
-        let pool = Quaint::builder(&conn_string).unwrap().build();
-
-        assert_eq!(num_cpus::get_physical() * 2 + 1, pool.capacity().await as usize);
-    }
-
-    #[tokio::test]
-    #[cfg(feature = "mssql-native")]
-    async fn mssql_custom_connection_limit() {
-        let conn_string = format!(
-            "{};connectionLimit=10",
-            std::env::var("TEST_MSSQL").expect("TEST_MSSQL connection string not set.")
         );
 
         let pool = Quaint::builder(&conn_string).unwrap().build();

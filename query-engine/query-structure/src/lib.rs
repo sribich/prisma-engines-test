@@ -1,5 +1,4 @@
 mod aggregate_selection;
-mod composite_type;
 mod convert;
 mod default_value;
 mod distinct;
@@ -27,7 +26,6 @@ pub mod prelude;
 
 pub use self::{default_value::*, native_type_instance::*, zipper::*};
 pub use aggregate_selection::*;
-pub use composite_type::*;
 pub use convert::convert;
 pub use distinct::*;
 pub use error::*;

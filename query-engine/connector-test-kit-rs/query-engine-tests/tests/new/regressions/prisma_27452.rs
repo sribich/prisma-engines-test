@@ -1,6 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schema), exclude(MongoDb, SqlServer))]
+#[test_suite(schema(schema))]
 mod prisma_27452 {
     fn schema() -> String {
         indoc! {

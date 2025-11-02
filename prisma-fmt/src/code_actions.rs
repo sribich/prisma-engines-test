@@ -1,6 +1,5 @@
 mod block;
 mod field;
-mod mongodb;
 mod multi_schema;
 mod relation_mode;
 mod relations;
@@ -79,12 +78,11 @@ pub(crate) fn available_actions(
     for source in initiating_ast.sources() {
         relation_mode::edit_referential_integrity(&mut actions, &context, source)
     }
-
+    
     // models AND views
     for model in validated_schema
         .db
         .walk_models_in_file(initiating_file_id)
-        .chain(validated_schema.db.walk_views_in_file(initiating_file_id))
     {
         for field in context.db.walk_fields(model.id) {
             field::add_missing_opposite_relation(&mut actions, &context, field);
@@ -94,18 +92,6 @@ pub(crate) fn available_actions(
 
         multi_schema::add_schema_block_attribute_model(&mut actions, &context, model);
         multi_schema::add_schema_to_schemas(&mut actions, &context, model);
-
-        if matches!(datasource, Some(ds) if ds.active_provider == "mongodb") {
-            mongodb::add_at_map_for_id(&mut actions, &context, model);
-
-            mongodb::add_native_for_auto_id(&mut actions, &context, model, datasource.unwrap());
-        }
-    }
-
-    if matches!(datasource, Some(ds) if ds.active_provider == "mongodb") {
-        for composite_type in validated_schema.db.walk_composite_types_in_file(initiating_file_id) {
-            block::create_missing_block_for_type(&mut actions, &context, composite_type);
-        }
     }
 
     for enumerator in validated_schema.db.walk_enums_in_file(initiating_file_id) {
@@ -121,10 +107,7 @@ pub(crate) fn available_actions(
                 None => continue,
             };
 
-            if matches!(datasource, Some(ds) if ds.active_provider != "mongodb") {
-                relations::make_referencing_side_many(&mut actions, &context, complete_relation);
-            }
-
+            relations::make_referencing_side_many(&mut actions, &context, complete_relation);
             relations::add_referenced_side_unique(&mut actions, &context, complete_relation);
 
             if inline_relation.is_one_to_one() {

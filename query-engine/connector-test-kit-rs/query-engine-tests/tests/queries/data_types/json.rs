@@ -362,7 +362,7 @@ mod json {
     #[connector_test(
         schema(schema_json_list),
         capabilities(Json, ScalarLists),
-        exclude(Mysql(5.6), CockroachDb)
+        exclude(Mysql(5.6))
     )]
     async fn json_list(runner: Runner) -> TestResult<()> {
         create_row(

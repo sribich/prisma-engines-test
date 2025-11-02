@@ -1,10 +1,7 @@
 //! Query Engine test setup.
 
 #![allow(clippy::await_holding_lock)]
-mod cockroachdb;
 pub mod driver_adapters;
-mod mongodb;
-mod mssql;
 mod mysql;
 mod postgres;
 mod providers;
@@ -13,7 +10,7 @@ mod sqlite;
 pub use schema_core::schema_connector::ConnectorError;
 use sqlite::sqlite_setup;
 
-use self::{cockroachdb::*, mongodb::*, mssql::*, mysql::*, postgres::*};
+use self::{mysql::*, postgres::*};
 use driver_adapters::DriverAdapter;
 use enumflags2::BitFlags;
 use providers::Provider;
@@ -106,11 +103,8 @@ pub async fn setup(url: String, prisma_schema: &str, db_schemas: &[&str]) -> Con
     let provider = Provider::try_from(source.active_provider).ok();
 
     match provider {
-        Some(Provider::SqlServer) => mssql_setup(url, prisma_schema, db_schemas).await,
         Some(Provider::Postgres) => postgres_setup(url, prisma_schema, db_schemas).await,
-        Some(Provider::Cockroach) => cockroach_setup(url, prisma_schema).await,
         Some(Provider::Mysql) => mysql_setup(url, prisma_schema).await,
-        Some(Provider::Mongo) => mongo_setup(prisma_schema, &url).await,
         Some(Provider::Sqlite) => sqlite_setup(source, url, prisma_schema).await,
         None => unimplemented!("Connector is not supported yet"),
     }
@@ -128,10 +122,7 @@ pub async fn teardown(url: &str, prisma_schema: &str, db_schemas: &[&str]) -> Co
         provider
             if [
                 SQLITE.provider_name(),
-                MSSQL.provider_name(),
                 MYSQL.provider_name(),
-                MONGODB.provider_name(),
-                COCKROACH.provider_name(),
             ]
             .contains(provider) => {}
 

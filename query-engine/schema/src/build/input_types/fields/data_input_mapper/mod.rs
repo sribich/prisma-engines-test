@@ -17,7 +17,6 @@ pub(crate) trait DataInputFieldMapper {
                 Field::Scalar(sf) if sf.is_list() => self.map_scalar_list(ctx, sf),
                 Field::Scalar(sf) => self.map_scalar(ctx, sf),
                 Field::Relation(rf) => self.map_relation(ctx, rf),
-                Field::Composite(cf) => self.map_composite(ctx, cf),
             })
             .collect()
     }
@@ -27,6 +26,4 @@ pub(crate) trait DataInputFieldMapper {
     fn map_scalar_list<'a>(&self, ctx: &'a QuerySchema, sf: ScalarFieldRef) -> InputField<'a>;
 
     fn map_relation<'a>(&self, ctx: &'a QuerySchema, rf: RelationFieldRef) -> InputField<'a>;
-
-    fn map_composite<'a>(&self, ctx: &'a QuerySchema, cf: CompositeFieldRef) -> InputField<'a>;
 }

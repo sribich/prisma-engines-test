@@ -88,7 +88,7 @@ impl<'db> PrimaryKeyWalker<'db> {
                 .fields
                 .iter()
                 .zip(fields)
-                .all(|(a, b)| matches!(a.path.field_in_index(), either::Either::Left(id)  if id == *b))
+                .all(|(a, b)| matches!(a.path.field_in_index(), id if id == *b))
     }
 
     /// Do the constrained fields match exactly these?

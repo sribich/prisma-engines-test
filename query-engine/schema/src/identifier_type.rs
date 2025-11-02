@@ -14,13 +14,6 @@ pub enum IdentifierType {
     CheckedUpdateManyInput(Model),
     UncheckedUpdateManyInput(Model, Option<RelationField>),
     CheckedUpdateOneInput(Model, Option<RelationField>),
-    CompositeCreateEnvelopeInput(CompositeType, FieldArity),
-    CompositeCreateInput(CompositeType),
-    CompositeDeleteManyInput(CompositeType),
-    CompositeUpdateEnvelopeInput(CompositeType, FieldArity),
-    CompositeUpdateInput(CompositeType),
-    CompositeUpdateManyInput(CompositeType),
-    CompositeUpsertObjectInput(CompositeType),
     CreateManyInput(Model, Option<RelationField>),
     CreateManyAndReturnOutput(Model),
     CreateOneScalarList(ScalarField),
@@ -41,9 +34,7 @@ pub enum IdentifierType {
     ScalarFilterInput(Model, bool),
     ScalarListFilterInput(Type, bool),
     ScalarListUpdateInput(ScalarField),
-    ToManyCompositeFilterInput(CompositeType),
     ToManyRelationFilterInput(Model),
-    ToOneCompositeFilterInput(CompositeType, FieldArity),
     ToOneRelationFilterInput(Model, FieldArity),
     TransactionIsolationLevel,
     UncheckedCreateInput(Model, Option<RelationField>),
@@ -83,7 +74,6 @@ impl std::fmt::Display for IdentifierType {
             IdentifierType::OrderByToManyAggregateInput(container) => {
                 let container_type = match container {
                     ParentContainer::Model(_) => "Relation",
-                    ParentContainer::CompositeType(_) => "Composite",
                 };
 
                 write!(f, "{}OrderBy{}AggregateInput", container.name(), container_type)
@@ -120,20 +110,6 @@ impl std::fmt::Display for IdentifierType {
                     capitalize(related_field.name())
                 )
             }
-            IdentifierType::CompositeCreateEnvelopeInput(ct, field_arity) => {
-                let arity = if field_arity.is_optional() {
-                    "Nullable"
-                } else if field_arity.is_list() {
-                    "List"
-                } else {
-                    ""
-                };
-
-                write!(f, "{}{}CreateEnvelopeInput", ct.name(), arity)
-            }
-            IdentifierType::CompositeCreateInput(ct) => {
-                write!(f, "{}CreateInput", ct.name())
-            }
             IdentifierType::ScalarListUpdateInput(sf) => {
                 write!(f, "{}Update{}Input", sf.container().name(), sf.name())
             }
@@ -158,29 +134,6 @@ impl std::fmt::Display for IdentifierType {
                     capitalize(related_field.name())
                 )
             }
-            IdentifierType::CompositeUpdateEnvelopeInput(ct, field_arity) => {
-                let arity = if field_arity.is_optional() {
-                    "Nullable"
-                } else if field_arity.is_list() {
-                    "List"
-                } else {
-                    ""
-                };
-
-                write!(f, "{}{}UpdateEnvelopeInput", ct.name(), arity)
-            }
-            IdentifierType::CompositeUpdateInput(ct) => {
-                write!(f, "{}UpdateInput", ct.name())
-            }
-            IdentifierType::CompositeUpsertObjectInput(ct) => {
-                write!(f, "{}UpsertInput", ct.name())
-            }
-            IdentifierType::CompositeUpdateManyInput(ct) => {
-                write!(f, "{}UpdateManyInput", ct.name())
-            }
-            IdentifierType::CompositeDeleteManyInput(ct) => {
-                write!(f, "{}DeleteManyInput", ct.name())
-            }
             IdentifierType::ToManyRelationFilterInput(related_model) => {
                 write!(f, "{}ListRelationFilter", capitalize(related_model.name()))
             }
@@ -193,14 +146,6 @@ impl std::fmt::Display for IdentifierType {
                     capitalize(related_model.name()),
                     nullable
                 )
-            }
-            IdentifierType::ToOneCompositeFilterInput(ct, arity) => {
-                let nullable = if arity.is_optional() { "Nullable" } else { "" };
-
-                write!(f, "{}{}CompositeFilter", capitalize(ct.name()), nullable)
-            }
-            IdentifierType::ToManyCompositeFilterInput(ct) => {
-                write!(f, "{}CompositeListFilter", capitalize(ct.name()))
             }
             IdentifierType::ScalarListFilterInput(typ, required) => {
                 f.write_str(&scalar_filter_name(&typ.type_name(), true, !required, false, false))

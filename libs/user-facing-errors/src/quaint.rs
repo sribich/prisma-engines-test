@@ -4,7 +4,6 @@ use quaint::connector::NativeConnectionInfo;
 use quaint::error::ErrorKind;
 
 #[cfg(any(
-    feature = "mssql-native",
     feature = "mysql-native",
     feature = "postgresql-native",
     feature = "sqlite-native"
@@ -74,8 +73,6 @@ pub fn render_quaint_error(kind: &ErrorKind, connection_info: Option<&NativeConn
                 }
                 #[cfg(feature = "mysql-native")]
                 Some(NativeConnectionInfo::Mysql(_)) => "— see https://pris.ly/d/mysql-connector for more details",
-                #[cfg(feature = "mssql-native")]
-                Some(NativeConnectionInfo::Mssql(_)) => "— see https://pris.ly/d/mssql-connector for more details",
                 #[cfg(feature = "sqlite-native")]
                 Some(NativeConnectionInfo::Sqlite { .. } | NativeConnectionInfo::InMemorySqlite { .. }) => {
                     "— see https://pris.ly/d/sqlite-connector for more details"
@@ -116,7 +113,6 @@ pub fn render_quaint_error(kind: &ErrorKind, connection_info: Option<&NativeConn
         ErrorKind::ConnectionClosed => Some(KnownError::new(common::ConnectionClosed)),
 
         #[cfg(any(
-            feature = "mssql-native",
             feature = "mysql-native",
             feature = "postgresql-native",
             feature = "sqlite-native"
@@ -134,12 +130,6 @@ pub fn render_quaint_error(kind: &ErrorKind, connection_info: Option<&NativeConn
                     database_location: format!("{}:{}", url.host(), url.port()),
                 }))
             }
-            #[cfg(feature = "mssql-native")]
-            (NativeErrorKind::ConnectionError(_), Some(NativeConnectionInfo::Mssql(url))) => {
-                Some(KnownError::new(common::DatabaseNotReachable {
-                    database_location: format!("{}:{}", url.host(), url.port()),
-                }))
-            }
             (NativeErrorKind::TlsError { message }, _) => Some(KnownError::new(common::TlsConnectionError {
                 message: message.into(),
             })),
@@ -151,12 +141,6 @@ pub fn render_quaint_error(kind: &ErrorKind, connection_info: Option<&NativeConn
             }
             #[cfg(feature = "mysql-native")]
             (NativeErrorKind::ConnectTimeout, Some(NativeConnectionInfo::Mysql(url))) => {
-                Some(KnownError::new(common::DatabaseNotReachable {
-                    database_location: format!("{}:{}", url.host(), url.port()),
-                }))
-            }
-            #[cfg(feature = "mssql-native")]
-            (NativeErrorKind::ConnectTimeout, Some(NativeConnectionInfo::Mssql(url))) => {
                 Some(KnownError::new(common::DatabaseNotReachable {
                     database_location: format!("{}:{}", url.host(), url.port()),
                 }))

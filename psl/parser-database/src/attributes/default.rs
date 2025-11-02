@@ -46,9 +46,6 @@ pub(super) fn visit_model_field_default(
     }
 
     match r#type {
-        ScalarFieldType::CompositeType(ctid) => {
-            validate_default_value_on_composite_type(ctid, ast_field, ctx);
-        }
         ScalarFieldType::Enum(enum_id) => {
             if ast_field.arity.is_list() {
                 validate_enum_list_default(value, enum_id, &mut accept, ctx);
@@ -72,72 +69,6 @@ pub(super) fn visit_model_field_default(
             ctx.push_attribute_validation_error(
                 "Only @default(dbgenerated(\"...\")) can be used for Unsupported types.",
             );
-        }
-    }
-}
-
-/// @default on composite type fields
-pub(super) fn visit_composite_field_default(
-    ct_id: crate::CompositeTypeId,
-    field_id: ast::FieldId,
-    r#type: ScalarFieldType,
-    ctx: &mut Context<'_>,
-) {
-    let (argument_idx, value) = match ctx.visit_default_arg_with_idx("value") {
-        Ok(value) => value,
-        Err(err) => return ctx.push_error(err),
-    };
-
-    let ast_model = &ctx.asts[ct_id];
-    let ast_field = &ast_model[field_id];
-
-    if ctx.visit_optional_arg("map").is_some() {
-        ctx.push_attribute_validation_error("The `map` argument is not allowed on a composite type field.");
-    }
-
-    let default_attribute = ctx.current_attribute_id();
-
-    let mut accept = move |ctx: &mut Context<'_>| {
-        let default_value = DefaultAttribute {
-            argument_idx,
-            mapped_name: None,
-            default_attribute,
-        };
-
-        let field_data = ctx.types.composite_type_fields.get_mut(&(ct_id, field_id)).unwrap();
-        field_data.default = Some(default_value);
-    };
-
-    // @default(dbgenerated(...)) is never valid on a composite type's fields.
-    match value {
-        ast::Expression::Function(name, ..) if name == FN_DBGENERATED => {
-            ctx.push_attribute_validation_error("Fields of composite types cannot have `dbgenerated()` as default.");
-            return;
-        }
-        _ => (),
-    }
-
-    // Resolve the default to a DefaultValue. We must loop in order to
-    // resolve type aliases.
-    match r#type {
-        ScalarFieldType::CompositeType(ctid) => {
-            validate_default_value_on_composite_type(ctid, ast_field, ctx);
-        }
-        ScalarFieldType::Enum(enum_id) => {
-            if ast_field.arity.is_list() {
-                validate_enum_list_default(value, enum_id, &mut accept, ctx);
-            } else {
-                validate_enum_default(value, enum_id, &mut accept, ctx);
-            }
-        }
-        ScalarFieldType::BuiltInScalar(scalar_type) => {
-            validate_composite_builtin_scalar_type_default(scalar_type, value, &mut accept, ast_field.arity, ctx)
-        }
-        ScalarFieldType::Extension(_) => {
-            ctx.push_attribute_validation_error("Composite field with extension type cannot have default values.")
-        }
-        ScalarFieldType::Unsupported(_) => {
-            ctx.push_attribute_validation_error("Composite field of type `Unsupported` cannot have default values.")
         }
     }
 }
@@ -336,22 +267,6 @@ fn validate_invalid_function_default(fn_name: &str, scalar_type: ScalarType, ctx
     ctx.push_attribute_validation_error(&format!(
         "The function `{fn_name}()` cannot be used on fields of type `{scalar_type}`.",
         scalar_type = scalar_type.as_str()
-    ));
-}
-
-fn validate_default_value_on_composite_type(
-    ctid: crate::CompositeTypeId,
-    ast_field: &ast::Field,
-    ctx: &mut Context<'_>,
-) {
-    let attr = ctx.current_attribute();
-    let ct_name = ctx.asts[ctid].name();
-
-    ctx.push_error(DatamodelError::new_composite_type_field_validation_error(
-        "Defaults on fields of type composite are not supported. Please remove the `@default` attribute.",
-        ct_name,
-        ast_field.name(),
-        attr.span,
     ));
 }
 

@@ -14,10 +14,7 @@ pub struct UniqueCriteriaWalker<'db> {
 
 impl<'db> UniqueCriteriaWalker<'db> {
     pub fn fields(self) -> impl ExactSizeIterator<Item = IndexFieldWalker<'db>> + 'db {
-        self.fields.iter().map(move |field| match field.path.field_in_index() {
-            either::Either::Left(id) => IndexFieldWalker::new(self.db.walk(id)),
-            either::Either::Right(id) => IndexFieldWalker::new(self.db.walk(id)),
-        })
+        self.fields.iter().map(move |field| IndexFieldWalker::new(self.db.walk(field.path.field_in_index())))
     }
 
     pub fn is_strict_criteria(self) -> bool {

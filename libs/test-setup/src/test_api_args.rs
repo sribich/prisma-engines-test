@@ -1,4 +1,4 @@
-use crate::{Capabilities, Tags, logging, mssql, mysql, postgres};
+use crate::{Capabilities, Tags, logging, mysql, postgres};
 use enumflags2::BitFlags;
 use quaint::single::Quaint;
 use std::sync::LazyLock;
@@ -75,11 +75,7 @@ static DB_UNDER_TEST: LazyLock<Result<DbUnderTest, String>> = LazyLock::new(|| {
         "postgresql" | "postgres" => Ok({
             let tags = postgres::get_postgres_tags(&database_url)?;
 
-            let provider = if tags.contains(Tags::CockroachDb) {
-                "cockroachdb"
-            } else {
-                "postgresql"
-            };
+            let provider = "postgresql";
 
             DbUnderTest {
                 tags,
@@ -92,14 +88,6 @@ static DB_UNDER_TEST: LazyLock<Result<DbUnderTest, String>> = LazyLock::new(|| {
                 shadow_database_url,
                 max_ddl_refresh_delay: None,
             }
-        }),
-        "sqlserver" => Ok(DbUnderTest {
-            tags: mssql::get_mssql_tags(&database_url)?,
-            database_url,
-            capabilities: Capabilities::CreateDatabase.into(),
-            provider: "sqlserver",
-            shadow_database_url,
-            max_ddl_refresh_delay: None,
         }),
         _ => Err("Unknown database URL".into()),
     }
@@ -158,12 +146,6 @@ impl TestApiArgs {
 
     pub fn capabilities(&self) -> BitFlags<Capabilities> {
         self.db.capabilities
-    }
-
-    pub async fn create_mssql_database(&self) -> (Quaint, String) {
-        mssql::init_mssql_database(self.database_url(), self.test_function_name)
-            .await
-            .unwrap()
     }
 
     pub async fn create_mysql_database(&self) -> (&'static str, String) {
