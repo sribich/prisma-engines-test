@@ -28,5 +28,16 @@ pub enum MigrateCommand {
 pub struct DeployArgs {}
 
 pub fn run(args: MigrateCli) -> Result<()> {
+    match args.command {
+        MigrateCommand::Deploy => todo!(),
+        MigrateCommand::Dev => todo!(),
+        MigrateCommand::Diff => todo!(),
+        MigrateCommand::Reset => todo!(),
+        MigrateCommand::Resolve => todo!(),
+        MigrateCommand::Status => migrate_status(),
+    }
+}
+
+fn migrate_status() -> Result<()> {
     Ok(())
 }

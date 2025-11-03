@@ -1424,7 +1424,7 @@ impl Default for SortOrder {
 }
 
 /// Prisma's builtin scalar types.
-#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq, PartialOrd, Ord)]
 #[allow(missing_docs)]
 pub enum ScalarType {
     Int,

@@ -26,7 +26,6 @@ members = [
     "query-engine/schema",
     "query-engine/query-builders/*",
     "libs/*",
-    "prisma-fmt",
     "psl/*",
     "quaint",
 ]
@@ -43,7 +42,7 @@ check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)', 'cfg(debug_assert)']
 
 [workspace.dependencies]
 quaint = { path = "./quaint", default-features = false }
-prisma-fmt.path = "./prisma-fmt"
+prisma-fmt.path = "./apps/fmt"
 
 build-utils.path = "./libs/build-utils"
 crosstarget-utils.path = "./libs/crosstarget-utils"

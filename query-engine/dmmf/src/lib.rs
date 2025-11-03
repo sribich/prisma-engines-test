@@ -1,5 +1,5 @@
 mod ast_builders;
-mod serialization_ast;
+pub mod serialization_ast;
 
 #[cfg(test)]
 mod tests;

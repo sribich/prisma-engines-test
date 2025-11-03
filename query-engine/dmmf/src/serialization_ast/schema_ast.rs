@@ -67,7 +67,7 @@ pub struct DmmfOutputType {
     pub fields: Vec<DmmfOutputField>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DmmfInputField {
     pub name: String,
@@ -82,7 +82,7 @@ pub struct DmmfInputField {
     pub deprecation: Option<DmmfDeprecation>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DmmfTypeReference {
     #[serde(rename = "type")]
@@ -111,7 +111,7 @@ pub struct DmmfEnum {
     pub values: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DmmfDeprecation {
     pub since_version: String,

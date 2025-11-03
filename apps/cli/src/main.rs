@@ -38,6 +38,7 @@ fn main() -> Result<()> {
 
     match args.command {
         Command::Debug(debug_command) => command::debug::run(debug_command),
+        Command::Migrate(migrate_command) => command::migrate::run(migrate_command),
         _ => todo!(),
     }?;
 

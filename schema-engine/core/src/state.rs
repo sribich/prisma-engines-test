@@ -11,7 +11,7 @@ use ::commands::MigrationSchemaCache;
 use enumflags2::BitFlags;
 use futures::stream::{FuturesUnordered, StreamExt};
 use json_rpc::types::*;
-use psl::parser_database::SourceFile;
+use psl::parser_database::{NoExtensionTypes, SourceFile};
 use schema_connector::{ConnectorError, ConnectorHost, IntrospectionResult, Namespaces, SchemaConnector};
 use std::{
     collections::HashMap,
@@ -30,7 +30,7 @@ use tracing_futures::{Instrument, WithSubscriber};
 /// `connectors`. Each connector has its own async task, and communicates with the core through
 /// channels. That ensures that each connector is handling requests one at a time to avoid
 /// synchronization issues. You can think of it in terms of the actor model.
-pub(crate) struct EngineState {
+pub struct EngineState {
     // The initial Prisma schema for the engine state.
     // Its datasource URL-like attributes are overridden by `datasource_urls_override`, if provided.
     initial_datamodel: Option<psl::ValidatedSchema>,
@@ -102,7 +102,8 @@ type ErasedConnectorRequest = Box<
 >;
 
 impl EngineState {
-    pub(crate) fn new(
+    ///
+    pub fn new(
         initial_datamodels: Option<Vec<(String, SourceFile)>>,
         datasource_urls_override: Option<psl::DatasourceUrls>,
         host: Option<Arc<dyn ConnectorHost>>,
@@ -136,6 +137,16 @@ impl EngineState {
             connectors: Default::default(),
             migration_schema_cache: Arc::new(Mutex::new(Default::default())),
         }
+    }
+
+    ///
+    pub fn new_single(initial_datamodel: Option<SourceFile>, host: Option<Arc<dyn ConnectorHost>>) -> Self {
+        Self::new(
+            Some(vec![("prisma.schema".to_owned(), initial_datamodel.unwrap())]),
+            None,
+            host,
+            Arc::new(ExtensionTypeConfig::default()),
+        )
     }
 
     fn namespaces(&self) -> Option<Namespaces> {
@@ -211,11 +222,11 @@ impl EngineState {
             .await
     }
 
-    // Note: this method is used by:
-    // - `prisma db pull` via `EngineState::introspect_sql`
-    // - `prisma db execute` via `EngineState::db_execute`
-    // - `prisma/prisma tests` via `EngineState::drop_database`
-    async fn with_connector_for_url<O: Send + 'static>(&self, url: String, f: ConnectorRequest<O>) -> CoreResult<O> {
+    /// Note: this method is used by:
+    /// - `prisma db pull` via `EngineState::introspect_sql`
+    /// - `prisma db execute` via `EngineState::db_execute`
+    /// - `prisma/prisma tests` via `EngineState::drop_database`
+    pub async fn with_connector_for_url<O: Send + 'static>(&self, url: String, f: ConnectorRequest<O>) -> CoreResult<O> {
         self.with_connector_for_request::<O>(ConnectorRequestType::Url(url.clone()), None, f)
             .await
     }

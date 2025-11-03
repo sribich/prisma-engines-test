@@ -14,7 +14,7 @@ pub use json_rpc;
 mod core_error;
 mod extensions;
 mod rpc;
-mod state;
+pub mod state;
 mod timings;
 
 pub use self::{rpc::RpcApi, timings::TimingsLayer};
