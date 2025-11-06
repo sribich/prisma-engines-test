@@ -5,7 +5,7 @@
 #[cfg(feature = "mysql")]
 mod mysql;
 
-#[cfg(any(feature = "postgresql", feature = "cockroachdb"))]
+#[cfg(any(feature = "postgresql"))]
 mod postgres;
 
 #[cfg(feature = "sqlite")]
@@ -14,7 +14,7 @@ mod sqlite;
 #[cfg(feature = "mysql")]
 pub(crate) use mysql::{MysqlConnector, MysqlDialect};
 
-#[cfg(any(feature = "postgresql", feature = "cockroachdb"))]
+#[cfg(any(feature = "postgresql"))]
 pub(crate) use postgres::{PostgresConnector, PostgresDialect};
 
 #[cfg(feature = "sqlite")]

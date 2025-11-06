@@ -21,9 +21,6 @@ pub trait GenericApi: Send + Sync + 'static {
     /// Send a raw command to the database.
     async fn db_execute(&self, params: DbExecuteParams) -> CoreResult<()>;
 
-    /// Debugging method that only panics, for CLI tests.
-    async fn debug_panic(&self) -> CoreResult<()>;
-
     /// Tells the CLI what to do in `migrate dev`.
     async fn dev_diagnostic(&self, input: DevDiagnosticInput) -> CoreResult<DevDiagnosticOutput>;
 

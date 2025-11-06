@@ -1526,7 +1526,6 @@ fn get_column_type_family(
             String,
             Some(KnownPostgresType::Char(precision.character_maximum_length)),
         ),
-        // https://www.cockroachlabs.com/docs/stable/string.html
         "char" | "_char" => (String, Some(KnownPostgresType::Char(None))),
         "date" | "_date" => (DateTime, Some(KnownPostgresType::Date)),
         "bytea" | "_bytea" => (Binary, Some(KnownPostgresType::ByteA)),

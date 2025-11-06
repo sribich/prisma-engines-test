@@ -2,8 +2,8 @@ mod context;
 mod file;
 
 use anyhow::{anyhow, Result};
-pub use context::SchemaContext;
-pub use file::SchemaFile;
+pub use context::{SchemaContext, SchemaParser, SchemaValidator};
+pub use file::{SchemaFile, New, Parsed, Validated};
 
 use std::{
     convert::identity,
@@ -20,9 +20,12 @@ pub struct SchemaFiles {
 }
 
 
+
+
 /// Attempt to locate a schema context.
 ///
 pub fn load_schema_context(cwd: Option<PathBuf>, schema: Option<PathBuf>) -> Result<SchemaFiles> {
+    // TODO(sr): We should return our own error here.
     let cwd = cwd.unwrap_or(current_dir()?);
 
     if let Some(path) = schema {
@@ -39,11 +42,7 @@ pub fn load_schema_context(cwd: Option<PathBuf>, schema: Option<PathBuf>) -> Res
 }
 
 fn load_path(cwd: &Path, path: PathBuf) -> Result<SchemaFiles> {
-    let path = if path.try_exists().is_ok_and(identity) {
-        path
-    } else {
-        cwd.join(path)
-    };
+    let path = cwd.join(path);
 
     if !path.try_exists().is_ok_and(identity) {
         return Err(anyhow!("Path {:?} does not exist", path));
@@ -56,6 +55,8 @@ fn load_path(cwd: &Path, path: PathBuf) -> Result<SchemaFiles> {
 }
 
 fn load_file(path: PathBuf) -> Option<SchemaFiles> {
+    assert!(path.is_file());
+
     // TODO: Error
     if path.extension().unwrap() != "prisma" {
         return None;
@@ -65,6 +66,8 @@ fn load_file(path: PathBuf) -> Option<SchemaFiles> {
 }
 
 fn load_dir(path: PathBuf) -> Option<SchemaFiles> {
+    assert!(path.is_dir());
+
     let mut files = SchemaFiles {
         root_dir: path.clone().canonicalize().unwrap(),
         schemas: vec![],

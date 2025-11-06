@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![deny(rust_2018_idioms, unsafe_code, missing_docs)]
 
+use std::sync::Arc;
+
 pub use psl_core::builtin_connectors;
 use psl_core::parser_database::{ExtensionTypes, Files, NoExtensionTypes};
 pub use psl_core::{
@@ -32,10 +34,69 @@ pub use psl_core::{
     schema_ast,
     set_config_dir,
 };
+use schema_context::{New, Parsed, SchemaContext, SchemaFile, SchemaParser};
 
 /// The implementation of the CLI getConfig() utility and its JSON format.
 pub mod get_config {
     pub use psl_core::mcf::{config_to_mcf_json_value as get_config, *};
+}
+
+///
+pub struct ConfigOnlyParser;
+
+///
+#[derive(Clone, Debug)]
+pub struct ConfigContext {
+    ///
+    pub files: Files,
+    ///
+    pub configuration: Configuration,
+}
+
+///
+#[derive(Clone, Debug)]
+pub struct ConfigFileContext;
+
+impl SchemaParser for ConfigOnlyParser {
+    type Context = ConfigContext;
+    type File = ConfigFileContext;
+
+    fn parse(schema: SchemaContext<New, New>) -> SchemaContext<Parsed<Self::Context>, Parsed<Self::File>> {
+        let fileinfo = schema
+            .files()
+            .iter()
+            .map(|it| {
+                (
+                    it.path().to_str().unwrap().to_owned(),
+                    SourceFile::new_allocated(it.content().into()),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let files = schema
+            .files
+            .into_iter()
+            .map(|file| {
+                file.convert(Parsed::<Self::File> {
+                    inner: ConfigFileContext,
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let result = parse_configuration_multi_file(&fileinfo).map_err(|(a, b)| b).unwrap();
+        println!("{:#?}", result.1.datasources[0].url);
+
+        SchemaContext {
+            root_dir: schema.root_dir,
+            files,
+            context: Parsed {
+                inner: ConfigContext {
+                    files: result.0,
+                    configuration: result.1,
+                },
+            },
+        }
+    }
 }
 
 /// Parses and validate a schema, but skip analyzing everything except datasource and generator

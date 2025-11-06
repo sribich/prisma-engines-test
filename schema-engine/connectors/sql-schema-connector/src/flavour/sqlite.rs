@@ -8,7 +8,7 @@ use crate::{flavour::SqlConnector, sql_renderer::SqlRenderer};
 use connector as imp;
 use destructive_change_checker::SqliteDestructiveChangeCheckerFlavour;
 use indoc::indoc;
-use quaint::connector::{AdapterName, DEFAULT_SQLITE_DATABASE};
+use quaint::connector::{DEFAULT_SQLITE_DATABASE};
 use renderer::SqliteRenderer;
 use schema_calculator::SqliteSchemaCalculatorFlavour;
 use schema_connector::{
@@ -417,13 +417,8 @@ impl SqlConnector for SqliteConnector {
 }
 
 async fn acquire_lock(connection: &imp::Connection) -> ConnectorResult<()> {
-    let adapter_name = connection.adapter_name();
     let sql = "PRAGMA main.locking_mode=EXCLUSIVE";
-    tracing::info!(sql, adapter_name = ?adapter_name, query_type = "acquire_lock");
-
-    if let Some(AdapterName::D1(_) | AdapterName::LibSQL) = adapter_name {
-        return Ok(());
-    };
+    tracing::info!(sql, query_type = "acquire_lock");
 
     connection.raw_cmd(sql).await
 }

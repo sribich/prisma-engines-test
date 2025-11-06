@@ -25,7 +25,6 @@ chrono.workspace = true
 enumflags2.workspace = true
 futures.workspace = true
 hashbrown.workspace = true
-jsonrpc-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

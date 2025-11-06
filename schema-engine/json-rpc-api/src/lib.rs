@@ -8,6 +8,3 @@ pub mod migration_directory;
 
 /// API type definitions used by the methods.
 pub mod types;
-
-/// JSON-RPC API method definitions.
-pub mod method_names;

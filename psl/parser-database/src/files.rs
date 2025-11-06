@@ -7,6 +7,7 @@ use std::ops::Index;
 ///
 /// The file path can be anything, the PSL implementation will only use it to display the file name
 /// in errors. For example, files can come from nested directories.
+#[derive(Debug, Clone)]
 pub struct Files(pub Vec<(String, schema_ast::SourceFile, ast::SchemaAst)>);
 
 impl Files {

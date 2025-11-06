@@ -13,11 +13,10 @@ pub use json_rpc;
 
 mod core_error;
 mod extensions;
-mod rpc;
 pub mod state;
 mod timings;
 
-pub use self::{rpc::RpcApi, timings::TimingsLayer};
+pub use self::timings::TimingsLayer;
 pub use extensions::{ExtensionType, ExtensionTypeConfig};
 use json_rpc::types::{SchemaContainer, SchemasContainer, SchemasWithConfigDir};
 pub use schema_connector;

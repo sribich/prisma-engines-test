@@ -307,6 +307,10 @@ impl Datasource {
     pub fn schemas_defined(&self) -> bool {
         self.schemas_span.is_some()
     }
+
+    pub fn get_connection_url(&self) -> &StringFromEnvVar {
+        self.direct_url.as_ref().unwrap_or(&self.url)
+    }
 }
 
 impl WithSpan for Datasource {

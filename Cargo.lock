@@ -3223,21 +3223,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpc-core"
-version = "17.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4467ab6dfa369b69e52bd0692e480c4d117410538526a57a304a0f2250fd95e"
-dependencies = [
- "futures",
- "futures-executor",
- "futures-util",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "keccak"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4357,15 +4342,21 @@ name = "prisma"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "build-utils",
  "clap 4.5.51",
  "clap-verbosity-flag",
  "cmd_lib",
  "fork",
+ "psl",
+ "schema-ast",
  "schema-context",
+ "schema-core",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
+ "tokio",
  "tracing",
+ "tracing-error",
  "tracing-subscriber",
 ]
 
@@ -4511,6 +4502,7 @@ dependencies = [
  "expect-test",
  "indoc",
  "psl-core",
+ "schema-context",
 ]
 
 [[package]]
@@ -4874,7 +4866,6 @@ dependencies = [
  "indoc",
  "insta",
  "itertools 0.13.0",
- "jsonrpc-core",
  "log",
  "nom",
  "panic-utils",
@@ -5361,7 +5352,6 @@ dependencies = [
  "crosstarget-utils",
  "enumflags2",
  "json-rpc-api",
- "jsonrpc-core",
  "psl",
  "quaint",
  "schema-connector",
@@ -5418,7 +5408,6 @@ dependencies = [
  "futures",
  "hashbrown 0.16.0",
  "json-rpc-api",
- "jsonrpc-core",
  "psl",
  "schema-commands",
  "schema-connector",
@@ -5428,36 +5417,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
- "tracing-subscriber",
- "url",
- "user-facing-errors",
-]
-
-[[package]]
-name = "schema-engine-cli"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "build-utils",
- "connection-string",
- "expect-test",
- "indoc",
- "jsonrpc-core",
- "panic-utils",
- "psl",
- "quaint",
- "schema-connector",
- "schema-core",
- "serde",
- "serde_json",
- "structopt",
- "tempfile",
- "test-macros",
- "test-setup",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-error",
  "tracing-subscriber",
  "url",
  "user-facing-errors",
@@ -5782,7 +5741,6 @@ dependencies = [
  "enumflags2",
  "expect-test",
  "indoc",
- "jsonrpc-core",
  "paste",
  "pretty_assertions",
  "prisma-value",
@@ -6456,9 +6414,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-error"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d686ec1c0f384b1277f097b2f279a2ecc11afe8c133c1aabf036a27cb4cd206e"
+checksum = "8b1581020d7a273442f5b45074a6a57d5757ad0a47dac0e9f0bd57b81936f3db"
 dependencies = [
  "tracing",
  "tracing-subscriber",

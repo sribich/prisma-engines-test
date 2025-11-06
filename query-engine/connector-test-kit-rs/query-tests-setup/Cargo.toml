@@ -32,7 +32,6 @@ hyper = { workspace = true, features = ["full"] }
 indexmap.workspace = true
 prisma-metrics.workspace = true
 quaint.workspace = true
-jsonrpc-core.workspace = true
 insta.workspace = true
 futures.workspace = true
 panic-utils.workspace = true

@@ -10,21 +10,11 @@ mysql = ["relation_joins", "quaint/mysql", "psl/mysql"]
 mysql-native = ["mysql", "quaint/mysql-native", "quaint/pooled"]
 sqlite = ["quaint/sqlite", "psl/sqlite"]
 sqlite-native = ["sqlite", "quaint/sqlite-native", "quaint/pooled"]
-mssql = ["psl/mssql"]
-mssql-native = ["mssql", "quaint/pooled"]
-cockroachdb = ["relation_joins", "quaint/postgresql", "psl/cockroachdb"]
-cockroachdb-native = [
-    "cockroachdb",
-    "quaint/postgresql-native",
-    "quaint/pooled",
-]
 vendored-openssl = ["quaint/vendored-openssl"]
 all-native = [
     "sqlite-native",
     "mysql-native",
     "postgresql-native",
-    "mssql-native",
-    "cockroachdb-native",
 ]
 # TODO: At the moment of writing (rustc 1.77.0), can_have_capability from psl does not eliminate joins
 # code from bundle for some reason, so we are doing it explicitly. Check with a newer version of compiler - if elimination

@@ -379,7 +379,6 @@ fn postgres_native_type_change_riskyness(
                     }
                     _ => SafeCast,
                 },
-                //todo this is the same as in mssql, but could be more finegrained
                 Real => RiskyCast,
                 DoublePrecision => RiskyCast,
                 VarChar(length) | Char(length) => match (length, old_params) {

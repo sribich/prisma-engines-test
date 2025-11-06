@@ -59,12 +59,6 @@ impl SqlSchemaDialect {
         Self::new(Box::new(flavour::SqliteDialect))
     }
 
-    /// Creates a SQL Server schema dialect with the default settings.
-    #[cfg(feature = "mssql")]
-    pub fn mssql() -> Self {
-        Self::new(Box::new(flavour::MssqlDialect::default()))
-    }
-
     fn new(flavour: Box<dyn SqlDialect>) -> Self {
         Self { dialect: flavour }
     }
@@ -168,15 +162,7 @@ impl SchemaDialect for SqlSchemaDialect {
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>> {
         Box::pin(async move {
             let mut connector = match target {
-                #[cfg(not(any(
-                    feature = "mssql-native",
-                    feature = "mysql-native",
-                    feature = "postgresql-native",
-                    feature = "sqlite-native"
-                )))]
-                ExternalShadowDatabase::DriverAdapter(factory) => self.dialect.connect_to_shadow_db(factory).await?,
                 #[cfg(any(
-                    feature = "mssql-native",
                     feature = "mysql-native",
                     feature = "postgresql-native",
                     feature = "sqlite-native"
@@ -212,38 +198,6 @@ pub struct SqlSchemaConnector {
 }
 
 impl SqlSchemaConnector {
-    /// Initialise an external migration connector.
-    pub async fn new_from_external(adapter: Arc<dyn quaint::connector::ExternalConnector>) -> ConnectorResult<Self> {
-        match adapter.provider() {
-            #[cfg(all(feature = "postgresql", not(feature = "postgresql-native")))]
-            quaint::connector::AdapterProvider::Postgres => Self::new_postgres_external(adapter).await,
-            #[cfg(all(feature = "sqlite", not(feature = "sqlite-native")))]
-            quaint::connector::AdapterProvider::Sqlite => Ok(Self::new_sqlite_external(adapter).await),
-            #[allow(unreachable_patterns)]
-            _ => panic!("Unsupported adapter provider: {:?}", adapter.provider()),
-        }
-    }
-
-    /// Initialize an external PostgreSQL migration connector.
-    #[cfg(all(feature = "postgresql", not(feature = "postgresql-native")))]
-    pub async fn new_postgres_external(
-        adapter: Arc<dyn quaint::connector::ExternalConnector>,
-    ) -> ConnectorResult<Self> {
-        Ok(SqlSchemaConnector {
-            inner: Box::new(flavour::PostgresConnector::new_external(adapter).await?),
-            host: Arc::new(EmptyHost),
-        })
-    }
-
-    /// Initialize an external SQLite migration connector.
-    #[cfg(all(feature = "sqlite", not(feature = "sqlite-native")))]
-    pub async fn new_sqlite_external(adapter: Arc<dyn quaint::connector::ExternalConnector>) -> Self {
-        SqlSchemaConnector {
-            inner: Box::new(flavour::SqliteConnector::new_external(adapter)),
-            host: Arc::new(EmptyHost),
-        }
-    }
-
     /// Initialize a PostgreSQL migration connector.
     #[cfg(feature = "postgresql-native")]
     pub fn new_postgres(params: ConnectorParams) -> ConnectorResult<Self> {
@@ -288,15 +242,6 @@ impl SqlSchemaConnector {
     pub fn new_mysql(params: ConnectorParams) -> ConnectorResult<Self> {
         Ok(SqlSchemaConnector {
             inner: Box::new(flavour::MysqlConnector::new_with_params(params)?),
-            host: Arc::new(EmptyHost),
-        })
-    }
-
-    /// Initialize a MSSQL migration connector.
-    #[cfg(feature = "mssql-native")]
-    pub fn new_mssql(params: ConnectorParams) -> ConnectorResult<Self> {
-        Ok(SqlSchemaConnector {
-            inner: Box::new(flavour::MssqlConnector::new_with_params(params)?),
             host: Arc::new(EmptyHost),
         })
     }

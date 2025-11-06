@@ -226,7 +226,11 @@ impl EngineState {
     /// - `prisma db pull` via `EngineState::introspect_sql`
     /// - `prisma db execute` via `EngineState::db_execute`
     /// - `prisma/prisma tests` via `EngineState::drop_database`
-    pub async fn with_connector_for_url<O: Send + 'static>(&self, url: String, f: ConnectorRequest<O>) -> CoreResult<O> {
+    pub async fn with_connector_for_url<O: Send + 'static>(
+        &self,
+        url: String,
+        f: ConnectorRequest<O>,
+    ) -> CoreResult<O> {
         self.with_connector_for_request::<O>(ConnectorRequestType::Url(url.clone()), None, f)
             .await
     }
@@ -316,10 +320,6 @@ impl GenericApi for EngineState {
             .await
     }
 
-    async fn debug_panic(&self) -> CoreResult<()> {
-        panic!("This is the debugPanic artificial panic")
-    }
-
     async fn dev_diagnostic(&self, input: DevDiagnosticInput) -> CoreResult<DevDiagnosticOutput> {
         let namespaces = self.namespaces();
         let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> = self.migration_schema_cache.clone();
@@ -364,13 +364,6 @@ impl GenericApi for EngineState {
         &self,
         params: EnsureConnectionValidityParams,
     ) -> CoreResult<EnsureConnectionValidityResult> {
-        // checking connection validity is currently not supported with local PGLite because PGLite
-        // only supports a single connection at a time and this creates a new connector instance
-        if matches!(&params.datasource, DatasourceParam::ConnectionString(str) if str.url.starts_with("prisma+postgres://localhost"))
-        {
-            return Ok(EnsureConnectionValidityResult {});
-        }
-
         self.with_connector_from_datasource_param(
             params.datasource,
             Box::new(|connector| {

@@ -7,12 +7,12 @@ edition.workspace = true
 postgresql = ["psl-core/postgresql"]
 sqlite = ["psl-core/sqlite"]
 mysql = ["psl-core/mysql"]
-cockroachdb = ["psl-core/cockroachdb", "postgresql"]
-mssql = ["psl-core/mssql"]
-all = ["postgresql", "sqlite", "mysql", "cockroachdb", "mssql"]
+all = ["postgresql", "sqlite", "mysql",]
 
 [dependencies]
+schema-context.workspace = true
 psl-core.workspace = true
+
 
 [dev-dependencies]
 base64.workspace = true

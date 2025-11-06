@@ -1,0 +1,493 @@
+///////////////////////////////
+/// Data Mappings           ///
+///-------------------------///
+/// Prisma -> SQLite        ///
+///-------------------------///
+/// String    TEXT          ///
+/// Boolean   BOOLEAN       ///
+/// Int	      INTEGER       ///
+/// BigInt    INTEGER       ///
+/// Float     REAL          ///
+/// Decimal   DECIMAL       ///
+/// DateTime  NUMERIC       ///
+/// Json      Not supported ///
+/// Bytes     BLOB          ///
+///////////////////////////////
+datasource db {
+  provider = "sqlite"
+  url      = "file:../../dist/dev.db"
+  // provider = "postgresql"
+  // url = "env(FOO)"
+}
+
+generator client {
+  provider = "cargo run -p prisma --bin=prisma-rust"
+  output   = "../src/generated"
+
+  client_format = "folder"
+
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+
+
+// documentation test
+// enum Role {
+  // user
+  // USER
+  // ADMIN
+// }
+
+model DataMigration {
+  @@map(name: "data_migration")
+
+  id          Int       @id @default(autoincrement())
+
+  name        String
+  executed_at DateTime  @default(now())
+
+  @@unique(fields: [name], map: "data_migration_name_uniq")
+}
+
+
+
+//
+// model Journal {
+//   id Int @id @default(autoincrement())
+//
+//   event String
+//   data String
+//   version Int
+// }
+//
+// model Word {}
+//
+// model Sentence {}
+//
+// model Card {
+//   id Int @id @default(autoincrement())
+//
+//   word
+//   reading
+//   reading_audio
+//   definition
+//   definition_audio
+//   sentence
+//   sentence_audio
+//   raw_content
+// }
+//
+// model CardTag {
+//   id Int @id @default(autoincrement())
+//   card_id
+//   tag
+//   note
+// }
+//
+// model Tag {
+//   id Int @id @default(autoincrement())
+//   builtin Bool
+//   name String
+// }
+//
+// model Review {
+//   id Int @id @default(autoincrement())
+// }
+//
+// model Recordings {
+//    id Int @id @default(autoincrement())
+// }
+
+
+
+
+
+// # Library
+// #
+// #
+// #
+// #
+// #
+// #
+// #
+// #
+// #
+//
+//
+//
+// # Anime
+// #
+// # Series (Title)
+// #   Season
+// #      Episode
+// #
+// #
+// # Movie
+// #
+// #
+// #
+// #
+//
+//
+// # Movie
+// # Show
+// #  Season
+// #   Episode
+// # Novel (Standalone)
+// # Novel (Series)
+//
+// # Collection
+
+model Library {
+  @@map(name: "Library")
+
+  id        Bytes   @id
+
+  title     String
+
+  image_resource_id Bytes?
+  image_resource    Resource? @relation(fields: [image_resource_id], references: [id])
+}
+
+model Media {
+  id        Bytes    @id
+
+  title     String
+  kind      String
+
+  library_id Bytes?
+  // Series    Series?
+  volume    Int?
+
+  //====================================
+  // Reverse Relations
+  //====================================
+  Book Book?
+  Progress Progress?
+
+  //====================================
+  // Indexes
+  //====================================
+  @@unique(fields: [title], map: "library_title_uniq")
+}
+
+// model Resource {
+//   @@map(name: "resource")
+//
+//   id         Int     @id @default(autoincrement())
+//   library_id Int
+//
+//   path       String
+//
+//   title      String
+//
+//   Library    Library @relation(fields: [library_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+// }
+
+model Book {
+  id    Bytes @id
+
+  path  String
+
+  //====================================
+  //
+  //====================================
+  rendered_path String
+  rendered_audio_path String?
+
+  //====================================
+  // Relations
+  //====================================
+  audio_resource_id Bytes?
+  audio_resource    Resource? @relation(fields: [audio_resource_id], references: [id])
+
+  media_id Bytes @unique
+  media    Media @relation(fields: [media_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  //====================================
+  // Reverse Relations
+  //====================================
+  // timestamped_book TimestampedBook?
+
+}
+
+model TimestampedBook {
+  id         Int    @id @default(autoincrement()) // @virtualType(Ruid)
+
+  audio_path String
+
+  parsed_audio_path String?
+  parsed_book_path  String?
+  final_book_path   String?
+
+  //====================================
+  // Reverse Relations
+  //====================================
+  // book_id Int  @unique
+  // book    Book @relation(fields: [book_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+// model Movie {}
+// model Show {}
+
+// #
+// # model Movie {
+// #   # Installment
+// # }
+// # model Book {
+// #
+// # }
+// # model AudioBook {
+// #
+// # }
+// # model Show {
+// #
+// # }
+//
+// # model Authorship {
+// #   id Int @id @default(autoincrement())
+// #
+// #   media_id FK
+// #   author_id FK
+// #   author_role FK
+// # }
+// #
+// # model Author {
+// #   id Int @id @default(autoincrement())
+// #
+// #   author_name String
+// #
+// #   birth Date?
+// #   death Date?
+// # }
+// #
+// model AuthorRole {
+//   id Int @id @default(autoincrement())
+//   role String
+// }
+// #
+//
+
+// model SyncHistory {
+//     id Int @id @default(autoincrement())
+// }
+
+model Progress {
+    id Bytes @id
+
+    timestamp BigInt
+
+    //====================================
+    // Relations
+    //====================================
+    media_id Bytes @unique
+    media    Media @relation(fields: [media_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model Pronunciation {
+  id Bytes @id
+
+  word String
+  reading String?
+
+  name String
+  sex String
+
+  language String
+
+  resource_id Bytes @unique
+  Resource Resource @relation(fields: [resource_id], references: [id])
+
+  @@index(fields: [word])
+}
+
+
+model Resource {
+  id Bytes @id
+
+  state String
+
+  kind String
+
+  hash String
+  path String
+
+  mime_type String
+
+  Book Book[]
+  CardA Card[] @relation("reading")
+  CardB Card[] @relation("sentence")
+  Pronunciation Pronunciation?
+  Library Library[]
+}
+
+// model Card {
+//   id Bytes @id
+//
+//   lang String // @index
+//
+//   word
+//   word_reading
+//   word_accent
+//   word_audio // Resource
+//
+//   sentence
+//   sentence_reading
+//   sentence_audio // Resource
+//
+//   // Resource
+//   media
+//
+//   definition_target // Link?
+//   definition_native // Link?
+//
+//   extra_definitions // Autoload...
+//   extra_info
+//
+//   user_info
+//
+//   stability
+//   difficulty
+//
+//   reviews
+//
+//   version
+// }
+
+
+
+model Card {
+  id  Bytes @id
+
+  state String
+  step Int?
+
+  due BigInt
+  last_review BigInt?
+
+  word String
+
+  reading          String
+  reading_audio_id Bytes?
+  reading_audio    Resource? @relation(name: "reading", fields: [reading_audio_id], references: [id])
+
+  sentence String
+  sentence_audio_id Bytes?
+  sentence_audio    Resource? @relation(name: "sentence", fields: [sentence_audio_id], references: [id])
+
+  stability Float?
+  difficulty Float?
+
+  reviews CardReview[]
+}
+
+model CardReview {
+  id Bytes @id
+
+  date   BigInt
+  rating Int
+
+  card_id Bytes
+  card    Card @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Dictionary {
+  id Bytes @id
+
+  title String
+
+  /// values: "mono", "bi"
+  language_type String
+
+  /// The types of data that the dictionary contains. Stored as a comma
+  /// separated list with no whitespace.
+  kinds String
+
+  file_path String
+  data_path String
+
+  /// The LexoRank rank.
+  rank String
+  @@index(fields: [rank(sort: Asc)])
+
+  //====================================
+  // Reverse Relations
+  //====================================
+  words Word[]
+  frequencies Frequency[]
+  accents PitchAccent[]
+}
+
+model Word {
+  id Bytes @id
+
+  word       String
+  reading    String
+  definition String
+
+  //====================================
+  // Relations
+  //====================================
+  dictionary_id Bytes
+  dictionary    Dictionary @relation(fields: [dictionary_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  //====================================
+  // Indexes
+  //====================================
+  @@index(fields: [word])
+  @@index(fields: [reading])
+}
+
+model Frequency {
+  id         Bytes @id
+
+  word       String
+  reading    String
+  frequency  Int
+  display    String?
+
+  //====================================
+  // Relations
+  //====================================
+  dictionary_id Bytes
+  dictionary    Dictionary @relation(fields: [dictionary_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  //====================================
+  // Indexes
+  //====================================
+  @@index(fields: [word])
+  @@index(fields: [reading])
+}
+
+model PitchAccent {
+  id         Bytes @id
+
+  word       String
+  reading    String
+  position   Int
+
+  //====================================
+  // Relations
+  //====================================
+  dictionary_id Bytes
+  dictionary    Dictionary @relation(fields: [dictionary_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  //====================================
+  // Indexes
+  //====================================
+  @@index(fields: [word])
+  @@index(fields: [reading])
+}
+
+model Setting {
+  @@map(name: "setting")
+
+  id     Bytes    @id
+
+  name        String
+  kind        String
+  value       String
+  constraints String?
+
+  @@unique(fields: [name], map: "setting_name_unique")
+}
