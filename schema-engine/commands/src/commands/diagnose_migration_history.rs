@@ -8,15 +8,12 @@ use schema_connector::{
     SchemaConnector,
     migrations_directory::{MigrationDirectory, Migrations, error_on_changed_provider},
 };
-use serde::Serialize;
 
 /// The output of the `DiagnoseMigrationHistory` command.
-#[derive(Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug)]
 pub struct DiagnoseMigrationHistoryOutput {
     /// Whether drift between the expected schema and the dev database could be
     /// detected. `None` if the dev database has the expected schema.
-    #[serde(skip)]
     pub drift: Option<DriftDiagnostic>,
     /// The current status of the migration history of the database relative to
     /// migrations directory. `None` if they are in sync and up to date.
@@ -31,7 +28,6 @@ pub struct DiagnoseMigrationHistoryOutput {
     /// An optional error encountered when applying a migration that is not
     /// applied in the main database to the shadow database. We do this to
     /// validate that unapplied migrations are at least minimally valid.
-    #[serde(skip)]
     pub error_in_unapplied_migration: Option<ConnectorError>,
     /// Is the migrations table initialized in the database.
     pub has_migrations_table: bool,

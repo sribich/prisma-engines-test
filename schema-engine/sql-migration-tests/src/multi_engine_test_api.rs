@@ -201,7 +201,7 @@ impl TestApi {
             ConnectionInfo::Native(NativeConnectionInfo::Sqlite { .. }) => {
                 SqlSchemaConnector::new_sqlite(params).unwrap()
             }
-            ConnectionInfo::Native(NativeConnectionInfo::InMemorySqlite { .. }) | ConnectionInfo::External(_) => {
+            ConnectionInfo::Native(NativeConnectionInfo::InMemorySqlite { .. }) => {
                 unreachable!()
             }
         };

@@ -1,12 +1,8 @@
-use serde::{Deserialize, Serialize};
-
 // ---- Common type definitions ----
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-#[serde(tag = "tag", content = "value", rename_all = "camelCase")]
+#[derive(Debug, Copy, Clone)]
 pub enum JsResult<R, E> {
     Ok(R),
-    #[serde(rename = "error")]
     Err(E),
 }
 

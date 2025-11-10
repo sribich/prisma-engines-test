@@ -128,23 +128,3 @@ const FIRST_TIME_MIGRATION_MESSAGE: &str = r#"
 If you are running this the first time on an existing database, please make sure to read this documentation page:
 https://www.prisma.io/docs/guides/database/developing-with-prisma-migrate/troubleshooting-development
 "#;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn dev_action_serializes_as_expected() {
-        let reset = serde_json::to_value(DevAction::Reset(DevActionReset {
-            reason: "Because I said so".to_owned(),
-        }))
-        .unwrap();
-
-        assert_eq!(reset, json!({ "tag": "reset", "reason": "Because I said so" }));
-
-        let create_migration = serde_json::to_value(DevAction::CreateMigration).unwrap();
-
-        assert_eq!(create_migration, json!({ "tag": "createMigration" }));
-    }
-}

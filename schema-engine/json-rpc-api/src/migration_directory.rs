@@ -1,10 +1,9 @@
 use std::hash;
 
 use crate::js_result::JsResult;
-use serde::{Deserialize, Serialize};
 
 /// Information about a migration file within a migration directory.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MigrationFile {
     /// Relative path to the migration file from the migration directory.
     /// E.g., `migration.sql`.
@@ -15,8 +14,7 @@ pub struct MigrationFile {
 }
 
 /// Information about a migration directory.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct MigrationDirectory {
     /// Relative path to a migration directory from `baseDir`.
     /// E.g., `20201117144659_test`.

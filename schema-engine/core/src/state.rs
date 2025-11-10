@@ -32,10 +32,7 @@ use tracing_futures::{Instrument, WithSubscriber};
 /// synchronization issues. You can think of it in terms of the actor model.
 pub struct EngineState {
     // The initial Prisma schema for the engine state.
-    // Its datasource URL-like attributes are overridden by `datasource_urls_override`, if provided.
     initial_datamodel: Option<psl::ValidatedSchema>,
-    // Override the URL-like attributes of the initial datamodel's datasources, if provided.
-    datasource_urls_override: Option<psl::DatasourceUrls>,
     host: Arc<dyn ConnectorHost>,
     extensions: Arc<ExtensionTypeConfig>,
     // A map from either:
@@ -52,7 +49,7 @@ pub struct EngineState {
 impl EngineState {
     fn get_url_from_schemas(&self, container: &SchemasWithConfigDir) -> CoreResult<String> {
         let sources = container.to_psl_input();
-        let (datasource, url, _, _) = parse_configuration_multi(&sources, self.datasource_urls_override.as_ref())?;
+        let (datasource, url, _, _) = parse_configuration_multi(&sources)?;
 
         Ok(psl::set_config_dir(
             datasource.active_connector.flavour(),
@@ -74,11 +71,10 @@ impl ConnectorRequestType {
     pub fn into_connector(
         self,
         initial_datamodel: Option<&psl::ValidatedSchema>,
-        datasource_urls_override: Option<&psl::DatasourceUrls>,
         config_dir: Option<&Path>,
     ) -> CoreResult<Box<dyn SchemaConnector>> {
         match self {
-            Self::Schema(schemas) => crate::schema_to_connector(&schemas, datasource_urls_override, config_dir),
+            Self::Schema(schemas) => crate::schema_to_connector(&schemas, config_dir),
             Self::Url(url) => crate::connector_for_connection_string(url, None, BitFlags::default()),
             Self::InitialDatamodel => {
                 if let Some(initial_datamodel) = initial_datamodel {
@@ -105,33 +101,15 @@ impl EngineState {
     ///
     pub fn new(
         initial_datamodels: Option<Vec<(String, SourceFile)>>,
-        datasource_urls_override: Option<psl::DatasourceUrls>,
         host: Option<Arc<dyn ConnectorHost>>,
         extensions: Arc<ExtensionTypeConfig>,
     ) -> Self {
         let initial_datamodel = initial_datamodels
             .as_deref()
-            .map(|dm| psl::validate_multi_file(dm, &*extensions))
-            .map(|mut schema| {
-                if let Some(override_urls) = datasource_urls_override.clone() {
-                    schema.configuration.datasources = schema
-                        .configuration
-                        .datasources
-                        .iter()
-                        .cloned()
-                        .map(|mut ds| {
-                            ds.override_urls(override_urls.clone());
-                            ds
-                        })
-                        .collect();
-                }
-
-                schema
-            });
+            .map(|dm| psl::validate_multi_file(dm, &*extensions));
 
         EngineState {
             initial_datamodel,
-            datasource_urls_override,
             host: host.unwrap_or_else(|| Arc::new(schema_connector::EmptyHost)),
             extensions,
             connectors: Default::default(),
@@ -139,11 +117,10 @@ impl EngineState {
         }
     }
 
-    ///
+    /// TODO(sr): Get rid of this
     pub fn new_single(initial_datamodel: Option<SourceFile>, host: Option<Arc<dyn ConnectorHost>>) -> Self {
         Self::new(
             Some(vec![("prisma.schema".to_owned(), initial_datamodel.unwrap())]),
-            None,
             host,
             Arc::new(ExtensionTypeConfig::default()),
         )
@@ -187,7 +164,6 @@ impl EngineState {
                 let request_key = request.clone();
                 let mut connector = request.into_connector(
                     self.initial_datamodel.as_ref(),
-                    self.datasource_urls_override.as_ref(),
                     config_dir,
                 )?;
 
@@ -255,8 +231,33 @@ impl EngineState {
     }
 }
 
+impl EngineState {
+    /// Create the database referenced by Prisma schema that was used to initialize the connector.
+    /// 
+    /// TODO(sr): this currently has no tests
+    async fn create_database(&self, params: CreateDatabaseParams) -> CoreResult<CreateDatabaseResult> {
+        self.with_connector_from_datasource_param(
+            params.datasource,
+            Box::new(|connector| {
+                Box::pin(async move {
+                    let database_name = SchemaConnector::create_database(connector).await?;
+                    Ok(CreateDatabaseResult { database_name })
+                })
+            }),
+        )
+        .await
+    }
+}
+
 #[async_trait::async_trait]
 impl GenericApi for EngineState {
+
+
+
+
+
+
+
     async fn version(&self, params: Option<GetDatabaseVersionInput>) -> CoreResult<String> {
         let f: ConnectorRequest<String> = Box::new(|connector| connector.version());
 
@@ -278,18 +279,7 @@ impl GenericApi for EngineState {
         .await
     }
 
-    async fn create_database(&self, params: CreateDatabaseParams) -> CoreResult<CreateDatabaseResult> {
-        self.with_connector_from_datasource_param(
-            params.datasource,
-            Box::new(|connector| {
-                Box::pin(async move {
-                    let database_name = SchemaConnector::create_database(connector).await?;
-                    Ok(CreateDatabaseResult { database_name })
-                })
-            }),
-        )
-        .await
-    }
+    
 
     async fn create_migration(&self, input: CreateMigrationInput) -> CoreResult<CreateMigrationOutput> {
         let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> = self.migration_schema_cache.clone();

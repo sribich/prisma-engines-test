@@ -12,8 +12,8 @@ pub trait GenericApi: Send + Sync + 'static {
     /// Apply all the unapplied migrations from the migrations folder.
     async fn apply_migrations(&self, input: ApplyMigrationsInput) -> CoreResult<ApplyMigrationsOutput>;
 
-    /// Create the database referenced by Prisma schema that was used to initialize the connector.
-    async fn create_database(&self, params: CreateDatabaseParams) -> CoreResult<CreateDatabaseResult>;
+    // Create the database referenced by Prisma schema that was used to initialize the connector.
+    //async fn create_database(&self, params: CreateDatabaseParams) -> CoreResult<CreateDatabaseResult>;
 
     /// Generate a new migration, based on the provided schema and existing migrations history.
     async fn create_migration(&self, input: CreateMigrationInput) -> CoreResult<CreateMigrationOutput>;

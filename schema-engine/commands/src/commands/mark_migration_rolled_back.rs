@@ -57,18 +57,3 @@ pub async fn mark_migration_rolled_back(
 
     Ok(MarkMigrationRolledBackOutput {})
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn mark_migration_rolled_back_output_serializes_as_expected() {
-        let output = MarkMigrationRolledBackOutput {};
-
-        let expected = serde_json::json!({});
-        let actual = serde_json::to_value(output).unwrap();
-
-        assert_eq!(actual, expected);
-    }
-}

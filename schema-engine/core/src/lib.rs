@@ -69,7 +69,6 @@ fn connector_for_connection_string(
 
 /// Same as schema_to_connector, but it will only read the provider, not the connector params.
 /// This uses `schema_files` to read `preview_features` and the `datasource` block.
-/// TODO: pass `datasource_urls_override`, and override the URL-like fields in the extracted `datasource` value accordingly.
 fn schema_to_dialect(schema_files: &[(String, SourceFile)]) -> CoreResult<Box<dyn schema_connector::SchemaDialect>> {
     let (_, config) = psl::parse_configuration_multi_file(schema_files)
         .map_err(|(files, err)| CoreError::new_schema_parser_error(files.render_diagnostics(&err)))?;
@@ -98,11 +97,10 @@ fn schema_to_dialect(schema_files: &[(String, SourceFile)]) -> CoreResult<Box<dy
 /// Go from a schema to a connector.
 fn schema_to_connector(
     files: &[(String, SourceFile)],
-    datasource_urls_override: Option<&psl::DatasourceUrls>,
     config_dir: Option<&Path>,
 ) -> CoreResult<Box<dyn schema_connector::SchemaConnector>> {
     let (datasource, url, preview_features, shadow_database_url) =
-        parse_configuration_multi(files, datasource_urls_override)?;
+        parse_configuration_multi(files)?;
 
     let url = config_dir
         .map(|config_dir| psl::set_config_dir(datasource.active_connector.flavour(), config_dir, &url).into_owned())
@@ -173,7 +171,7 @@ pub fn schema_api(
 
     let datamodel = datamodel.map(|datamodel| vec![("schema.prisma".to_owned(), SourceFile::from(datamodel))]);
 
-    let state = state::EngineState::new(datamodel, None, host, extension_config);
+    let state = state::EngineState::new(datamodel, host, extension_config);
     Ok(Box::new(state))
 }
 
@@ -188,16 +186,9 @@ fn parse_configuration(datamodel: &str) -> CoreResult<(Datasource, String, BitFl
 
 fn parse_configuration_multi(
     files: &[(String, SourceFile)],
-    datasource_urls_override: Option<&psl::DatasourceUrls>,
 ) -> CoreResult<(Datasource, String, BitFlags<PreviewFeature>, Option<String>)> {
     let (files, mut config) = psl::parse_configuration_multi_file(files)
         .map_err(|(files, err)| CoreError::new_schema_parser_error(files.render_diagnostics(&err)))?;
-
-    if let Some(override_urls) = datasource_urls_override {
-        for ds in &mut config.datasources {
-            ds.override_urls(override_urls.clone());
-        }
-    }
 
     extract_configuration(config, |err| {
         CoreError::new_schema_parser_error(files.render_diagnostics(&err))

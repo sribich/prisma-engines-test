@@ -99,8 +99,8 @@ async fn migrate_status() -> Result<()> {
         .collect::<Vec<(String, SourceFile)>>();
 
     println!("{:#?}", files);
-    let state = EngineState::new(Some(files), None, None, Arc::new(ExtensionTypeConfig::default()));
-
+    let state = EngineState::new(Some(files), None, Arc::new(ExtensionTypeConfig::default()));
+    
     let result = state
         .ensure_connection_validity(EnsureConnectionValidityParams {
             datasource: DatasourceParam::ConnectionString(UrlContainer {

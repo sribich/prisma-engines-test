@@ -21,8 +21,6 @@ use crate::connector::SqliteParams;
 #[cfg(feature = "sqlite-native")]
 use std::convert::TryFrom;
 
-use super::ExternalConnectionInfo;
-
 /// General information about a SQL connection.
 #[derive(Debug, Clone)]
 pub enum ConnectionInfo {
@@ -32,7 +30,6 @@ pub enum ConnectionInfo {
         feature = "postgresql-native",
     ))]
     Native(NativeConnectionInfo),
-    External(ExternalConnectionInfo),
 }
 
 impl ConnectionInfo {
@@ -110,7 +107,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::Sqlite { .. } | NativeConnectionInfo::InMemorySqlite { .. } => None,
             },
-            ConnectionInfo::External(_) => None,
         }
     }
 
@@ -136,7 +132,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::InMemorySqlite { db_name } => Some(db_name),
             },
-            ConnectionInfo::External(info) => info.schema_name.as_deref(),
         }
     }
 
@@ -156,7 +151,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::Sqlite { .. } | NativeConnectionInfo::InMemorySqlite { .. } => "localhost",
             },
-            ConnectionInfo::External(_) => "external",
         }
     }
 
@@ -177,7 +171,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::Sqlite { .. } | NativeConnectionInfo::InMemorySqlite { .. } => None,
             },
-            ConnectionInfo::External(_) => None,
         }
     }
 
@@ -199,7 +192,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::InMemorySqlite { .. } => None,
             },
-            ConnectionInfo::External(_) => None,
         }
     }
 
@@ -215,8 +207,6 @@ impl ConnectionInfo {
                 feature = "postgresql-native",
             ))]
             ConnectionInfo::Native(_) => self.sql_family().max_bind_values(),
-            // Wasm connectors can override the default max bind values.
-            ConnectionInfo::External(info) => info.max_bind_values.unwrap_or(self.sql_family().max_bind_values()),
         }
     }
 
@@ -236,7 +226,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::Sqlite { .. } | NativeConnectionInfo::InMemorySqlite { .. } => SqlFamily::Sqlite,
             },
-            ConnectionInfo::External(info) => info.sql_family.to_owned(),
         }
     }
 
@@ -256,7 +245,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::Sqlite { .. } | NativeConnectionInfo::InMemorySqlite { .. } => None,
             },
-            ConnectionInfo::External(_) => None,
         }
     }
 
@@ -288,7 +276,6 @@ impl ConnectionInfo {
                 #[cfg(feature = "sqlite-native")]
                 NativeConnectionInfo::InMemorySqlite { .. } => "in-memory".into(),
             },
-            ConnectionInfo::External(_) => "external".into(),
         }
     }
 
@@ -301,7 +288,6 @@ impl ConnectionInfo {
                 feature = "postgresql-native",
             ))]
             ConnectionInfo::Native(native) => native.set_version(version),
-            ConnectionInfo::External(_) => (),
         }
     }
 

@@ -9,6 +9,9 @@ schema-ast.workspace = true
 schema-context.workspace = true
 schema-core.workspace = true
 
+dotenv = { version = "0.15.0" }
+
+
 tokio = { workspace = true }
 
 thiserror = "1.0.37"

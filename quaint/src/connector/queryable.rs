@@ -17,11 +17,6 @@ pub trait ToColumnNames {
 /// Represents a connection or a transaction that can be queried.
 #[async_trait]
 pub trait Queryable: Send + Sync {
-    /// Returns a reference to self as an ExternalConnector if available.
-    fn as_external_connector(&self) -> Option<&dyn ExternalConnector> {
-        None
-    }
-
     /// Execute the given query.
     async fn query(&self, q: Query<'_>) -> crate::Result<ResultSet>;
 
