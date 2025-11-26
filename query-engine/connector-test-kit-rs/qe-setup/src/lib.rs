@@ -15,7 +15,7 @@ use driver_adapters::DriverAdapter;
 use enumflags2::BitFlags;
 use providers::Provider;
 use psl::{Datasource, builtin_connectors::*, parser_database::NoExtensionTypes};
-use schema_core::schema_connector::{ConnectorResult, SchemaConnector, SchemaDialect, SchemaFilter};
+use schema_core::schema_connector::{ConnectorResult, SchemaConnector, SchemaDialect};
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct InitResult {
@@ -145,7 +145,7 @@ pub(crate) async fn diff(
         default_namespace,
         &NoExtensionTypes,
     )?;
-    let migration = dialect.diff(from, to, &SchemaFilter::default());
+    let migration = dialect.diff(from, to);
     dialect.render_script(&migration, &Default::default())
 }
 

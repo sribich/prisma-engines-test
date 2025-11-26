@@ -5,7 +5,7 @@
 #[cfg(feature = "mysql")]
 mod mysql;
 
-#[cfg(any(feature = "postgresql", feature = "cockroachdb"))]
+#[cfg(any(feature = "postgresql"))]
 mod postgres;
 
 #[cfg(feature = "sqlite")]
@@ -14,7 +14,7 @@ mod sqlite;
 #[cfg(feature = "mysql")]
 pub(crate) use mysql::{MysqlConnector, MysqlDialect};
 
-#[cfg(any(feature = "postgresql", feature = "cockroachdb"))]
+#[cfg(any(feature = "postgresql"))]
 pub(crate) use postgres::{PostgresConnector, PostgresDialect};
 
 #[cfg(feature = "sqlite")]
@@ -28,7 +28,7 @@ use psl::{PreviewFeatures, ValidatedSchema};
 use quaint::prelude::{NativeConnectionInfo, Table};
 use schema_connector::{
     BoxFuture, ConnectorError, ConnectorResult, IntrospectionContext, MigrationRecord, Namespaces,
-    PersistenceNotInitializedError, SchemaFilter, migrations_directory::Migrations,
+    PersistenceNotInitializedError, migrations_directory::Migrations,
 };
 use sql_schema_describer::SqlSchema;
 use std::fmt::Debug;
@@ -140,16 +140,6 @@ pub(crate) trait SqlDialect: Send + Sync + 'static {
         url: String,
         preview_features: PreviewFeatures,
     ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>>;
-
-    #[cfg(not(any(
-        feature = "mysql-native",
-        feature = "postgresql-native",
-        feature = "sqlite-native"
-    )))]
-    fn connect_to_shadow_db(
-        &self,
-        factory: std::sync::Arc<dyn quaint::connector::ExternalConnectorFactory>,
-    ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>>;
 }
 
 pub(crate) trait SqlConnector: Send + Sync + Debug {
@@ -194,7 +184,6 @@ pub(crate) trait SqlConnector: Send + Sync + Debug {
     fn table_names(
         &mut self,
         namespaces: Option<Namespaces>,
-        filters: SchemaFilter,
     ) -> BoxFuture<'_, ConnectorResult<Vec<String>>>;
 
     /// Check a connection to make sure it is usable by the schema engine.
@@ -308,7 +297,6 @@ pub(crate) trait SqlConnector: Send + Sync + Debug {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         external_shadow_db: UsingExternalShadowDb,
     ) -> BoxFuture<'a, ConnectorResult<SqlSchema>>;
 

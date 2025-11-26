@@ -1,8 +1,7 @@
 use crate::utils;
 use schema_core::{
     CoreError, CoreResult,
-    commands::apply_migrations,
-    json_rpc::types::*,
+    commands::apply_migrations::{ApplyMigrationsInput, ApplyMigrationsOutput, apply_migrations},
     schema_connector::{Namespaces, SchemaConnector},
 };
 use tempfile::TempDir;
@@ -34,7 +33,6 @@ impl<'a> ApplyMigrations<'a> {
         let output = apply_migrations(
             ApplyMigrationsInput {
                 migrations_list,
-                filters: SchemaFilter::default(),
             },
             self.api,
             self.namespaces,

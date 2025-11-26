@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use schema_core::{json_rpc::types::*, schema_api_without_extensions};
+use schema_core::{commands::{create_migration::CreateMigrationOutput, db_execute::{DbExecuteDatasourceType, DbExecuteParams}, dev_diagnostic::{DevAction, DevDiagnosticInput, DevDiagnosticOutput}}, schema_api_without_extensions};
 use sql_migration_tests::{test_api::*, utils::list_migrations};
 use std::io::Write;
 use user_facing_errors::{UserFacingError, schema_engine::MigrationDoesNotApplyCleanly};
@@ -617,7 +617,6 @@ fn dev_diagnostic_shadow_database_creation_error_is_special_cased_mysql(api: Tes
         migration_api
             .dev_diagnostic(DevDiagnosticInput {
                 migrations_list,
-                filters: SchemaFilter::default(),
             })
             .await
     })
@@ -668,7 +667,6 @@ fn dev_diagnostic_shadow_database_creation_error_is_special_cased_postgres(api: 
         migration_api
             .dev_diagnostic(DevDiagnosticInput {
                 migrations_list,
-                filters: SchemaFilter::default(),
             })
             .await
     })
@@ -755,7 +753,6 @@ ALTER TABLE "public".profiles ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) R
 
     tok(api.dev_diagnostic(DevDiagnosticInput {
         migrations_list,
-        filters: SchemaFilter::default(),
     }))
     .unwrap();
 }

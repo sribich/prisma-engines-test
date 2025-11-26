@@ -4,12 +4,9 @@ fn main() {
     cfg_aliases! {
         native: {
             any(
-                feature = "mongodb",
-                feature = "mssql-native",
                 feature = "mysql-native",
                 feature = "postgresql-native",
-                feature = "sqlite-native",
-                feature = "cockroachdb-native"
+                feature = "sqlite-native"
             )
         }
     }

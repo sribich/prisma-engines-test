@@ -87,26 +87,6 @@ impl std::fmt::Debug for Datasource {
 }
 
 impl Datasource {
-    pub fn override_urls(&mut self, datasource_urls_override: DatasourceUrls) {
-        self.url = StringFromEnvVar {
-            value: Some(datasource_urls_override.url),
-            from_env_var: None,
-        };
-        self.direct_url = datasource_urls_override.direct_url.map(|url| StringFromEnvVar {
-            value: Some(url),
-            from_env_var: None,
-        });
-        self.shadow_database_url = datasource_urls_override.shadow_database_url.map(|url| {
-            (
-                StringFromEnvVar {
-                    value: Some(url),
-                    from_env_var: None,
-                },
-                self.url_span,
-            )
-        });
-    }
-
     /// Extract connector-specific constructs. The type parameter must be the right one.
     #[track_caller]
     pub fn downcast_connector_data<T: 'static>(&self) -> Option<&T> {
@@ -306,6 +286,10 @@ impl Datasource {
 
     pub fn schemas_defined(&self) -> bool {
         self.schemas_span.is_some()
+    }
+
+    pub fn get_connection_url(&self) -> &StringFromEnvVar {
+        self.direct_url.as_ref().unwrap_or(&self.url)
     }
 }
 

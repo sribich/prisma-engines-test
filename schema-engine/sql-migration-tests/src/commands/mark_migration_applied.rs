@@ -1,5 +1,5 @@
 use schema_core::{
-    CoreError, CoreResult, commands::mark_migration_applied, json_rpc::types::*, schema_connector::SchemaConnector,
+    CoreError, CoreResult, commands::mark_migration_applied::{MarkMigrationAppliedInput, MarkMigrationAppliedOutput, mark_migration_applied}, schema_connector::SchemaConnector,
 };
 use tempfile::TempDir;
 

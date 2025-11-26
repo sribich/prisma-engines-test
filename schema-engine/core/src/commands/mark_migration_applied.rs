@@ -1,9 +1,32 @@
-use crate::{CoreError, CoreResult, json_rpc::types::*};
+use crate::{CoreError, CoreResult};
+use json_rpc::types::MigrationList;
 use schema_connector::{
     SchemaConnector,
     migrations_directory::{MigrationDirectory, error_on_changed_provider},
 };
 use user_facing_errors::schema_engine::{MigrationAlreadyApplied, MigrationToMarkAppliedNotFound};
+
+/// Mark a migration as applied in the migrations table.
+///
+/// There are two possible outcomes:
+///
+/// - The migration is already in the table, but in a failed state. In this case, we will mark it
+///   as rolled back, then create a new entry.
+/// - The migration is not in the table. We will create a new entry in the migrations table. The
+///   `started_at` and `finished_at` will be the same.
+/// - If it is already applied, we return a user-facing error.
+#[derive(Debug)]
+pub struct MarkMigrationAppliedInput {
+    /// The name of the migration to mark applied.
+    pub migration_name: String,
+
+    /// The list of migrations, already loaded from disk.
+    pub migrations_list: MigrationList,
+}
+
+/// The output of the `markMigrationApplied` command.
+#[derive(Debug)]
+pub struct MarkMigrationAppliedOutput {}
 
 /// Mark a migration as applied.
 pub async fn mark_migration_applied(

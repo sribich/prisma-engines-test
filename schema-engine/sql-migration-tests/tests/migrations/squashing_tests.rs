@@ -1,4 +1,4 @@
-use schema_core::commands::{DiagnoseMigrationHistoryOutput, HistoryDiagnostic};
+use schema_core::commands::diagnose_migration_history::{DiagnoseMigrationHistoryOutput, HistoryDiagnostic};
 use sql_migration_tests::test_api::*;
 use std::io::Write;
 

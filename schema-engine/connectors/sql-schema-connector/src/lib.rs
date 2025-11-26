@@ -59,12 +59,6 @@ impl SqlSchemaDialect {
         Self::new(Box::new(flavour::SqliteDialect))
     }
 
-    /// Creates a SQL Server schema dialect with the default settings.
-    #[cfg(feature = "mssql")]
-    pub fn mssql() -> Self {
-        Self::new(Box::new(flavour::MssqlDialect::default()))
-    }
-
     fn new(flavour: Box<dyn SqlDialect>) -> Self {
         Self { dialect: flavour }
     }
@@ -72,13 +66,12 @@ impl SqlSchemaDialect {
 
 impl SchemaDialect for SqlSchemaDialect {
     #[tracing::instrument(skip(self, from, to))]
-    fn diff(&self, from: DatabaseSchema, to: DatabaseSchema, filter: &SchemaFilter) -> Migration {
+    fn diff(&self, from: DatabaseSchema, to: DatabaseSchema) -> Migration {
         let previous = SqlDatabaseSchema::from_erased(from);
         let next = SqlDatabaseSchema::from_erased(to);
         let steps = sql_schema_differ::calculate_steps(
             MigrationPair::new(&previous, &next),
             &*self.dialect.schema_differ(),
-            filter,
         );
         tracing::debug!(?steps, "Inferred migration steps.");
 
@@ -149,11 +142,10 @@ impl SchemaDialect for SqlSchemaDialect {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         target: ExternalShadowDatabase,
     ) -> BoxFuture<'a, ConnectorResult<()>> {
         Box::pin(async move {
-            self.schema_from_migrations_with_target(migrations, namespaces, filter, target)
+            self.schema_from_migrations_with_target(migrations, namespaces, target)
                 .await?;
             Ok(())
         })
@@ -163,20 +155,11 @@ impl SchemaDialect for SqlSchemaDialect {
         &'a self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         target: ExternalShadowDatabase,
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>> {
         Box::pin(async move {
             let mut connector = match target {
-                #[cfg(not(any(
-                    feature = "mssql-native",
-                    feature = "mysql-native",
-                    feature = "postgresql-native",
-                    feature = "sqlite-native"
-                )))]
-                ExternalShadowDatabase::DriverAdapter(factory) => self.dialect.connect_to_shadow_db(factory).await?,
                 #[cfg(any(
-                    feature = "mssql-native",
                     feature = "mysql-native",
                     feature = "postgresql-native",
                     feature = "sqlite-native"
@@ -196,7 +179,7 @@ impl SchemaDialect for SqlSchemaDialect {
                 }
             };
             let schema = connector
-                .sql_schema_from_migration_history(migrations, namespaces, filter, UsingExternalShadowDb::Yes)
+                .sql_schema_from_migration_history(migrations, namespaces, UsingExternalShadowDb::Yes)
                 .await;
             // dispose of the connector regardless of the result
             connector.dispose().await?;
@@ -212,38 +195,6 @@ pub struct SqlSchemaConnector {
 }
 
 impl SqlSchemaConnector {
-    /// Initialise an external migration connector.
-    pub async fn new_from_external(adapter: Arc<dyn quaint::connector::ExternalConnector>) -> ConnectorResult<Self> {
-        match adapter.provider() {
-            #[cfg(all(feature = "postgresql", not(feature = "postgresql-native")))]
-            quaint::connector::AdapterProvider::Postgres => Self::new_postgres_external(adapter).await,
-            #[cfg(all(feature = "sqlite", not(feature = "sqlite-native")))]
-            quaint::connector::AdapterProvider::Sqlite => Ok(Self::new_sqlite_external(adapter).await),
-            #[allow(unreachable_patterns)]
-            _ => panic!("Unsupported adapter provider: {:?}", adapter.provider()),
-        }
-    }
-
-    /// Initialize an external PostgreSQL migration connector.
-    #[cfg(all(feature = "postgresql", not(feature = "postgresql-native")))]
-    pub async fn new_postgres_external(
-        adapter: Arc<dyn quaint::connector::ExternalConnector>,
-    ) -> ConnectorResult<Self> {
-        Ok(SqlSchemaConnector {
-            inner: Box::new(flavour::PostgresConnector::new_external(adapter).await?),
-            host: Arc::new(EmptyHost),
-        })
-    }
-
-    /// Initialize an external SQLite migration connector.
-    #[cfg(all(feature = "sqlite", not(feature = "sqlite-native")))]
-    pub async fn new_sqlite_external(adapter: Arc<dyn quaint::connector::ExternalConnector>) -> Self {
-        SqlSchemaConnector {
-            inner: Box::new(flavour::SqliteConnector::new_external(adapter)),
-            host: Arc::new(EmptyHost),
-        }
-    }
-
     /// Initialize a PostgreSQL migration connector.
     #[cfg(feature = "postgresql-native")]
     pub fn new_postgres(params: ConnectorParams) -> ConnectorResult<Self> {
@@ -288,15 +239,6 @@ impl SqlSchemaConnector {
     pub fn new_mysql(params: ConnectorParams) -> ConnectorResult<Self> {
         Ok(SqlSchemaConnector {
             inner: Box::new(flavour::MysqlConnector::new_with_params(params)?),
-            host: Arc::new(EmptyHost),
-        })
-    }
-
-    /// Initialize a MSSQL migration connector.
-    #[cfg(feature = "mssql-native")]
-    pub fn new_mssql(params: ConnectorParams) -> ConnectorResult<Self> {
-        Ok(SqlSchemaConnector {
-            inner: Box::new(flavour::MssqlConnector::new_with_params(params)?),
             host: Arc::new(EmptyHost),
         })
     }
@@ -435,7 +377,6 @@ impl SchemaConnector for SqlSchemaConnector {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>> {
         Box::pin(async move {
             match self.inner.shadow_db_url() {
@@ -445,12 +386,12 @@ impl SchemaConnector for SqlSchemaConnector {
                         preview_features: self.inner.preview_features(),
                     };
                     self.schema_dialect()
-                        .schema_from_migrations_with_target(migrations, namespaces, filter, target)
+                        .schema_from_migrations_with_target(migrations, namespaces, target)
                         .await
                 }
                 None => self
                     .inner
-                    .sql_schema_from_migration_history(migrations, namespaces, filter, UsingExternalShadowDb::No)
+                    .sql_schema_from_migration_history(migrations, namespaces, UsingExternalShadowDb::No)
                     .await
                     .map(SqlDatabaseSchema::from)
                     .map(DatabaseSchema::new),
@@ -492,11 +433,10 @@ impl SchemaConnector for SqlSchemaConnector {
         &'a mut self,
         soft: bool,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<()>> {
         Box::pin(async move {
             if soft || self.inner.reset(namespaces.clone()).await.is_err() {
-                best_effort_reset(self.inner.as_mut(), namespaces, filter).await?;
+                best_effort_reset(self.inner.as_mut(), namespaces).await?;
             }
 
             Ok(())
@@ -525,10 +465,9 @@ impl SchemaConnector for SqlSchemaConnector {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<()>> {
         Box::pin(async move {
-            self.schema_from_migrations(migrations, namespaces, filter).await?;
+            self.schema_from_migrations(migrations, namespaces).await?;
             Ok(())
         })
     }
@@ -597,9 +536,8 @@ fn new_shadow_database_name() -> String {
 async fn best_effort_reset(
     connector: &mut (dyn SqlConnector + Send + Sync),
     namespaces: Option<Namespaces>,
-    filter: &SchemaFilter,
 ) -> ConnectorResult<()> {
-    best_effort_reset_impl(connector, namespaces, filter)
+    best_effort_reset_impl(connector, namespaces)
         .await
         .map_err(|err| err.into_soft_reset_failed_error())
 }
@@ -607,7 +545,6 @@ async fn best_effort_reset(
 async fn best_effort_reset_impl(
     connector: &mut (dyn SqlConnector + Send + Sync),
     namespaces: Option<Namespaces>,
-    filter: &SchemaFilter,
 ) -> ConnectorResult<()> {
     tracing::info!("Attempting best_effort_reset");
 
@@ -630,7 +567,6 @@ async fn best_effort_reset_impl(
     steps.extend(sql_schema_differ::calculate_steps(
         diffables.as_ref(),
         &*dialect.schema_differ(),
-        filter,
     ));
     let (source_schema, target_schema) = diffables.map(|s| s.describer_schema).into_tuple();
 

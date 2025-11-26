@@ -1,6 +1,5 @@
 use schema_core::{
-    json_rpc::types::{SchemaFilter, SchemasContainer},
-    schema_connector::{ConnectorParams, SchemaConnector},
+    commands::{db_execute::{DbExecuteDatasourceType, DbExecuteParams}, diff::{DiffParams, DiffTarget}}, json_rpc::types::SchemasContainer, schema_connector::{ConnectorParams, SchemaConnector}
 };
 use sql_migration_tests::test_api::*;
 use sql_schema_connector::SqlSchemaConnector;
@@ -80,7 +79,7 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
             shadow_database_connection_string: None,
         };
         let mut conn = SqlSchemaConnector::new_mysql(params).unwrap();
-        tok(conn.reset(false, None, &SchemaFilter::default().into())).unwrap();
+        tok(conn.reset(false, None)).unwrap();
         test_api_args.database_url().to_owned()
     } else if tags.contains(Tags::Mysql) {
         let (_, connection_string) = tok(test_api_args.create_mysql_database());
@@ -94,26 +93,25 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
     let host = Arc::new(sql_migration_tests::test_api::TestConnectorHost::default());
     let schema_engine = schema_core::schema_api_without_extensions(None, Some(host.clone())).unwrap();
 
-    tok(schema_engine.diff(schema_core::json_rpc::types::DiffParams {
+    tok(schema_engine.diff(DiffParams {
         exit_code: None,
         script: true,
         shadow_database_url: None,
-        from: schema_core::json_rpc::types::DiffTarget::Empty,
-        to: schema_core::json_rpc::types::DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![schema_core::json_rpc::types::SchemaContainer {
+        from: DiffTarget::Empty,
+        to: DiffTarget::SchemaDatamodel(SchemasContainer {
+            files: vec![SchemaContainer {
                 path: file_path.to_str().unwrap().to_owned(),
                 content: text.to_string(),
             }],
         }),
-        filters: SchemaFilter::default(),
     }))
     .unwrap();
 
     let migration: String = host.printed_messages.lock().unwrap()[0].clone();
 
-    tok(schema_engine.db_execute(schema_core::json_rpc::types::DbExecuteParams {
-        datasource_type: schema_core::json_rpc::types::DbExecuteDatasourceType::Url(
-            schema_core::json_rpc::types::UrlContainer {
+    tok(schema_engine.db_execute(DbExecuteParams {
+        datasource_type: DbExecuteDatasourceType::Url(
+            UrlContainer {
                 url: connection_string.clone(),
             },
         ),
@@ -121,20 +119,19 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
     }))
     .unwrap(); // check that it runs
 
-    let second_migration_result = tok(schema_engine.diff(schema_core::json_rpc::types::DiffParams {
+    let second_migration_result = tok(schema_engine.diff(DiffParams {
         exit_code: Some(true),
         script: true,
         shadow_database_url: None,
-        from: schema_core::json_rpc::types::DiffTarget::Url(schema_core::json_rpc::types::UrlContainer {
+        from: DiffTarget::Url(UrlContainer {
             url: connection_string,
         }),
-        to: schema_core::json_rpc::types::DiffTarget::SchemaDatamodel(SchemasContainer {
-            files: vec![schema_core::json_rpc::types::SchemaContainer {
+        to: DiffTarget::SchemaDatamodel(SchemasContainer {
+            files: vec![SchemaContainer {
                 path: file_path.to_str().unwrap().to_owned(),
                 content: text.to_string(),
             }],
         }),
-        filters: SchemaFilter::default(),
     }))
     .unwrap();
 

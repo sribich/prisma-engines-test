@@ -2,8 +2,6 @@
 resolver = "2"
 members = [
     "apps/*",
-    "schema-engine/cli",
-    "schema-engine/commands",
     "schema-engine/core",
     "schema-engine/connectors/*",
     "schema-engine/datamodel-renderer",
@@ -123,7 +121,6 @@ hyper = "0.14"
 indoc = "2"
 indexmap = "2"
 itertools = "0.13"
-jsonrpc-core = "17"
 log = "0.4"
 lru = "0.7"
 lru-cache = "0.1"

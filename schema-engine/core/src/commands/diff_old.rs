@@ -10,7 +10,7 @@ use enumflags2::BitFlags;
 use psl::{SourceFile, parser_database::ExtensionTypes};
 use quaint::connector::ExternalConnectorFactory;
 use schema_connector::{
-    ConnectorError, DatabaseSchema, ExternalShadowDatabase, Namespaces, SchemaConnector, SchemaDialect, SchemaFilter,
+    ConnectorError, DatabaseSchema, ExternalShadowDatabase, Namespaces, SchemaConnector, SchemaDialect,
     migrations_directory::Migrations,
 };
 
@@ -26,15 +26,11 @@ pub async fn diff(
     let (namespaces, preview_features) =
         namespaces_and_preview_features_from_diff_targets(&[&params.from, &params.to])?;
 
-    let filter: SchemaFilter = params.filters.into();
-    filter.validate(&*connector.schema_dialect())?;
-
     let (conn_from, schema_from) = diff_target_to_dialect(
         &params.from,
         connector,
         adapter_factory.clone(),
         namespaces.clone(),
-        &filter,
         preview_features,
         extension_types,
     )
@@ -46,7 +42,6 @@ pub async fn diff(
         connector,
         adapter_factory,
         namespaces,
-        &filter,
         preview_features,
         extension_types,
     )
@@ -62,7 +57,7 @@ pub async fn diff(
     let from = schema_from.unwrap_or_else(|| dialect.empty_database_schema());
     let to = schema_to.unwrap_or_else(|| dialect.empty_database_schema());
 
-    let migration = dialect.diff(from, to, &filter);
+    let migration = dialect.diff(from, to);
 
     let mut stdout = if params.script {
         dialect.render_script(&migration, &Default::default())?
@@ -119,7 +114,6 @@ async fn diff_target_to_dialect(
     connector: &mut dyn SchemaConnector,
     adapter_factory: Arc<dyn ExternalConnectorFactory>,
     namespaces: Option<Namespaces>,
-    filter: &SchemaFilter,
     preview_features: BitFlags<psl::PreviewFeature>,
     extension_types: &dyn ExtensionTypes,
 ) -> CoreResult<Option<(Box<dyn SchemaDialect>, DatabaseSchema)>> {
@@ -162,7 +156,6 @@ async fn diff_target_to_dialect(
                         .schema_from_migrations_with_target(
                             &migrations,
                             namespaces,
-                            filter,
                             ExternalShadowDatabase::DriverAdapter(adapter_factory),
                         )
                         .await?;

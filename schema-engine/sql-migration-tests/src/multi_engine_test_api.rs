@@ -3,7 +3,6 @@
 //! A TestApi that is initialized without IO or async code and can instantiate
 //! multiple schema engines.
 
-use schema_core::json_rpc::types::SchemaFilter;
 use std::time::Duration;
 pub use test_macros::test_connector;
 pub use test_setup::sqlite_test_url;
@@ -52,7 +51,7 @@ impl TestApi {
                 shadow_database_connection_string: args.shadow_database_url().map(String::from),
             };
             let mut conn = SqlSchemaConnector::new_mysql(params).unwrap();
-            tok(conn.reset(false, None, &schema_connector::SchemaFilter::default())).unwrap();
+            tok(conn.reset(false, None)).unwrap();
 
             (
                 tok(Quaint::new(args.database_url())).unwrap(),
@@ -201,7 +200,7 @@ impl TestApi {
             ConnectionInfo::Native(NativeConnectionInfo::Sqlite { .. }) => {
                 SqlSchemaConnector::new_sqlite(params).unwrap()
             }
-            ConnectionInfo::Native(NativeConnectionInfo::InMemorySqlite { .. }) | ConnectionInfo::External(_) => {
+            ConnectionInfo::Native(NativeConnectionInfo::InMemorySqlite { .. }) => {
                 unreachable!()
             }
         };
@@ -312,7 +311,6 @@ impl EngineTestApi {
             name,
             &[("schema.prisma", schema)],
             migrations_directory,
-            SchemaFilter::default(),
             Default::default(),
         )
     }
@@ -343,25 +341,12 @@ impl EngineTestApi {
             &mut self.connector,
             &[("schema.prisma", &dm)],
             self.max_ddl_refresh_delay,
-            SchemaFilter::default(),
         )
     }
 
     /// The schema name of the current connected database.
     pub fn schema_name(&self) -> &str {
         self.connection_info.schema_name().unwrap()
-    }
-
-    /// Creates a schema filter for the given tables and prefixes them with the default namespace if applicable.
-    pub fn namespaced_schema_filter(&self, tables: &[&str]) -> SchemaFilter {
-        let default_namespace = self.connector.default_runtime_namespace();
-        SchemaFilter {
-            external_tables: tables
-                .iter()
-                .map(|table| default_namespace.map_or(table.to_string(), |ns| format!("{ns}.{table}")))
-                .collect(),
-            external_enums: vec![],
-        }
     }
 
     /// Execute a raw SQL command and expect it to succeed.

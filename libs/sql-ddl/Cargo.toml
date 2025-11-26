@@ -7,8 +7,7 @@ edition.workspace = true
 postgres = []
 mysql = []
 sqlite = []
-mssql = []
-default = ["postgres", "mysql", "sqlite", "mssql"]
+default = ["postgres", "mysql", "sqlite"]
 
 [dependencies]
 

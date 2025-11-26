@@ -1,7 +1,31 @@
-use crate::{CoreResult, SchemaContainerExt, json_rpc::types::*, parse_schema_multi};
+use crate::{CoreResult, SchemaContainerExt, parse_schema_multi};
+use json_rpc::types::SchemasContainer;
 use psl::parser_database::ExtensionTypes;
 use schema_connector::{ConnectorError, SchemaConnector};
 use tracing_futures::Instrument;
+
+/// Request params for the `schemaPush` method.
+#[derive(Debug)]
+pub struct SchemaPushInput {
+    /// Push the schema ignoring destructive change warnings.
+    pub force: bool,
+
+    /// The Prisma schema files.
+    pub schema: SchemasContainer,
+}
+
+/// Response result for the `schemaPush` method.
+#[derive(Debug)]
+pub struct SchemaPushOutput {
+    /// How many migration steps were executed.
+    pub executed_steps: u32,
+
+    /// Steps that cannot be executed in the current state of the database.
+    pub unexecutable: Vec<String>,
+
+    /// Destructive change warnings.
+    pub warnings: Vec<String>,
+}
 
 /// Command to bring the local database in sync with the prisma schema, without
 /// interacting with the migrations directory nor the migrations table.
@@ -27,19 +51,17 @@ pub async fn schema_push(
     // TODO: We should remove this call once the state machines are no longer used.
     let _ = connector.ensure_connection_validity().await;
     let dialect = connector.schema_dialect();
-    let filter: schema_connector::SchemaFilter = input.filters.into();
 
     let to = dialect.schema_from_datamodel(sources, connector.default_runtime_namespace(), extension_types)?;
     // We only consider the namespaces present in the "to" schema aka the PSL file for the introspection of the "from" schema.
     // So when the user removes a previously existing namespace from their PSL file we will not modify that namespace in the database.
     let namespaces = dialect.extract_namespaces(&to);
-    filter.validate(&*dialect)?;
 
     let from = connector
         .schema_from_database(namespaces)
         .instrument(tracing::info_span!("Calculate from database"))
         .await?;
-    let database_migration = dialect.diff(from, to, &filter);
+    let database_migration = dialect.diff(from, to);
 
     tracing::debug!(migration = dialect.migration_summary(&database_migration).as_str());
 

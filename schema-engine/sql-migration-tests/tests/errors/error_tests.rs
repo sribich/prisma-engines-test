@@ -3,8 +3,7 @@ use indoc::{formatdoc, indoc};
 use pretty_assertions::assert_eq;
 use quaint::prelude::Insert;
 use schema_core::{
-    json_rpc::types::{DatasourceParam, EnsureConnectionValidityParams, SchemasContainer},
-    schema_connector::ConnectorError,
+    commands::ensure_connection_validity::EnsureConnectionValidityParams, json_rpc::types::{DatasourceParam, SchemasContainer}, schema_connector::ConnectorError
 };
 use serde_json::json;
 use sql_migration_tests::test_api::*;

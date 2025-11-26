@@ -1,3 +1,6 @@
+.env
+apps/cli/prisma
+
 db/*
 !.placeholder
 .DS_Store

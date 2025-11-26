@@ -1,18 +1,17 @@
 use std::sync::Arc;
 
 use psl::{PreviewFeatures, SourceFile, ValidatedSchema, parser_database::ExtensionTypes};
-use quaint::connector::ExternalConnectorFactory;
 
 use crate::{
     BoxFuture, ConnectorHost, ConnectorResult, DatabaseSchema, DestructiveChangeChecker, DestructiveChangeDiagnostics,
     DiffTarget, IntrospectSqlQueryInput, IntrospectSqlQueryOutput, IntrospectionContext, IntrospectionResult,
-    Migration, MigrationPersistence, Namespaces, SchemaFilter, migrations_directory::Migrations,
+    Migration, MigrationPersistence, Namespaces, migrations_directory::Migrations,
 };
 
 /// The dialect for schema operations on a particular database.
 pub trait SchemaDialect: Send + Sync + 'static {
     /// Create a migration by comparing two database schemas.
-    fn diff(&self, from: DatabaseSchema, to: DatabaseSchema, filter: &SchemaFilter) -> Migration;
+    fn diff(&self, from: DatabaseSchema, to: DatabaseSchema) -> Migration;
 
     /// Render the migration to a runnable script.
     ///
@@ -64,7 +63,6 @@ pub trait SchemaDialect: Send + Sync + 'static {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         target: ExternalShadowDatabase,
     ) -> BoxFuture<'a, ConnectorResult<()>>;
 
@@ -75,7 +73,6 @@ pub trait SchemaDialect: Send + Sync + 'static {
         &'a self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         target: ExternalShadowDatabase,
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>>;
 }
@@ -140,7 +137,6 @@ pub trait SchemaConnector: Send + Sync + 'static {
         &'a mut self,
         soft: bool,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<()>>;
 
     /// Optionally check that the features implied by the provided datamodel are all compatible with
@@ -170,7 +166,6 @@ pub trait SchemaConnector: Send + Sync + 'static {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>>;
 
     /// In-tro-spec-shon.
@@ -191,7 +186,6 @@ pub trait SchemaConnector: Send + Sync + 'static {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<()>>;
 
     /// Read a schema for diffing.
@@ -200,7 +194,6 @@ pub trait SchemaConnector: Send + Sync + 'static {
         diff_target: DiffTarget<'a>,
         namespaces: Option<Namespaces>,
         default_namespace: Option<&'a str>,
-        filter: &'a SchemaFilter,
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>> {
         Box::pin(async move {
             match diff_target {
@@ -208,7 +201,7 @@ pub trait SchemaConnector: Send + Sync + 'static {
                     self.schema_dialect()
                         .schema_from_datamodel(sources, default_namespace, extension_types)
                 }
-                DiffTarget::Migrations(migrations) => self.schema_from_migrations(migrations, namespaces, filter).await,
+                DiffTarget::Migrations(migrations) => self.schema_from_migrations(migrations, namespaces).await,
                 DiffTarget::Database => self.schema_from_database(namespaces).await,
                 DiffTarget::Empty => Ok(self.schema_dialect().empty_database_schema()),
             }
@@ -222,8 +215,6 @@ pub trait SchemaConnector: Send + Sync + 'static {
 #[derive(Clone)]
 /// An external shadow database to be used for schema operations.
 pub enum ExternalShadowDatabase {
-    /// A driver adapter factory.
-    DriverAdapter(Arc<dyn ExternalConnectorFactory>),
     /// A shadow database connection string and preview features.
     ConnectionString {
         /// The shadow database connection string.

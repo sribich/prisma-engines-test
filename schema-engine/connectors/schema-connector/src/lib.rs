@@ -9,7 +9,6 @@ mod database_schema;
 mod destructive_change_checker;
 mod diff;
 mod error;
-mod filter;
 mod introspect_sql;
 mod introspection_context;
 mod introspection_result;
@@ -31,9 +30,8 @@ pub use destructive_change_checker::{
 };
 pub use diff::DiffTarget;
 pub use error::{ConnectorError, ConnectorResult};
-pub use filter::SchemaFilter;
 pub use introspect_sql::*;
-pub use introspection_context::{IntrospectionContext};
+pub use introspection_context::IntrospectionContext;
 pub use introspection_result::{IntrospectionResult, ViewDefinition};
 pub use migration::Migration;
 pub use migration_persistence::{MigrationPersistence, MigrationRecord, PersistenceNotInitializedError, Timestamp};

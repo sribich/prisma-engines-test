@@ -43,7 +43,7 @@ pub use traits::{WithAttributes, WithDocumentation, WithIdentifier, WithName, Wi
 /// annotated with its location in the text representation.
 /// Basically, the AST is an object oriented representation of the datamodel's text.
 /// Schema = Datamodel + Generators + Datasources
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SchemaAst {
     /// All models, enums, composite types, datasources, generators and type aliases.
     pub tops: Vec<Top>,

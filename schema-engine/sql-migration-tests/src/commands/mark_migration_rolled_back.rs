@@ -1,5 +1,5 @@
 use schema_core::{
-    CoreError, CoreResult, commands::mark_migration_rolled_back, json_rpc::types::*, schema_connector::SchemaConnector,
+    CoreError, CoreResult, commands::mark_migration_rolled_back::{self, MarkMigrationRolledBackInput, MarkMigrationRolledBackOutput, mark_migration_rolled_back}, schema_connector::SchemaConnector,
 };
 
 #[must_use = "This struct does nothing on its own. See MarkMigrationRolledBack::send()"]

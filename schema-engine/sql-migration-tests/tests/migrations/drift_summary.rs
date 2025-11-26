@@ -1,5 +1,5 @@
 use expect_test::{Expect, expect};
-use schema_core::json_rpc::types::{SchemaFilter, SchemasContainer};
+use schema_core::{commands::diff::{DiffParams, DiffTarget}, json_rpc::types::SchemasContainer};
 use sql_migration_tests::test_api::*;
 use std::sync::Arc;
 
@@ -10,7 +10,7 @@ fn check(from: &str, to: &str, expectation: Expect) {
 
     let params = DiffParams {
         exit_code: None,
-        from: schema_core::json_rpc::types::DiffTarget::SchemaDatamodel(SchemasContainer {
+        from: DiffTarget::SchemaDatamodel(SchemasContainer {
             files: vec![SchemaContainer {
                 path: from_schema.to_str().unwrap().to_owned(),
                 content: from.to_string(),
@@ -18,13 +18,12 @@ fn check(from: &str, to: &str, expectation: Expect) {
         }),
         script: false,
         shadow_database_url: None,
-        to: schema_core::json_rpc::types::DiffTarget::SchemaDatamodel(SchemasContainer {
+        to: DiffTarget::SchemaDatamodel(SchemasContainer {
             files: vec![SchemaContainer {
                 path: to_schema.to_str().unwrap().to_owned(),
                 content: to.to_string(),
             }],
         }),
-        filters: SchemaFilter::default(),
     };
 
     let host = Arc::new(TestConnectorHost::default());

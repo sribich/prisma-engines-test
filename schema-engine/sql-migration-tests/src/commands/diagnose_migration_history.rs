@@ -1,8 +1,5 @@
 use schema_core::{
-    CoreError, CoreResult,
-    commands::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, diagnose_migration_history_cli},
-    json_rpc::types::SchemaFilter,
-    schema_connector::SchemaConnector,
+    CoreError, CoreResult, commands::diagnose_migration_history::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, diagnose_migration_history}, schema_connector::SchemaConnector
 };
 use tempfile::TempDir;
 
@@ -33,11 +30,10 @@ impl<'a> DiagnoseMigrationHistory<'a> {
     pub async fn send(self) -> CoreResult<DiagnoseMigrationHistoryAssertions<'a>> {
         let migrations_list = utils::list_migrations(self.migrations_directory.path()).unwrap();
         let mut migration_schema_cache = Default::default();
-        let output = diagnose_migration_history_cli(
+        let output = diagnose_migration_history(
             DiagnoseMigrationHistoryInput {
                 migrations_list,
                 opt_in_to_shadow_database: self.opt_in_to_shadow_database,
-                filters: SchemaFilter::default(),
             },
             None,
             self.api,

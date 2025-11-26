@@ -1,22 +1,18 @@
 use std::hash;
 
-use crate::js_result::JsResult;
-use serde::{Deserialize, Serialize};
-
 /// Information about a migration file within a migration directory.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MigrationFile {
     /// Relative path to the migration file from the migration directory.
     /// E.g., `migration.sql`.
     pub path: String,
 
     /// Content of the migration file or error if it couldn't be read.
-    pub content: JsResult<String, String>,
+    pub content: Result<String, String>,
 }
 
 /// Information about a migration directory.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct MigrationDirectory {
     /// Relative path to a migration directory from `baseDir`.
     /// E.g., `20201117144659_test`.
@@ -37,7 +33,7 @@ impl hash::Hash for MigrationDirectory {
     fn hash<H: hash::Hasher>(&self, hasher: &mut H) {
         self.path.hash(hasher);
         self.migration_file.path.hash(hasher);
-        if let JsResult::Ok(content) = &self.migration_file.content {
+        if let Result::Ok(content) = &self.migration_file.content {
             content.hash(hasher);
         }
     }

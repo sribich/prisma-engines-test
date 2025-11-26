@@ -16,7 +16,7 @@ use regex::{Regex, RegexSet};
 use renderer::MysqlRenderer;
 use schema_calculator::MysqlSchemaCalculatorFlavour;
 use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorParams, ConnectorResult, Namespaces, SchemaFilter,
+    BoxFuture, ConnectorError, ConnectorParams, ConnectorResult, Namespaces,
     migrations_directory::Migrations,
 };
 use schema_differ::MysqlSchemaDifferFlavour;
@@ -97,14 +97,6 @@ impl SqlDialect for MysqlDialect {
         let params = ConnectorParams::new(url, preview_features, None);
         Box::pin(async move { Ok(Box::new(MysqlConnector::new_with_params(params)?) as Box<dyn SqlConnector>) })
     }
-
-    #[cfg(not(feature = "mysql-native"))]
-    fn connect_to_shadow_db(
-        &self,
-        _factory: std::sync::Arc<dyn quaint::connector::ExternalConnectorFactory>,
-    ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>> {
-        todo!("MySQL WASM shadow database not supported yet")
-    }
 }
 
 pub(crate) struct MysqlConnector {
@@ -177,7 +169,6 @@ impl SqlConnector for MysqlConnector {
     fn table_names(
         &mut self,
         _namespaces: Option<Namespaces>,
-        filters: SchemaFilter,
     ) -> BoxFuture<'_, ConnectorResult<Vec<String>>> {
         Box::pin(async move {
             let select = r#"
@@ -205,12 +196,6 @@ impl SqlConnector for MysqlConnector {
             let table_names: Vec<String> = rows
                 .into_iter()
                 .flat_map(|row| row.get("table_name").and_then(|s| s.to_string()))
-                .filter(|table_name| {
-                    !self
-                        .dialect()
-                        .schema_differ()
-                        .contains_table(&filters.external_tables, None, table_name)
-                })
                 .collect();
 
             Ok(table_names)
@@ -368,7 +353,6 @@ impl SqlConnector for MysqlConnector {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         external_shadow_db: UsingExternalShadowDb,
     ) -> BoxFuture<'a, ConnectorResult<SqlSchema>> {
         match external_shadow_db {
@@ -377,7 +361,7 @@ impl SqlConnector for MysqlConnector {
                 tracing::info!("Connected to an external shadow database.");
 
                 if self.reset(None).await.is_err() {
-                    crate::best_effort_reset(self, namespaces, filter).await?;
+                    crate::best_effort_reset(self, namespaces).await?;
                 }
 
                 shadow_db::sql_schema_from_migrations_history(migrations, self).await

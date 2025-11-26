@@ -7,8 +7,6 @@ version = "0.1.0"
 postgresql = []
 sqlite = []
 mysql = []
-cockroachdb = ["postgresql"]
-mssql = []
 
 [dependencies]
 diagnostics.workspace = true

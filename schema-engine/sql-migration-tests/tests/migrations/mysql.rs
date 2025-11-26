@@ -2,7 +2,7 @@
 
 use indoc::indoc;
 use psl::{SourceFile, parser_database::NoExtensionTypes};
-use schema_core::{json_rpc::types::*, schema_connector};
+use schema_core::{commands::diff::{DiffParams, DiffTarget}, json_rpc::types::SchemasContainer, schema_connector};
 use sql_migration_tests::test_api::*;
 use std::fmt::Write as _;
 
@@ -484,7 +484,6 @@ fn dropping_m2m_relation_from_datamodel_works() {
         }),
         script: true,
         shadow_database_url: None,
-        filters: SchemaFilter::default(),
     });
 
     let expected = expect![[r#"

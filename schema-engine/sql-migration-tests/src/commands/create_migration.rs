@@ -1,7 +1,7 @@
 use pretty_assertions::assert_eq;
 use psl::parser_database::{ExtensionTypes, NoExtensionTypes};
 use schema_core::{
-    CoreError, CoreResult, commands::create_migration, json_rpc::types::*, schema_connector::SchemaConnector,
+    CoreError, CoreResult, commands::create_migration::{self, CreateMigrationInput, CreateMigrationOutput, create_migration}, json_rpc::types::{SchemaContainer, SchemasContainer}, schema_connector::SchemaConnector
 };
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
@@ -15,7 +15,6 @@ pub struct CreateMigration<'a> {
     migrations_directory: &'a TempDir,
     draft: bool,
     name: &'a str,
-    filter: SchemaFilter,
     init_script: &'a str,
     extension_types: &'a dyn ExtensionTypes,
 }
@@ -98,7 +97,6 @@ impl<'a> CreateMigration<'a> {
         name: &'a str,
         files: &[(&'a str, &'a str)],
         migrations_directory: &'a TempDir,
-        filter: SchemaFilter,
         init_script: &'a str,
     ) -> Self {
         CreateMigration {
@@ -113,7 +111,6 @@ impl<'a> CreateMigration<'a> {
             migrations_directory,
             draft: false,
             name,
-            filter,
             init_script,
             extension_types: &NoExtensionTypes,
         }
@@ -141,7 +138,6 @@ impl<'a> CreateMigration<'a> {
                 schema: SchemasContainer { files: self.files },
                 draft: self.draft,
                 migration_name: migration_name.clone(),
-                filters: self.filter,
             },
             self.api,
             &mut migration_schema_cache,

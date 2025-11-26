@@ -1,7 +1,6 @@
 #![allow(unused_imports)]
 
 use psl::{Datasource, PreviewFeatures, builtin_connectors::*};
-use quaint::connector::ExternalConnector;
 use query_core::{Connector, QueryExecutor, executor::InterpretingExecutor};
 #[cfg(feature = "sql")]
 use sql_query_connector::*;

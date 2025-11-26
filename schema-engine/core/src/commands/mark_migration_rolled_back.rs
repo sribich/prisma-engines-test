@@ -1,6 +1,18 @@
-use crate::{CoreError, CoreResult, json_rpc::types::*};
+use crate::{CoreError, CoreResult};
 use schema_connector::SchemaConnector;
 use user_facing_errors::schema_engine::{CannotRollBackSucceededMigration, CannotRollBackUnappliedMigration};
+
+/// Mark an existing failed migration as rolled back in the migrations table. It
+/// will still be there, but ignored for all purposes except as audit trail.
+#[derive(Debug)]
+pub struct MarkMigrationRolledBackInput {
+    /// The name of the migration to mark rolled back.
+    pub migration_name: String,
+}
+
+/// The output of the `markMigrationRolledBack` command.
+#[derive(Debug)]
+pub struct MarkMigrationRolledBackOutput {}
 
 /// Mark a migration as rolled back.
 pub async fn mark_migration_rolled_back(
@@ -56,19 +68,4 @@ pub async fn mark_migration_rolled_back(
     }
 
     Ok(MarkMigrationRolledBackOutput {})
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn mark_migration_rolled_back_output_serializes_as_expected() {
-        let output = MarkMigrationRolledBackOutput {};
-
-        let expected = serde_json::json!({});
-        let actual = serde_json::to_value(output).unwrap();
-
-        assert_eq!(actual, expected);
-    }
 }

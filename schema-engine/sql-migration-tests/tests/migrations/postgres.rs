@@ -4,7 +4,7 @@ mod multi_schema;
 
 use psl::parser_database::{NoExtensionTypes, SourceFile};
 use quaint::Value;
-use schema_core::{json_rpc::types::SchemasContainer, schema_connector::DiffTarget};
+use schema_core::schema_connector::DiffTarget;
 use sql_migration_tests::test_api::*;
 use std::fmt::Write;
 

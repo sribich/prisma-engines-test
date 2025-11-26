@@ -1,4 +1,4 @@
-use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::{commands::{db_execute::{DbExecuteDatasourceType, DbExecuteParams}, introspect::IntrospectParams}, json_rpc::types::SchemasContainer};
 use sql_migration_tests::test_api::*;
 
 #[test]
@@ -51,7 +51,7 @@ ALTER TABLE blocks
         "#,
     };
 
-    let result = tok(me.introspect(schema_core::json_rpc::types::IntrospectParams {
+    let result = tok(me.introspect(IntrospectParams {
         force: false,
         schema: SchemasContainer {
             files: vec![SchemaContainer {
@@ -125,7 +125,7 @@ CREATE TABLE capitals (
         "#,
     };
 
-    let result = tok(me.introspect(schema_core::json_rpc::types::IntrospectParams {
+    let result = tok(me.introspect(IntrospectParams {
         force: false,
         schema: SchemasContainer {
             files: vec![SchemaContainer {
@@ -200,7 +200,7 @@ CREATE TABLE capitals (
         "#,
     };
 
-    let result = tok(me.introspect(schema_core::json_rpc::types::IntrospectParams {
+    let result = tok(me.introspect(IntrospectParams {
         force: false,
         schema: SchemasContainer {
             files: vec![SchemaContainer {

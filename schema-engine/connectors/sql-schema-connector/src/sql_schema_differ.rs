@@ -6,7 +6,6 @@ pub mod sql_schema_differ_flavour;
 pub(crate) mod table;
 
 pub(crate) use column::{ColumnChange, ColumnChanges};
-use schema_connector::SchemaFilter;
 pub(crate) use sql_schema_differ_flavour::SqlSchemaDifferFlavour;
 
 use self::differ_database::DifferDatabase;
@@ -23,9 +22,8 @@ use table::TableDiffer;
 pub(crate) fn calculate_steps(
     schemas: MigrationPair<&SqlDatabaseSchema>,
     flavour: &dyn SqlSchemaDifferFlavour,
-    filter: &SchemaFilter,
 ) -> Vec<SqlMigrationStep> {
-    let db = DifferDatabase::new(schemas, flavour, filter);
+    let db = DifferDatabase::new(schemas, flavour);
     let mut steps: Vec<SqlMigrationStep> = Vec::new();
 
     flavour.push_extension_steps(&mut steps, &db);

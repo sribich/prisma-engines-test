@@ -4,8 +4,15 @@ version = "0.0.0"
 edition = "2024"
 
 [dependencies]
+psl.workspace = true
+schema-ast.workspace = true
 schema-context.workspace = true
+schema-core.workspace = true
 
+dotenv = { version = "0.15.0" }
+
+
+tokio = { workspace = true }
 
 thiserror = "1.0.37"
 anyhow = "1.0.65"
@@ -20,4 +27,9 @@ cmd_lib = "1.3.0"
 fork = "0.1.22"
 
 tracing = "0.1.37"
-tracing-subscriber = "0.3.17"
+tracing-subscriber = { version = "0.3.17", features = ["fmt", "json", "time", "env-filter"] }
+tracing-error = "0.2.1"
+url = "2.5.7"
+
+[build-dependencies]
+build-utils.workspace = true

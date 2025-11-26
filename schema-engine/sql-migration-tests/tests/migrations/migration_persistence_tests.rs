@@ -1,13 +1,12 @@
 use chrono::Duration;
 use pretty_assertions::assert_eq;
-use schema_core::schema_connector::SchemaFilter;
 use sql_migration_tests::test_api::*;
 
 #[test_connector]
 fn starting_a_migration_works(api: TestApi) {
     let persistence = api.migration_persistence();
 
-    tok(persistence.initialize(None, SchemaFilter::default())).unwrap();
+    tok(persistence.initialize(None)).unwrap();
 
     let script = "CREATE ENUM MyBoolean ( \"TRUE\", \"FALSE\" )";
 
@@ -40,7 +39,7 @@ fn starting_a_migration_works(api: TestApi) {
 fn finishing_a_migration_works(api: TestApi) {
     let persistence = api.migration_persistence();
 
-    tok(persistence.initialize(None, SchemaFilter::default())).unwrap();
+    tok(persistence.initialize(None)).unwrap();
 
     let script = "CREATE ENUM MyBoolean ( \"TRUE\", \"FALSE\" )";
 
@@ -77,7 +76,7 @@ fn finishing_a_migration_works(api: TestApi) {
 fn updating_then_finishing_a_migration_works(api: TestApi) {
     let persistence = api.migration_persistence();
 
-    tok(persistence.initialize(None, SchemaFilter::default())).unwrap();
+    tok(persistence.initialize(None)).unwrap();
 
     let script = "CREATE ENUM MyBoolean ( \"TRUE\", \"FALSE\" )";
 
@@ -115,7 +114,7 @@ fn updating_then_finishing_a_migration_works(api: TestApi) {
 fn multiple_successive_migrations_work(api: TestApi) {
     let persistence = api.migration_persistence();
 
-    tok(persistence.initialize(None, SchemaFilter::default())).unwrap();
+    tok(persistence.initialize(None)).unwrap();
 
     let script_1 = "CREATE ENUM MyBoolean ( \"TRUE\", \"FALSE\" )";
 
@@ -185,23 +184,11 @@ fn starting_a_migration_on_a_non_empty_database_errors(api: TestApi) {
 
     let persistence = api.migration_persistence();
 
-    let result = tok(persistence.initialize(None, SchemaFilter::default()))
+    let result = tok(persistence.initialize(None))
         .unwrap_err()
         .to_user_facing()
         .unwrap_known();
 
     assert_eq!(result.error_code, "P3005");
     assert!(result.message.starts_with("The database schema is not empty. Read more about how to baseline an existing production database: https://pris.ly/d/migrate-baseline"));
-}
-
-#[test_connector]
-fn starting_a_migration_on_db_with_existing_external_table_does_not_errors(api: TestApi) {
-    api.raw_cmd("CREATE TABLE cats (id INT)");
-
-    let filter = api.namespaced_schema_filter(&["cats"]).into();
-    let persistence = api.migration_persistence();
-
-    let result = tok(persistence.initialize(None, filter));
-
-    assert!(result.is_ok());
 }

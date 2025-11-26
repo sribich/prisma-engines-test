@@ -1,5 +1,6 @@
-use crate::{CoreError, CoreResult, json_rpc::types::*};
+use crate::{CoreError, CoreResult};
 use crosstarget_utils::time::ElapsedTimeCounter;
+use json_rpc::types::MigrationList;
 use schema_connector::{
     ConnectorError, MigrationRecord, Namespaces, PersistenceNotInitializedError, SchemaConnector,
     migrations_directory::{MigrationDirectory, Migrations, error_on_changed_provider},
@@ -7,6 +8,21 @@ use schema_connector::{
 use tracing::Instrument;
 use user_facing_errors::schema_engine::FoundFailedMigrations;
 
+/// The input to the `applyMigrations` command.
+#[derive(Debug)]
+pub struct ApplyMigrationsInput {
+    /// The list of migrations, already loaded from disk.
+    pub migrations_list: MigrationList,
+}
+
+/// The output of the `applyMigrations` command.
+#[derive(Debug)]
+pub struct ApplyMigrationsOutput {
+    /// The names of the migrations that were just applied. Empty if no migration was applied.
+    pub applied_migration_names: Vec<String>,
+}
+
+///
 pub async fn apply_migrations(
     input: ApplyMigrationsInput,
     connector: &mut dyn SchemaConnector,
@@ -20,7 +36,7 @@ pub async fn apply_migrations(
     connector.acquire_lock().await?;
     connector
         .migration_persistence()
-        .initialize(namespaces, input.filters.into())
+        .initialize(namespaces)
         .await?;
 
     let migrations_from_database = connector

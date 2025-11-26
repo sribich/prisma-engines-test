@@ -1203,6 +1203,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1480,9 +1486,9 @@ dependencies = [
 
 [[package]]
 name = "form_urlencoded"
-version = "1.2.1"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456"
+checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
 ]
@@ -3035,9 +3041,9 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
-version = "1.0.3"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "686f825264d630750a544639377bae737628043f20d38bbc029e8f29ea968a7e"
+checksum = "3b0875f23caa03898994f6ddc501886a45c7d3d62d04d2d90788d47be1b1e4de"
 dependencies = [
  "idna_adapter",
  "smallvec",
@@ -3219,22 +3225,6 @@ name = "json-rpc-api"
 version = "0.1.0"
 dependencies = [
  "heck 0.4.1",
- "serde",
-]
-
-[[package]]
-name = "jsonrpc-core"
-version = "17.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4467ab6dfa369b69e52bd0692e480c4d117410538526a57a304a0f2250fd95e"
-dependencies = [
- "futures",
- "futures-executor",
- "futures-util",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
 ]
 
 [[package]]
@@ -4108,9 +4098,9 @@ dependencies = [
 
 [[package]]
 name = "percent-encoding"
-version = "2.3.1"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "pest"
@@ -4357,16 +4347,24 @@ name = "prisma"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "build-utils",
  "clap 4.5.51",
  "clap-verbosity-flag",
  "cmd_lib",
+ "dotenv",
  "fork",
+ "psl",
+ "schema-ast",
  "schema-context",
+ "schema-core",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
+ "tokio",
  "tracing",
+ "tracing-error",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]
@@ -4511,6 +4509,7 @@ dependencies = [
  "expect-test",
  "indoc",
  "psl-core",
+ "schema-context",
 ]
 
 [[package]]
@@ -4874,7 +4873,6 @@ dependencies = [
  "indoc",
  "insta",
  "itertools 0.13.0",
- "jsonrpc-core",
  "log",
  "nom",
  "panic-utils",
@@ -5353,30 +5351,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "schema-commands"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "chrono",
- "crosstarget-utils",
- "enumflags2",
- "json-rpc-api",
- "jsonrpc-core",
- "psl",
- "quaint",
- "schema-connector",
- "serde",
- "serde_json",
- "sql-schema-connector",
- "tokio",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
- "url",
- "user-facing-errors",
-]
-
-[[package]]
 name = "schema-connector"
 version = "0.1.0"
 dependencies = [
@@ -5418,9 +5392,7 @@ dependencies = [
  "futures",
  "hashbrown 0.16.0",
  "json-rpc-api",
- "jsonrpc-core",
  "psl",
- "schema-commands",
  "schema-connector",
  "serde",
  "serde_json",
@@ -5428,36 +5400,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
- "tracing-subscriber",
- "url",
- "user-facing-errors",
-]
-
-[[package]]
-name = "schema-engine-cli"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "build-utils",
- "connection-string",
- "expect-test",
- "indoc",
- "jsonrpc-core",
- "panic-utils",
- "psl",
- "quaint",
- "schema-connector",
- "schema-core",
- "serde",
- "serde_json",
- "structopt",
- "tempfile",
- "test-macros",
- "test-setup",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-error",
  "tracing-subscriber",
  "url",
  "user-facing-errors",
@@ -5782,7 +5724,6 @@ dependencies = [
  "enumflags2",
  "expect-test",
  "indoc",
- "jsonrpc-core",
  "paste",
  "pretty_assertions",
  "prisma-value",
@@ -6456,9 +6397,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-error"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d686ec1c0f384b1277f097b2f279a2ecc11afe8c133c1aabf036a27cb4cd206e"
+checksum = "8b1581020d7a273442f5b45074a6a57d5757ad0a47dac0e9f0bd57b81936f3db"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -6668,9 +6609,9 @@ dependencies = [
 
 [[package]]
 name = "url"
-version = "2.5.4"
+version = "2.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32f8b686cadd1473f4bd0117a5d28d36b1ade384ea9b5069a1c40aefed7fda60"
+checksum = "08bc136a29a3d1758e07a9cca267be308aeebf5cfd5a10f3f67ab2097683ef5b"
 dependencies = [
  "form_urlencoded",
  "idna",

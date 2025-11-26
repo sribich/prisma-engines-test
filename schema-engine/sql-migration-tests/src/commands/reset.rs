@@ -1,13 +1,12 @@
 use schema_core::{
     CoreResult,
-    schema_connector::{Namespaces, SchemaConnector, SchemaFilter},
+    schema_connector::{Namespaces, SchemaConnector},
 };
 
 #[must_use = "This struct does nothing on its own. See Reset::send()"]
 pub struct Reset<'a> {
     api: &'a mut dyn SchemaConnector,
     soft: bool,
-    filter: SchemaFilter,
 }
 
 impl<'a> Reset<'a> {
@@ -15,7 +14,6 @@ impl<'a> Reset<'a> {
         Reset {
             api,
             soft: false,
-            filter: SchemaFilter::default(),
         }
     }
 
@@ -24,13 +22,8 @@ impl<'a> Reset<'a> {
         self
     }
 
-    pub fn filter(mut self, filter: SchemaFilter) -> Self {
-        self.filter = filter;
-        self
-    }
-
     pub async fn send(self, namespaces: Option<Namespaces>) -> CoreResult<ResetAssertion> {
-        self.api.reset(self.soft, namespaces, &self.filter).await?;
+        self.api.reset(self.soft, namespaces).await?;
 
         Ok(ResetAssertion {})
     }

@@ -1,4 +1,4 @@
-use crate::{BoxFuture, ConnectorError, ConnectorResult, Namespaces, SchemaFilter, checksum};
+use crate::{BoxFuture, ConnectorError, ConnectorResult, Namespaces, checksum};
 
 /// A timestamp.
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
@@ -17,7 +17,6 @@ pub trait MigrationPersistence: Send + Sync {
     fn initialize(
         &mut self,
         namespaces: Option<Namespaces>,
-        filters: SchemaFilter,
     ) -> BoxFuture<'_, ConnectorResult<()>>;
 
     /// Implementation in the connector for the core's MarkMigrationApplied

@@ -18,7 +18,7 @@ use quaint::{
 use renderer::PostgresRenderer;
 use schema_calculator::PostgresSchemaCalculatorFlavour;
 use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorResult, Namespaces, SchemaFilter, migrations_directory::Migrations,
+    BoxFuture, ConnectorError, ConnectorResult, Namespaces, migrations_directory::Migrations,
 };
 use schema_differ::PostgresSchemaDifferFlavour;
 use serde::Deserialize;
@@ -237,21 +237,6 @@ impl SqlDialect for PostgresDialect {
         let params = schema_connector::ConnectorParams::new(url, preview_features, None);
         Box::pin(async move { Ok(Box::new(PostgresConnector::new_with_params(params)?) as Box<dyn SqlConnector>) })
     }
-
-    #[cfg(not(feature = "postgresql-native"))]
-    fn connect_to_shadow_db(
-        &self,
-        factory: std::sync::Arc<dyn quaint::connector::ExternalConnectorFactory>,
-    ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>> {
-        Box::pin(async move {
-            let adapter = factory
-                .connect_to_shadow_db()
-                .await
-                .ok_or_else(|| ConnectorError::from_msg("Provided adapter does not support shadow databases".into()))?
-                .map_err(|e| ConnectorError::from_source(e, "Failed to connect to the shadow database"))?;
-            Ok(Box::new(PostgresConnector::new_external(adapter).await?) as Box<dyn SqlConnector>)
-        })
-    }
 }
 
 pub(crate) struct PostgresConnector {
@@ -266,17 +251,6 @@ impl std::fmt::Debug for PostgresConnector {
 }
 
 impl PostgresConnector {
-    #[cfg(not(feature = "postgresql-native"))]
-    pub(crate) async fn new_external(
-        adapter: std::sync::Arc<dyn quaint::connector::ExternalConnector>,
-    ) -> ConnectorResult<Self> {
-        let provider = PostgresProvider::Unspecified;
-        Ok(PostgresConnector {
-            state: State::new(adapter, provider, Default::default()).await?,
-            provider,
-        })
-    }
-
     #[cfg(feature = "postgresql-native")]
     pub(crate) fn new_postgres(params: schema_connector::ConnectorParams) -> ConnectorResult<Self> {
         Ok(Self {
@@ -356,7 +330,6 @@ impl SqlConnector for PostgresConnector {
     fn table_names(
         &mut self,
         namespaces: Option<Namespaces>,
-        filters: SchemaFilter,
     ) -> BoxFuture<'_, ConnectorResult<Vec<String>>> {
         Box::pin(async move {
             let search_path = self.schema_name().to_string();
@@ -383,12 +356,6 @@ impl SqlConnector for PostgresConnector {
                     let table_name = row.get("table_name").and_then(|s| s.to_string());
 
                     ns.and_then(|ns| table_name.map(|table_name| (ns, table_name)))
-                })
-                .filter(|(ns, table_name)| {
-                    !self
-                        .dialect()
-                        .schema_differ()
-                        .contains_table(&filters.external_tables, Some(ns), table_name)
                 })
                 .map(|(_, table_name)| table_name)
                 .collect();
@@ -545,7 +512,6 @@ impl SqlConnector for PostgresConnector {
         &'a mut self,
         migrations: &'a Migrations,
         namespaces: Option<Namespaces>,
-        filter: &'a SchemaFilter,
         external_shadow_db: UsingExternalShadowDb,
     ) -> BoxFuture<'a, ConnectorResult<SqlSchema>> {
         Box::pin(imp::shadow_db::sql_schema_from_migration_history(
@@ -553,7 +519,6 @@ impl SqlConnector for PostgresConnector {
             self.provider,
             migrations,
             namespaces,
-            filter,
             external_shadow_db,
         ))
     }

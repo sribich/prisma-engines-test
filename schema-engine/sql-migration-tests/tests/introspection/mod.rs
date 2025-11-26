@@ -1,6 +1,6 @@
 use expect_test::expect;
 use quaint::connector::rusqlite;
-use schema_core::json_rpc::types::{IntrospectParams, SchemasContainer};
+use schema_core::{commands::introspect::IntrospectParams, json_rpc::types::SchemasContainer};
 use sql_migration_tests::test_api::SchemaContainer;
 use test_setup::runtime::run_with_thread_local_runtime as tok;
 

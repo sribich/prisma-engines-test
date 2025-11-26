@@ -8,11 +8,11 @@ use crate::{flavour::SqlConnector, sql_renderer::SqlRenderer};
 use connector as imp;
 use destructive_change_checker::SqliteDestructiveChangeCheckerFlavour;
 use indoc::indoc;
-use quaint::connector::{AdapterName, DEFAULT_SQLITE_DATABASE};
+use quaint::connector::{DEFAULT_SQLITE_DATABASE};
 use renderer::SqliteRenderer;
 use schema_calculator::SqliteSchemaCalculatorFlavour;
 use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorResult, Namespaces, SchemaFilter, migrations_directory::Migrations,
+    BoxFuture, ConnectorError, ConnectorResult, Namespaces, migrations_directory::Migrations,
 };
 use schema_differ::SqliteSchemaDifferFlavour;
 use sql_schema_describer::{DescriberErrorKind, SqlSchema, sqlite::SqlSchemaDescriber};
@@ -57,21 +57,6 @@ impl SqlDialect for SqliteDialect {
         let params = schema_connector::ConnectorParams::new(url, preview_features, None);
         Box::pin(async move { Ok(Box::new(SqliteConnector::new_with_params(params)?) as Box<dyn SqlConnector>) })
     }
-
-    #[cfg(not(feature = "sqlite-native"))]
-    fn connect_to_shadow_db(
-        &self,
-        factory: std::sync::Arc<dyn quaint::connector::ExternalConnectorFactory>,
-    ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>> {
-        Box::pin(async move {
-            let adapter = factory
-                .connect_to_shadow_db()
-                .await
-                .ok_or_else(|| ConnectorError::from_msg("Provided adapter does not support shadow databases".into()))?
-                .map_err(|e| ConnectorError::from_source(e, "Failed to connect to the shadow database"))?;
-            Ok(Box::new(SqliteConnector::new_external(adapter)) as Box<dyn SqlConnector>)
-        })
-    }
 }
 
 pub(crate) struct SqliteConnector {
@@ -100,13 +85,6 @@ impl Default for SqliteConnector {
 }
 
 impl SqliteConnector {
-    #[cfg(not(feature = "sqlite-native"))]
-    pub(crate) fn new_external(adapter: std::sync::Arc<dyn quaint::connector::ExternalConnector>) -> Self {
-        Self {
-            state: State::new(adapter, Default::default()),
-        }
-    }
-
     #[cfg(feature = "sqlite-native")]
     pub fn new_with_params(params: schema_connector::ConnectorParams) -> ConnectorResult<Self> {
         Ok(Self {
@@ -158,7 +136,6 @@ impl SqlConnector for SqliteConnector {
     fn table_names(
         &mut self,
         _namespaces: Option<Namespaces>,
-        filters: SchemaFilter,
     ) -> BoxFuture<'_, ConnectorResult<Vec<String>>> {
         Box::pin(async move {
             let select = r#"SELECT name AS table_name FROM sqlite_master WHERE type='table' ORDER BY name ASC"#;
@@ -167,12 +144,6 @@ impl SqlConnector for SqliteConnector {
             let table_names: Vec<String> = rows
                 .into_iter()
                 .flat_map(|row| row.get("table_name").and_then(|s| s.to_string()))
-                .filter(|table_name| {
-                    !self
-                        .dialect()
-                        .schema_differ()
-                        .contains_table(&filters.external_tables, None, table_name)
-                })
                 .collect();
 
             Ok(table_names)
@@ -354,7 +325,6 @@ impl SqlConnector for SqliteConnector {
         &'a mut self,
         migrations: &'a Migrations,
         _namespaces: Option<Namespaces>,
-        _filter: &'a SchemaFilter,
         external_shadow_db: UsingExternalShadowDb,
     ) -> BoxFuture<'a, ConnectorResult<SqlSchema>> {
         async fn apply_migrations_and_describe(
@@ -417,13 +387,8 @@ impl SqlConnector for SqliteConnector {
 }
 
 async fn acquire_lock(connection: &imp::Connection) -> ConnectorResult<()> {
-    let adapter_name = connection.adapter_name();
     let sql = "PRAGMA main.locking_mode=EXCLUSIVE";
-    tracing::info!(sql, adapter_name = ?adapter_name, query_type = "acquire_lock");
-
-    if let Some(AdapterName::D1(_) | AdapterName::LibSQL) = adapter_name {
-        return Ok(());
-    };
+    tracing::info!(sql, query_type = "acquire_lock");
 
     connection.raw_cmd(sql).await
 }

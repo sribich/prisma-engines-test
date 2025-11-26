@@ -1,5 +1,5 @@
 use schema_core::{
-    CoreError, CoreResult, commands::dev_diagnostic_cli, json_rpc::types::*, schema_connector::SchemaConnector,
+    CoreError, CoreResult, commands::dev_diagnostic::{DevAction, DevDiagnosticInput, DevDiagnosticOutput, dev_diagnostic}, schema_connector::SchemaConnector,
 };
 use tempfile::TempDir;
 
@@ -9,29 +9,25 @@ use crate::utils;
 pub struct DevDiagnostic<'a> {
     api: &'a mut dyn SchemaConnector,
     migrations_directory: &'a TempDir,
-    filter: SchemaFilter,
 }
 
 impl<'a> DevDiagnostic<'a> {
     pub(crate) fn new(
         api: &'a mut dyn SchemaConnector,
         migrations_directory: &'a TempDir,
-        filter: SchemaFilter,
     ) -> Self {
         DevDiagnostic {
             api,
             migrations_directory,
-            filter,
         }
     }
 
     fn send_impl(self) -> CoreResult<DevDiagnosticAssertions<'a>> {
         let migrations_list = utils::list_migrations(self.migrations_directory.path()).unwrap();
         let mut migration_schema_cache = Default::default();
-        let fut = dev_diagnostic_cli(
+        let fut = dev_diagnostic(
             DevDiagnosticInput {
                 migrations_list,
-                filters: self.filter,
             },
             None,
             self.api,

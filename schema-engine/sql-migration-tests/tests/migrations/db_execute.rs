@@ -1,29 +1,9 @@
 use quaint::{prelude::Queryable, single::Quaint};
+use schema_core::commands::db_execute::{DbExecuteDatasourceType, DbExecuteParams};
 use schema_core::json_rpc::types::SchemasWithConfigDir;
 use sql_migration_tests::test_api::*;
 use sql_migration_tests::utils::to_schema_containers;
 use sql_migration_tests::*;
-
-#[test]
-fn db_execute_input_source_takes_expected_json_shape() {
-    let value = DbExecuteParams {
-        datasource_type: DbExecuteDatasourceType::Url(UrlContainer {
-            url: "uiuiui".to_owned(),
-        }),
-        script: "SQL goes here".to_owned(),
-    };
-
-    let expected = expect![[r#"
-        {
-          "datasourceType": {
-            "tag": "url",
-            "url": "uiuiui"
-          },
-          "script": "SQL goes here"
-        }"#]];
-
-    expected.assert_eq(&serde_json::to_string_pretty(&value).unwrap());
-}
 
 #[test]
 fn db_execute_happy_path_with_literal_url() {

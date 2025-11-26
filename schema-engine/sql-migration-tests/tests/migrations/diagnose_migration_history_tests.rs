@@ -1,7 +1,6 @@
 use pretty_assertions::assert_eq;
 use schema_core::{
-    commands::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, DriftDiagnostic, HistoryDiagnostic},
-    json_rpc::types::{CreateMigrationOutput, SchemaFilter},
+    commands::{create_migration::CreateMigrationOutput, diagnose_migration_history::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, DriftDiagnostic, HistoryDiagnostic}},
     schema_api_without_extensions,
 };
 use sql_migration_tests::{test_api::*, utils::list_migrations};
@@ -813,7 +812,6 @@ fn shadow_database_creation_error_is_special_cased_mysql(api: TestApi) {
     let output = tok(migration_api.diagnose_migration_history(DiagnoseMigrationHistoryInput {
         migrations_list,
         opt_in_to_shadow_database: true,
-        filters: SchemaFilter::default(),
     }))
     .unwrap();
 
@@ -863,7 +861,6 @@ fn shadow_database_creation_error_is_special_cased_postgres(api: TestApi) {
             .diagnose_migration_history(DiagnoseMigrationHistoryInput {
                 migrations_list,
                 opt_in_to_shadow_database: true,
-                filters: SchemaFilter::default(),
             })
             .await
     })

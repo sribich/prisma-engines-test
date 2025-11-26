@@ -1,14 +1,38 @@
-use std::sync::Arc;
-
-use super::{DiagnoseMigrationHistoryOutput, DriftDiagnostic, HistoryDiagnostic, diagnose_migration_history};
-use crate::{
-    json_rpc::types::{
-        DevAction, DevActionReset, DevDiagnosticInput, DevDiagnosticOutput, DiagnoseMigrationHistoryInput,
-    },
-    migration_schema_cache::MigrationSchemaCache,
-};
-use quaint::connector::ExternalConnectorFactory;
+use json_rpc::types::MigrationList;
 use schema_connector::{ConnectorResult, Namespaces, SchemaConnector, migrations_directory};
+
+use crate::{commands::diagnose_migration_history::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, DriftDiagnostic, HistoryDiagnostic, diagnose_migration_history}, migration_schema_cache::MigrationSchemaCache};
+
+///
+#[derive(Debug)]
+pub struct DevDiagnosticInput {
+    /// The list of migrations, already loaded from disk.
+    pub migrations_list: MigrationList,
+}
+
+/// The response type for `devDiagnostic`.
+#[derive(Debug)]
+pub struct DevDiagnosticOutput {
+    /// The suggested course of action for the CLI.
+    pub action: DevAction,
+}
+
+/// A suggested action for the CLI `migrate dev` command.
+#[derive(Debug)]
+pub enum DevAction {
+    /// Reset the database.
+    Reset(DevActionReset),
+
+    /// Proceed to the next step
+    CreateMigration,
+}
+
+/// Reset action fields.
+#[derive(Debug)]
+pub struct DevActionReset {
+    /// Why do we need to reset?
+    pub reason: String,
+}
 
 /// Method called at the beginning of `migrate dev` to decide the course of
 /// action based on the current state of the workspace.
@@ -16,7 +40,6 @@ pub async fn dev_diagnostic(
     input: DevDiagnosticInput,
     namespaces: Option<Namespaces>,
     connector: &mut dyn SchemaConnector,
-    adapter_factory: Arc<dyn ExternalConnectorFactory>,
     migration_schema_cache: &mut MigrationSchemaCache,
 ) -> ConnectorResult<DevDiagnosticOutput> {
     migrations_directory::error_on_changed_provider(&input.migrations_list.lockfile, connector.connector_type())?;
@@ -24,17 +47,10 @@ pub async fn dev_diagnostic(
     let diagnose_input = DiagnoseMigrationHistoryInput {
         migrations_list: input.migrations_list,
         opt_in_to_shadow_database: true,
-        filters: input.filters,
     };
 
-    let diagnose_migration_history_output = diagnose_migration_history(
-        diagnose_input,
-        namespaces,
-        connector,
-        adapter_factory,
-        migration_schema_cache,
-    )
-    .await?;
+    let diagnose_migration_history_output =
+        diagnose_migration_history(diagnose_input, namespaces, connector, migration_schema_cache).await?;
 
     check_for_broken_migrations(&diagnose_migration_history_output)?;
 
@@ -128,23 +144,3 @@ const FIRST_TIME_MIGRATION_MESSAGE: &str = r#"
 If you are running this the first time on an existing database, please make sure to read this documentation page:
 https://www.prisma.io/docs/guides/database/developing-with-prisma-migrate/troubleshooting-development
 "#;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn dev_action_serializes_as_expected() {
-        let reset = serde_json::to_value(DevAction::Reset(DevActionReset {
-            reason: "Because I said so".to_owned(),
-        }))
-        .unwrap();
-
-        assert_eq!(reset, json!({ "tag": "reset", "reason": "Because I said so" }));
-
-        let create_migration = serde_json::to_value(DevAction::CreateMigration).unwrap();
-
-        assert_eq!(create_migration, json!({ "tag": "createMigration" }));
-    }
-}

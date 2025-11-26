@@ -26,7 +26,6 @@ connection-string.workspace = true
 enumflags2.workspace = true
 expect-test.workspace = true
 indoc.workspace = true
-jsonrpc-core.workspace = true
 pretty_assertions.workspace = true
 serde.workspace = true
 serde_json.workspace = true

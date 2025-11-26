@@ -1,7 +1,9 @@
 use colored::Colorize;
 use psl::parser_database::{ExtensionTypes, NoExtensionTypes};
+use schema_core::commands::schema_push::{SchemaPushInput, SchemaPushOutput, schema_push};
+use schema_core::json_rpc::types::{SchemaContainer, SchemasContainer};
 use schema_core::{
-    CoreError, CoreResult, commands::schema_push, json_rpc::types::*, schema_connector::SchemaConnector,
+    CoreError, CoreResult, schema_connector::SchemaConnector,
 };
 use std::time::Duration;
 use std::{borrow::Cow, fmt::Debug};
@@ -15,7 +17,6 @@ pub struct SchemaPush<'a> {
     migration_id: Option<&'a str>,
     // In eventually-consistent systems, we might need to wait for a while before the system refreshes
     max_ddl_refresh_delay: Option<Duration>,
-    schema_filter: SchemaFilter,
     extensions: &'a dyn ExtensionTypes,
 }
 
@@ -24,7 +25,6 @@ impl<'a> SchemaPush<'a> {
         api: &'a mut dyn SchemaConnector,
         files: &[(&str, &str)],
         max_refresh_delay: Option<Duration>,
-        schema_filter: SchemaFilter,
     ) -> Self {
         SchemaPush {
             api,
@@ -38,7 +38,6 @@ impl<'a> SchemaPush<'a> {
             force: false,
             migration_id: None,
             max_ddl_refresh_delay: max_refresh_delay,
-            schema_filter,
             extensions: &NoExtensionTypes,
         }
     }
@@ -62,7 +61,6 @@ impl<'a> SchemaPush<'a> {
         let input = SchemaPushInput {
             schema: SchemasContainer { files: self.files },
             force: self.force,
-            filters: self.schema_filter,
         };
 
         let fut = schema_push(input, self.api, self.extensions)
