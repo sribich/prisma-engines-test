@@ -10,7 +10,7 @@ mysql = ["psl-core/mysql"]
 all = ["postgresql", "sqlite", "mysql",]
 
 [dependencies]
-schema-context.workspace = true
+psl-schema.workspace = true
 psl-core.workspace = true
 
 

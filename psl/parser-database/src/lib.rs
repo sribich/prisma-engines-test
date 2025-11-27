@@ -53,8 +53,8 @@ use interner::StringInterner;
 use names::Names;
 pub use names::is_reserved_type_name;
 pub use relations::{ManyToManyRelationId, ReferentialAction, RelationId};
-use schema_ast::ast::{GeneratorConfig, SourceConfig};
-pub use schema_ast::{SourceFile, ast};
+use psl_ast::ast::{GeneratorConfig, SourceConfig};
+pub use psl_ast::{SourceFile, ast};
 pub use types::{
     IndexAlgorithm, IndexFieldPath, IndexType, OperatorClass, RelationFieldId, ScalarFieldId, ScalarFieldType,
     ScalarType, SortOrder,
@@ -100,7 +100,7 @@ impl ParserDatabase {
 
     /// See the docs on [ParserDatabase](/struct.ParserDatabase.html).
     pub fn new(
-        schemas: &[(String, schema_ast::SourceFile)],
+        schemas: &[(String, psl_ast::SourceFile)],
         diagnostics: &mut Diagnostics,
         extension_types: &dyn ExtensionTypes,
     ) -> Self {

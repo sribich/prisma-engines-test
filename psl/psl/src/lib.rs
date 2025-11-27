@@ -31,10 +31,10 @@ pub use psl_core::{
     reformat,
     reformat_multiple,
     reformat_validated_schema_into_single,
-    schema_ast,
+    psl_ast,
     set_config_dir,
 };
-use schema_context::{New, Parsed, SchemaContext, SchemaFile, SchemaParser};
+use psl_schema::{New, Parsed, SchemaContext, SchemaFile, SchemaParser};
 
 /// The implementation of the CLI getConfig() utility and its JSON format.
 pub mod get_config {

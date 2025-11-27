@@ -1,7 +1,7 @@
 use psl::{
     datamodel_connector::walker_ext_traits::IndexWalkerExt,
     parser_database::{self as db, walkers},
-    schema_ast::ast::WithDocumentation,
+    psl_ast::ast::WithDocumentation,
 };
 use sql::postgres::PostgresSchemaExt;
 use sql_schema_describer as sql;

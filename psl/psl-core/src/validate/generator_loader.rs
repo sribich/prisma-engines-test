@@ -10,7 +10,7 @@ use parser_database::{
     ast::{self, WithDocumentation},
     coerce, coerce_array,
 };
-use schema_ast::ast::WithName;
+use psl_ast::ast::WithName;
 use std::collections::HashMap;
 
 const PROVIDER_KEY: &str = "provider";

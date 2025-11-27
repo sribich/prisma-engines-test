@@ -3,7 +3,7 @@ use either::Either;
 use psl::{
     datamodel_connector::{Flavour, walker_ext_traits::IndexWalkerExt},
     parser_database::{ExtensionTypeEntry, ScalarFieldType, walkers},
-    schema_ast::ast::WithDocumentation,
+    psl_ast::ast::WithDocumentation,
 };
 use sql::ColumnArity;
 use sql_schema_describer as sql;

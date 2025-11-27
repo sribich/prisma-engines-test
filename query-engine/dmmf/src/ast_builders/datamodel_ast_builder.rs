@@ -6,7 +6,7 @@ use bigdecimal::ToPrimitive;
 use itertools::{Either, Itertools};
 use psl::{
     parser_database::{ScalarFieldType, walkers},
-    schema_ast::ast::WithDocumentation,
+    psl_ast::ast::WithDocumentation,
 };
 use query_structure::{DefaultKind, FieldArity, PrismaValue, dml_default_kind, encode_bytes};
 

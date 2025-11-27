@@ -1,6 +1,6 @@
 use crate::{Field, FieldSelection, ScalarFieldRef, SelectedField, TypeIdentifier};
 use itertools::Itertools;
-use psl::schema_ast::ast::FieldArity;
+use psl::psl_ast::ast::FieldArity;
 
 /// Projection of a `Model`. A projection is a (sub)set of fields of a model.
 /// There can only ever be fields of one model contained in a particular `ModelProjection`

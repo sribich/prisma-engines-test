@@ -9,7 +9,7 @@ API for other parts of prisma-engines.
 The crate dependency graph is and should remain simple:
 
 [diagnostics](./diagnostics) →
-[schema-ast](./schema-ast) →
+[psl-ast](./psl-ast) →
 [parser-database](./parser-database) →
 [psl-core](./psl-core)
 [builtin-connectors](./connectors/builtin-connectors) →

@@ -3,7 +3,7 @@ use crate::{
     walkers::{ModelWalker, RelationFieldId, RelationFieldWalker, ScalarFieldWalker},
 };
 use diagnostics::Span;
-use schema_ast::ast;
+use psl_ast::ast;
 
 /// Represents a relation that has fields and references defined in one of the
 /// relation fields. Includes 1:1 and 1:n relations that are defined from both sides.

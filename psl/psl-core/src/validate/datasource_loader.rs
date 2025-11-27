@@ -10,7 +10,7 @@ use parser_database::{
     ast::{Expression, WithDocumentation},
     coerce, coerce_array, coerce_opt,
 };
-use schema_ast::ast::WithSpan;
+use psl_ast::ast::WithSpan;
 use std::{borrow::Cow, collections::HashMap};
 
 const PREVIEW_FEATURES_KEY: &str = "previewFeatures";

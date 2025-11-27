@@ -1,6 +1,6 @@
 use crate::FileId;
 use diagnostics::Diagnostics;
-use schema_ast::ast;
+use psl_ast::ast;
 use std::ops::Index;
 
 /// The content is a list of (file path, file source text, file AST).
@@ -8,17 +8,17 @@ use std::ops::Index;
 /// The file path can be anything, the PSL implementation will only use it to display the file name
 /// in errors. For example, files can come from nested directories.
 #[derive(Debug, Clone)]
-pub struct Files(pub Vec<(String, schema_ast::SourceFile, ast::SchemaAst)>);
+pub struct Files(pub Vec<(String, psl_ast::SourceFile, ast::SchemaAst)>);
 
 impl Files {
     /// Create a new Files instance from multiple files.
-    pub fn new(files: &[(String, schema_ast::SourceFile)], diagnostics: &mut Diagnostics) -> Self {
+    pub fn new(files: &[(String, psl_ast::SourceFile)], diagnostics: &mut Diagnostics) -> Self {
         let asts = files
             .iter()
             .enumerate()
             .map(|(file_idx, (path, source))| {
                 let id = FileId(file_idx as u32);
-                let ast = schema_ast::parse_schema(source.as_str(), diagnostics, id);
+                let ast = psl_ast::parse_schema(source.as_str(), diagnostics, id);
                 (path.to_owned(), source.clone(), ast)
             })
             .collect();
@@ -27,7 +27,7 @@ impl Files {
 
     /// Iterate all parsed files.
     #[allow(clippy::should_implement_trait)]
-    pub fn iter(&self) -> impl Iterator<Item = (FileId, &String, &schema_ast::SourceFile, &ast::SchemaAst)> {
+    pub fn iter(&self) -> impl Iterator<Item = (FileId, &String, &psl_ast::SourceFile, &ast::SchemaAst)> {
         self.0
             .iter()
             .enumerate()
@@ -36,7 +36,7 @@ impl Files {
 
     /// Iterate all parsed files, consuming the parser database.
     #[allow(clippy::should_implement_trait)]
-    pub fn into_iter(self) -> impl Iterator<Item = (FileId, String, schema_ast::SourceFile, ast::SchemaAst)> {
+    pub fn into_iter(self) -> impl Iterator<Item = (FileId, String, psl_ast::SourceFile, ast::SchemaAst)> {
         self.0
             .into_iter()
             .enumerate()
@@ -64,7 +64,7 @@ impl Files {
 }
 
 impl Index<crate::FileId> for Files {
-    type Output = (String, schema_ast::SourceFile, ast::SchemaAst);
+    type Output = (String, psl_ast::SourceFile, ast::SchemaAst);
 
     fn index(&self, index: crate::FileId) -> &Self::Output {
         &self.0[index.0 as usize]

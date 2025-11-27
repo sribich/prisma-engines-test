@@ -3,8 +3,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use psl::{ConfigOnlyParser, Datasource};
-use schema_ast::SourceFile;
-use schema_context::{SchemaContext, load_schema_context};
+use psl_ast::SourceFile;
+use psl_schema::{SchemaContext, load_schema_context};
 use schema_core::{
     ExtensionTypeConfig,
     commands::{create_database::CreateDatabaseParams, dev_diagnostic::DevDiagnosticInput, diagnose_migration_history::DiagnoseMigrationHistoryInput, ensure_connection_validity::EnsureConnectionValidityParams},

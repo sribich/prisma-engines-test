@@ -12,7 +12,7 @@ mysql = []
 diagnostics.workspace = true
 parser-database.workspace = true
 prisma-value.workspace = true
-schema-ast.workspace = true
+psl-ast.workspace = true
 
 bigdecimal.workspace = true
 chrono.workspace = true

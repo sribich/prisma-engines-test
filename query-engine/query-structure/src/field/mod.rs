@@ -8,7 +8,7 @@ pub use scalar::*;
 use crate::{Model, NativeTypeInstance, Zipper, parent_container::ParentContainer};
 use psl::{
     parser_database::{EnumId, ExtensionTypeId, ScalarType, walkers},
-    schema_ast::ast::FieldArity,
+    psl_ast::ast::FieldArity,
 };
 use std::{borrow::Cow, hash::Hash};
 

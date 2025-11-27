@@ -49,7 +49,7 @@ pub use prisma_value::*;
 pub use psl::{
     self,
     parser_database::walkers,
-    schema_ast::ast::{self, FieldArity},
+    psl_ast::ast::{self, FieldArity},
 };
 
 pub type Result<T> = std::result::Result<T, DomainError>;

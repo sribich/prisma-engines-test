@@ -1,7 +1,7 @@
 use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand};
 use psl::{
     parser_database::walkers::CompleteInlineRelationWalker,
-    schema_ast::ast::{SourceConfig, WithIdentifier, WithName},
+    psl_ast::ast::{SourceConfig, WithIdentifier, WithName},
 };
 
 use super::CodeActionsContext;

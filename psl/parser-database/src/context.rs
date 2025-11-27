@@ -5,7 +5,7 @@ use crate::{
     DatamodelError, Diagnostics, InFile, StringId, ast, extension::ExtensionTypes, interner::StringInterner,
     names::Names, relations::Relations, types::Types,
 };
-use schema_ast::ast::{EnumValueId, Expression, WithName};
+use psl_ast::ast::{EnumValueId, Expression, WithName};
 use std::collections::{HashMap, HashSet};
 
 /// Validation context. This is an implementation detail of ParserDatabase. It

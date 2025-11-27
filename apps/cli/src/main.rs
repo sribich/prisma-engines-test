@@ -9,7 +9,7 @@ use command::{debug::DebugCommand, migrate::MigrateCli};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::Verbosity;
-use schema_context::SchemaContext;
+use psl_schema::SchemaContext;
 
 #[derive(Parser)]
 #[command(author, version, about)]

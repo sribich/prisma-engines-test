@@ -59,7 +59,7 @@ query-template.path = "libs/query-template"
 psl.path = "./psl/psl"
 psl-core.path = "./psl/psl-core"
 diagnostics.path = "./psl/diagnostics"
-schema-ast.path = "./psl/schema-ast"
+psl-ast.path = "./psl/psl-ast"
 parser-database.path = "./psl/parser-database"
 
 query-engine.path = "./query-engine/query-engine"
@@ -79,7 +79,7 @@ schema-connector.path = "./schema-engine/connectors/schema-connector"
 sql-schema-connector.path = "./schema-engine/connectors/sql-schema-connector"
 sql-schema-describer.path = "./schema-engine/sql-schema-describer"
 
-schema-context = { path = "./psl/schema-context" }
+psl-schema = { path = "./psl/psl-schema" }
 
 gix = "0.74.1"
 

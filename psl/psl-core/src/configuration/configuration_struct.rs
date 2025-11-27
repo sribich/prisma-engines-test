@@ -36,7 +36,7 @@ impl Configuration {
         if self.datasources.is_empty() {
             Err(DatamodelError::new_validation_error(
                 "You defined no datasource. You must define exactly one datasource.",
-                schema_ast::ast::Span::new(0, 0, diagnostics::FileId::ZERO),
+                psl_ast::ast::Span::new(0, 0, diagnostics::FileId::ZERO),
             )
             .into())
         } else {

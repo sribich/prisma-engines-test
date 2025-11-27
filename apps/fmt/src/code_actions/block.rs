@@ -4,7 +4,7 @@ use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand, Diagnostic, Ran
 use psl::{
     diagnostics::Span,
     parser_database::walkers::ModelWalker,
-    schema_ast::ast::{NewlineType, WithSpan},
+    psl_ast::ast::{NewlineType, WithSpan},
 };
 
 use super::CodeActionsContext;

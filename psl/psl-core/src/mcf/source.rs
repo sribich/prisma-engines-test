@@ -1,5 +1,5 @@
 use parser_database::Files;
-use schema_ast::ast::WithSpan;
+use psl_ast::ast::WithSpan;
 
 use crate::configuration::{self, StringFromEnvVar};
 

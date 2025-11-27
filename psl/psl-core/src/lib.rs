@@ -27,13 +27,13 @@ pub use crate::{
 };
 pub use diagnostics;
 pub use parser_database::{self, coerce, coerce_array, generators, is_reserved_type_name};
-pub use schema_ast;
+pub use psl_ast;
 pub use set_config_dir::set_config_dir;
 
 use self::validate::{datasource_loader, generator_loader};
 use diagnostics::Diagnostics;
 use parser_database::{ExtensionTypes, Files, ParserDatabase, SourceFile, ast};
-use schema_ast::ast::WithName;
+use psl_ast::ast::WithName;
 
 /// The collection of all available connectors.
 pub type ConnectorRegistry<'a> = &'a [&'static dyn datamodel_connector::Connector];
@@ -193,15 +193,15 @@ pub fn error_tolerant_parse_configuration(
 }
 
 fn validate_configuration(
-    schema_ast: &ast::SchemaAst,
+    psl_ast: &ast::SchemaAst,
     diagnostics: &mut Diagnostics,
     connectors: ConnectorRegistry<'_>,
 ) -> Configuration {
     // TODO: set `is_using_driver_adapters` to the `true` constant for Prisma 7.0.0.
-    let is_using_schema_engine_driver_adapters = has_preview_feature_schema_engine_driver_adapters(schema_ast);
+    let is_using_schema_engine_driver_adapters = has_preview_feature_schema_engine_driver_adapters(psl_ast);
 
     let datasources = datasource_loader::load_datasources_from_ast(
-        schema_ast,
+        psl_ast,
         diagnostics,
         connectors,
         is_using_schema_engine_driver_adapters,
@@ -216,17 +216,17 @@ fn validate_configuration(
         .map(FeatureMapWithProvider::new)
         .unwrap_or_else(|| (*ALL_PREVIEW_FEATURES).clone());
 
-    let generators = generator_loader::load_generators_from_ast(schema_ast, diagnostics, &feature_map_with_provider);
+    let generators = generator_loader::load_generators_from_ast(psl_ast, diagnostics, &feature_map_with_provider);
 
     Configuration::new(generators, datasources, diagnostics.warnings().to_owned())
 }
 
-fn has_preview_feature_schema_engine_driver_adapters(schema_ast: &ast::SchemaAst) -> bool {
+fn has_preview_feature_schema_engine_driver_adapters(psl_ast: &ast::SchemaAst) -> bool {
     // Out of band check for `previewFeatures` because we need to know about the driver adapter feature before we parse the datasource block.
     // But we also need to parse the datasource block before the full generator block parsing.
     // So we ignore the diagnostics from the `previewFeatures` parsing as that will be properly validated down the line.
     let mut ignored_diagnostics = Diagnostics::new();
-    schema_ast.generators().any(|generator| {
+    psl_ast.generators().any(|generator| {
         generator
             .properties
             .iter()

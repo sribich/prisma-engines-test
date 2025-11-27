@@ -7,7 +7,7 @@ use psl::{
     diagnostics::Span,
     error_tolerant_parse_configuration,
     parser_database::{NoExtensionTypes, ParserDatabase, SourceFile, ast},
-    schema_ast::ast::AttributePosition,
+    psl_ast::ast::AttributePosition,
 };
 
 use crate::LSPContext;

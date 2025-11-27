@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use diagnostics::DatamodelError;
-use schema_ast::ast::{self, WithName, WithSpan};
+use psl_ast::ast::{self, WithName, WithSpan};
 
 use crate::{
     Context, ScalarFieldId,

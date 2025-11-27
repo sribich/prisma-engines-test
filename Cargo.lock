@@ -4071,8 +4071,8 @@ dependencies = [
  "enumflags2",
  "indexmap 2.10.0",
  "itertools 0.13.0",
+ "psl-ast",
  "rustc-hash 2.1.1",
- "schema-ast",
 ]
 
 [[package]]
@@ -4354,8 +4354,8 @@ dependencies = [
  "dotenv",
  "fork",
  "psl",
- "schema-ast",
- "schema-context",
+ "psl-ast",
+ "psl-schema",
  "schema-core",
  "serde",
  "serde_json",
@@ -4509,7 +4509,18 @@ dependencies = [
  "expect-test",
  "indoc",
  "psl-core",
- "schema-context",
+ "psl-schema",
+]
+
+[[package]]
+name = "psl-ast"
+version = "0.1.0"
+dependencies = [
+ "diagnostics",
+ "pest",
+ "pest_derive",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -4530,11 +4541,23 @@ dependencies = [
  "lsp-types",
  "parser-database",
  "prisma-value",
+ "psl-ast",
  "regex",
- "schema-ast",
  "serde",
  "serde_json",
  "url",
+]
+
+[[package]]
+name = "psl-schema"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "diagnostics",
+ "pest",
+ "pest_derive",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -5340,17 +5363,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "schema-ast"
-version = "0.1.0"
-dependencies = [
- "diagnostics",
- "pest",
- "pest_derive",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "schema-connector"
 version = "0.1.0"
 dependencies = [
@@ -5366,18 +5378,6 @@ dependencies = [
  "tracing",
  "tracing-error",
  "user-facing-errors",
-]
-
-[[package]]
-name = "schema-context"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "diagnostics",
- "pest",
- "pest_derive",
- "serde",
- "serde_json",
 ]
 
 [[package]]

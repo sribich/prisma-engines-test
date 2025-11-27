@@ -1,7 +1,7 @@
 use std::{borrow::Cow, slice};
 
 use itertools::Either;
-use psl::schema_ast::ast::FieldArity;
+use psl::psl_ast::ast::FieldArity;
 
 use crate::{InternalDataModelRef, ScalarFieldRef, Type, TypeIdentifier, Zipper};
 

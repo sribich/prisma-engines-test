@@ -6,7 +6,7 @@ use indexmap::IndexMap;
 use itertools::EitherOrBoth;
 use psl::{
     parser_database::{self as db, walkers},
-    schema_ast::ast::{WithDocumentation, WithName},
+    psl_ast::ast::{WithDocumentation, WithName},
 };
 use sql_schema_describer as sql;
 use std::borrow::Cow;

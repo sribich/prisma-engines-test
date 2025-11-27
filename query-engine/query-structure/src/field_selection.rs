@@ -5,7 +5,7 @@ use crate::{
 };
 use itertools::Itertools;
 use prisma_value::PrismaValue;
-use psl::schema_ast::ast::FieldArity;
+use psl::psl_ast::ast::FieldArity;
 use std::{borrow::Cow, fmt::Display};
 
 /// A selection of fields from a model.

@@ -7,7 +7,7 @@ use crate::{
 use either::Either;
 use enumflags2::bitflags;
 use rustc_hash::FxHashMap as HashMap;
-use schema_ast::ast::{self, EnumValueId};
+use psl_ast::ast::{self, EnumValueId};
 use std::fmt;
 
 pub(super) fn resolve_types(ctx: &mut Context<'_>) {

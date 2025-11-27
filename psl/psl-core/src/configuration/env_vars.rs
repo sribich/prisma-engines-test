@@ -1,6 +1,6 @@
 use crate::parser_database::{ast, coerce};
 use diagnostics::{DatamodelError, DatamodelWarning, Diagnostics};
-use schema_ast::ast::WithSpan;
+use psl_ast::ast::WithSpan;
 use serde::Serialize;
 
 /// Either an env var or a string literal.

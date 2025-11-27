@@ -3,7 +3,7 @@ use crate::{
     ScalarFieldType, ScalarType,
     types::{RefinedFieldVariant, RelationField, ScalarField},
 };
-use schema_ast::ast;
+use psl_ast::ast;
 
 /// A model field, scalar or relation.
 pub type FieldWalker<'db> = Walker<'db, (crate::ModelId, ast::FieldId)>;

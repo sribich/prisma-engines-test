@@ -6,7 +6,7 @@ use psl::{
         NoExtensionTypes, ParserDatabase, RelationFieldId, ScalarFieldType,
         walkers::{self, Walker},
     },
-    schema_ast::ast::{
+    psl_ast::ast::{
         self, EnumPosition, EnumValuePosition, Field, FieldPosition, ModelPosition,
         SchemaPosition, WithDocumentation, WithName,
     },

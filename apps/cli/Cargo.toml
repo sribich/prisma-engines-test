@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 psl.workspace = true
-schema-ast.workspace = true
-schema-context.workspace = true
+psl-ast.workspace = true
+psl-schema.workspace = true
 schema-core.workspace = true
 
 dotenv = { version = "0.15.0" }

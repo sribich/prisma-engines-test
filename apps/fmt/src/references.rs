@@ -5,7 +5,7 @@ use psl::{
     diagnostics::{FileId, Span},
     error_tolerant_parse_configuration,
     parser_database::{NoExtensionTypes, ParserDatabase},
-    schema_ast::ast::{
+    psl_ast::ast::{
         AttributePosition, EnumPosition, Field, FieldId, FieldPosition, FieldType, ModelId,
         ModelPosition, SchemaPosition, SourcePosition, Top, WithAttributes, WithIdentifier, WithName, WithSpan,
     },

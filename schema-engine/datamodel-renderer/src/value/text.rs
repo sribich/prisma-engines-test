@@ -15,13 +15,13 @@ impl<'a> Text<Cow<'a, str>> {
 
 impl fmt::Display for Text<&str> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&psl::schema_ast::string_literal(self.0), f)
+        fmt::Display::fmt(&psl::psl_ast::string_literal(self.0), f)
     }
 }
 
 impl fmt::Display for Text<Cow<'_, str>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&psl::schema_ast::string_literal(self.0.as_ref()), f)
+        fmt::Display::fmt(&psl::psl_ast::string_literal(self.0.as_ref()), f)
     }
 }
 

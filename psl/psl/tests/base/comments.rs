@@ -1,6 +1,6 @@
 use crate::common::*;
 use psl::parser_database::ScalarType;
-use psl::schema_ast::ast::WithDocumentation;
+use psl::psl_ast::ast::WithDocumentation;
 
 #[test]
 fn comments_must_work_in_models() {

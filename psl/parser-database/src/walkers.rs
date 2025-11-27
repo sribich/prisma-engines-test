@@ -24,7 +24,7 @@ pub use model::*;
 pub use relation::*;
 pub use relation_field::*;
 pub use scalar_field::*;
-use schema_ast::ast::{NewlineType, WithSpan};
+use psl_ast::ast::{NewlineType, WithSpan};
 pub use top::*;
 
 use crate::{FileId, ModelId, ast};

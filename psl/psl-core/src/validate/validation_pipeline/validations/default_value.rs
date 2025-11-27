@@ -2,7 +2,7 @@ use crate::datamodel_connector::ConnectorCapability;
 use crate::{diagnostics::DatamodelError, validate::validation_pipeline::context::Context};
 use bigdecimal::BigDecimal;
 use parser_database::ScalarType;
-use schema_ast::ast::{self, Expression};
+use psl_ast::ast::{self, Expression};
 
 /// Function `auto()` works for now only with MongoDB.
 pub(super) fn validate_auto_param(default_value: Option<&ast::Expression>, ctx: &mut Context<'_>) {

@@ -3,7 +3,7 @@ use chrono::{DateTime, FixedOffset};
 use psl::{
     generators::{DEFAULT_CUID_VERSION, DEFAULT_UUID_VERSION},
     parser_database::{ScalarFieldType, ScalarType, walkers},
-    schema_ast::ast::FieldArity,
+    psl_ast::ast::FieldArity,
 };
 use std::fmt::{Debug, Display};
 

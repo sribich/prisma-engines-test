@@ -7,8 +7,8 @@ use psl::diagnostics::DatamodelWarning;
 use psl::parser_database::{
     IndexAlgorithm, ModelId, OperatorClass, ReferentialAction, ScalarFieldType, ScalarType, SortOrder, walkers,
 };
-use psl::schema_ast::ast::WithDocumentation;
-use psl::schema_ast::ast::{self, FieldArity};
+use psl::psl_ast::ast::WithDocumentation;
+use psl::psl_ast::ast::{self, FieldArity};
 use psl::{Diagnostics, StringFromEnvVar};
 
 pub(crate) trait DatamodelAssert<'a> {

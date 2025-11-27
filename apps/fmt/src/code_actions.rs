@@ -13,7 +13,7 @@ use psl::{
         SourceFile,
         walkers::{ModelWalker, RefinedRelationWalker, ScalarFieldWalker},
     },
-    schema_ast::ast::{self, Attribute, IndentationType, NewlineType, WithSpan},
+    psl_ast::ast::{self, Attribute, IndentationType, NewlineType, WithSpan},
 };
 use std::collections::HashMap;
 

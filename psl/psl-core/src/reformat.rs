@@ -2,7 +2,7 @@ use crate::{ParserDatabase, ValidatedSchema};
 use cruet::Inflector;
 use diagnostics::FileId;
 use parser_database::{NoExtensionTypes, ast::WithSpan, walkers};
-use schema_ast::{SourceFile, ast};
+use psl_ast::{SourceFile, ast};
 use std::{borrow::Cow, collections::HashMap};
 
 /// Returns either the reformatted schema, or the original input if we can't reformat. This happens
@@ -22,7 +22,7 @@ pub fn reformat_validated_schema_into_single(schema: ValidatedSchema, indent_wid
         .collect::<Vec<String>>()
         .join("\n");
 
-    schema_ast::reformat(&source, indent_width)
+    psl_ast::reformat(&source, indent_width)
 }
 
 pub fn reformat_multiple(sources: Vec<(String, SourceFile)>, indent_width: usize) -> Vec<(String, String)> {
@@ -32,7 +32,7 @@ pub fn reformat_multiple(sources: Vec<(String, SourceFile)>, indent_width: usize
     if diagnostics.has_errors() {
         db.iter_file_ids()
             .filter_map(|file_id| {
-                let formatted_source = schema_ast::reformat(db.source(file_id), indent_width)?;
+                let formatted_source = psl_ast::reformat(db.source(file_id), indent_width)?;
                 Some((db.file_name(file_id).to_owned(), formatted_source))
             })
             .collect()
@@ -57,7 +57,7 @@ pub fn reformat_multiple(sources: Vec<(String, SourceFile)>, indent_width: usize
                     Cow::Borrowed(db.source(file_id))
                 };
 
-                let formatted_source = schema_ast::reformat(&source, indent_width)?;
+                let formatted_source = psl_ast::reformat(&source, indent_width)?;
 
                 Some((db.file_name(file_id).to_owned(), formatted_source))
             })

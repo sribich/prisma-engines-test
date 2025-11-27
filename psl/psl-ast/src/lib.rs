@@ -20,7 +20,7 @@ mod source_file;
 /// literals](https://datatracker.ietf.org/doc/html/rfc8259#section-7).
 ///
 /// ```
-/// # use schema_ast::string_literal;
+/// # use psl_ast::string_literal;
 ///let input = r#"oh
 ///hi"#;
 ///assert_eq!(r#""oh\nhi""#, &string_literal(input).to_string());

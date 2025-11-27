@@ -3,7 +3,7 @@ use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand};
 use psl::{
     diagnostics::Span,
     parser_database::walkers::{self, FieldWalker},
-    schema_ast::ast::{WithAttributes, WithName, WithSpan},
+    psl_ast::ast::{WithAttributes, WithName, WithSpan},
 };
 
 use super::CodeActionsContext;

@@ -1,8 +1,8 @@
-mod context;
+mod schema;
 mod file;
 
 use anyhow::{anyhow, Result};
-pub use context::{SchemaContext, SchemaParser, SchemaValidator};
+pub use schema::{SchemaContext, SchemaParser, SchemaValidator};
 pub use file::{SchemaFile, New, Parsed, Validated};
 
 use std::{
@@ -10,6 +10,17 @@ use std::{
     env::current_dir,
     path::{Path, PathBuf},
 };
+
+
+
+
+
+
+
+
+
+
+
 
 const SCHEMA_PATHS: [&str; 1] = ["prisma/schema.prisma"];
 
@@ -19,9 +30,10 @@ pub struct SchemaFiles {
     pub schemas: Vec<PathBuf>,
 }
 
-pub fn load_schema() {
-    
-}
+
+
+
+
 
 /// Attempt to locate a schema context.
 ///

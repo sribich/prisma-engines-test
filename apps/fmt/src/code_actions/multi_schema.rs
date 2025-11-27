@@ -2,7 +2,7 @@ use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand};
 use psl::{
     diagnostics::Span,
     parser_database::walkers::{EnumWalker, ModelWalker},
-    schema_ast::ast::WithSpan,
+    psl_ast::ast::WithSpan,
 };
 
 use super::CodeActionsContext;
