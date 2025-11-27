@@ -37,10 +37,19 @@ pub struct SchemaFile<T = New>
 where
     T: Clone,
 {
-    path: PathBuf,
-    content: String,
-    context: T,
-    _marker: PhantomData<T>,
+    // Real {
+        path: PathBuf,
+        content: String,
+        context: T,
+        _marker: PhantomData<T>,
+    // },
+    /*
+    Virtual {
+        content: String,
+        context: T,
+        _marker: PhantomData<T>,
+    }
+     */
 }
 
 impl<T> SchemaFile<T> 

@@ -19,8 +19,9 @@ pub struct SchemaFiles {
     pub schemas: Vec<PathBuf>,
 }
 
-
-
+pub fn load_schema() {
+    
+}
 
 /// Attempt to locate a schema context.
 ///
